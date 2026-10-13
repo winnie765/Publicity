@@ -1,0 +1,3 @@
+import type {Follower} from './model';
+export function latestFollower(rows:Follower[],cutoff='9999-12-31'):Follower|undefined{const filtered=rows.filter(f=>f.date<=cutoff).sort((a,b)=>b.date.localeCompare(a.date));if(!filtered.length)return;let newest=filtered.filter(f=>f.date===filtered[0].date);const manual=newest.filter(f=>f.origin==='manual');if(manual.length)newest=manual;return new Set(newest.map(f=>f.followers)).size===1?newest[0]:undefined;}
+export function followerConflicts(rows:Follower[]){return [...new Set(rows.map(f=>f.account+'|'+f.date))].filter(key=>{const list=rows.filter(f=>f.account+'|'+f.date===key);return !list.some(f=>f.origin==='manual')&&new Set(list.map(f=>f.followers)).size>1;}).length;}

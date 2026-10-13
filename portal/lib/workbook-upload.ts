@@ -1,0 +1,14 @@
+import ExcelJS from 'exceljs';
+import {extractSheetData,isStandardWorkbook,prepareStandardWorkbook,type SheetData} from '../app/standard-workbook';
+import {inferKind,prepareWorkbook,type RecordKind} from '../app/import';
+import type {Dataset} from '../app/model';
+export function parseCsv(text:string):Record<string,string>[] {const rows:string[][]=[];let row:string[]=[],cell='',quoted=false;const input=text.replace(/^\uFEFF/,'');for(let i=0;i<input.length;i++){const c=input[i];if(c==='"'){if(quoted&&input[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===','&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&input[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell='';}else cell+=c;}if(quoted)throw Error('CSV has an unclosed quoted field.');row.push(cell);if(row.some(v=>v.trim()))rows.push(row);const headers=rows.shift()||[];if(new Set(headers).size!==headers.length)throw Error('CSV contains duplicate column headers.');return rows.map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));}
+export async function parseWorkbookUpload(file:{name:string;arrayBuffer():Promise<ArrayBuffer>;text():Promise<string>},data:Dataset,options:{sheet?:string;kind?:RecordKind;startYear?:number}={}){
+ let sheets:SheetData[]=[];
+ if(file.name.toLowerCase().endsWith('.xlsx')){const workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await file.arrayBuffer());sheets=extractSheetData(workbook);}
+ else if(file.name.toLowerCase().endsWith('.csv')){const rows=parseCsv(await file.text()),headers=Object.keys(rows[0]||{}),normalized=headers.map(h=>h.toLowerCase().replace(/[^a-z0-9]/g,''));let name=options.sheet;if(!name){if(normalized.includes('page'))name='Facebook';else if(normalized.includes('reach')&&normalized.includes('account')&&normalized.includes('posttitle'))name='Instagram';else if(normalized.includes('notes')&&normalized.includes('posttitle'))name='WorkVivo';else if(normalized.includes('month')&&normalized.includes('followers'))name='Followers';else if(normalized.includes('objectiveid'))name='KPI_Mapping';else if(normalized.includes('interactiontype')&&normalized.includes('stakeholder'))name='Stakeholder';else name=file.name;}sheets=[{name,headers,rows:rows.map((values,i)=>({row:i+2,values}))}];}
+ else throw Error('Upload an XLSX workbook or CSV file.');
+ if(isStandardWorkbook(sheets)||['Followers','Stakeholder'].includes(sheets[0]?.name)){return prepareStandardWorkbook(sheets,data,options.startYear);}
+ const raw=sheets.map(s=>({name:s.name,kind:inferKind(s.name,s.rows[0]?.values||{},options.kind||'posts'),rows:s.rows.map(r=>r.values)})).filter(s=>s.kind&&s.rows.length) as {name:string;kind:RecordKind;rows:any[]}[];
+ return {...prepareWorkbook(raw,data),warnings:[],format:'Workbook',startYear:undefined};
+}

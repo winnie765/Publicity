@@ -1,0 +1,42 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Record {
+  id        String   @id
+  kind      String
+  payload   Json
+  recordDate DateTime? @db.Date @map("record_date")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([kind])
+  @@index([recordDate])
+  @@map("portal_records")
+}
+
+model Audit {
+  id       String   @id @default(uuid())
+  actor    String
+  action   String
+  recordId String   @map("record_id")
+  date     DateTime @default(now())
+
+  @@index([date])
+  @@map("portal_audit")
+}
+
+model FacebookFollower {
+  id String @id @default(uuid())
+  snapshotDate DateTime @unique @db.Date @map("snapshot_date")
+  followerCount Int @map("follower_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  @@map("facebook_followers")
+}

@@ -1,0 +1,16 @@
+project_id = "tzu-chi-community-intelligence"
+
+[api]
+enabled = false
+
+[auth]
+enabled = false
+
+[storage]
+enabled = false
+
+[db]
+major_version = 15
+
+[db.seed]
+enabled = false

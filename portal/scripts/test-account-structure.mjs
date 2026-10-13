@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {prepareStandardWorkbook} from '../.sites-runtime/standard-workbook.mjs';
+import {defaultConfig,insights} from '../.sites-runtime/model.mjs';
+import {migrateDataset} from '../.sites-runtime/account-structure.mjs';
+const empty={posts:[],followers:[],interactions:[],config:structuredClone(defaultConfig)};
+const labels=['GLOW (BB)','GLOW (Nanyang)','SEEN (BB)','SEEN (Nanyang)'];
+const sheet={name:'Facebook',headers:['Date','Page','Post_Title','Content_Type','Likes'],rows:labels.map((Page,i)=>({row:i+2,values:{Date:'2026-01-01',Page,Post_Title:'Explicit label '+i,Content_Type:'Reel',Likes:10+i}}))};
+const prepared=await prepareStandardWorkbook([sheet],empty),posts=prepared.batches[0].items;
+assert.equal(prepared.config.accounts.length,1);assert.equal(prepared.config.accounts[0].brand,undefined);
+assert.deepEqual(posts.map(p=>[p.brand,p.location]),[['GLOW','Bukit Batok'],['GLOW','Nanyang'],['SEEN','Bukit Batok'],['SEEN','Nanyang']]);
+posts[0].topic='Senior Story';posts[0].description='A recorded description';posts[0].features=['Senior'];posts[0].featuresKnown=true;
+const update=await prepareStandardWorkbook([sheet],{...empty,posts,config:prepared.config});assert.equal(update.batches[0].items[0].description,posts[0].description);assert.deepEqual(update.batches[0].items[0].features,['Senior']);
+const legacy=migrateDataset({posts:[{...posts[0],brand:undefined,programme:'GLOW',account:'Facebook · GLOW (BB)'}],followers:[],interactions:[],config:{programmes:['GLOW'],locations:['BB'],accounts:[{name:'Facebook · GLOW (BB)',platform:'Facebook',programme:'GLOW'}],topics:['Senior Story'],types:['Reel'],stakeholders:[]}});
+assert.equal(legacy.posts[0].brand,'GLOW');assert.equal(legacy.posts[0].location,'Bukit Batok');assert.equal(legacy.config.accounts[0].brand,undefined);
+const evidence=Array.from({length:40},(_,i)=>({...posts[0],id:'pattern-'+i,platform:'Instagram',type:'Reel',topic:i<20?'Senior Story':'Event',likes:i<20?30:10,comments:0,shares:0,saves:0,features:[],featuresKnown:false}));
+assert(insights(evidence).some(i=>i.title.includes('Senior Story topic')&&i.lift===200));assert(!insights(evidence.slice(0,2)).some(i=>i.title.includes('topic posts')));
+console.log('PASS: one shared Facebook account, independent brand/location, legacy migration, preserved annotations and sampled topic insights.');

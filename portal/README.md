@@ -1,42 +1,44 @@
 # Tzu Chi Community Care Social Media Intelligence Portal
 
-An owner-private Sites application with React/Vinext, a Cloudflare Worker, D1 persistence and dispatch-owned ChatGPT sign-in. No social-platform API credentials are required.
+A public, Excel-first social media intelligence website. Visitors need no registration, login, account, password, verification, MFA or role. The homepage immediately loads saved data and displays executive metrics, monthly trends, Top Hits, stakeholder activity, centre/brand and location comparisons, and a separate Workvivo summary.
 
-## Operations
+## Public pages
 
-- Executive overview, content intelligence, breakout detection, stakeholder intelligence, centre comparison, Workvivo insights, outreach evaluation and insight engine.
-- Post, follower snapshot and stakeholder interaction CRUD; validated CSV/XLSX review and imports; CSV/XLSX exports.
-- Configurable programmes, locations, accounts, topics, formats and stakeholders; server-side configuration validation and durable audit logging.
-- There are no seeded posts, follower totals or stakeholder interactions. All dashboard data comes from imported workbooks/CSV or authorized manual records. Programmes, locations, accounts, topics, formats and stakeholders are inferred from validated imports.
+- `/`: executive dashboard and intelligence summaries.
+- `/import`, `/upload`, `/admin`: workbook/CSV upload, validation, preview, batch import, data management and export.
+- `/content`, `/top-hits`, `/stakeholders`, `/compare`, `/workvivo`, `/outreach`, `/insights`: dedicated analysis views.
+- `/settings`: public configuration for centres, locations and platform accounts.
 
-## Analytics
+All records are shared across visitors. Uploads update the public dataset. There are no seeded performance metrics. The official workbook remains **Social Media Report V1.xlsx** with Facebook, Instagram, WorkVivo, Followers, Stakeholder and KPI_Mapping sheets. Explicit follower date ranges such as `1 Sep 2025 - 30 Sep 2025` are authoritative. The source workbook is read at upload time and is never embedded in application code.
 
-Engagement uses an explicit imported engagementTotal when supplied; otherwise likes + comments + shares + saves. Breakouts require at least 2x mean peer engagement with at least 5 other posts of the same platform and format. Feature lift compares platform-specific averages, weighted by featured-post counts, requiring 3 records in each group. Sample-size labels are not significance tests. These methods are descriptive and do not establish causality.
+## Deployment
 
-Workvivo is isolated from external analytics. Reach sums can double-count viewers; follower totals can overlap across accounts. Account-level follower snapshots cannot be allocated to shared-account programmes or locations. Senior advocacy economics use manually attributed followers and incentives; cost per follower is not incremental ROI.
+Use [DEPLOYMENT.md](DEPLOYMENT.md) for Vercel + hosted Supabase setup. Root Directory is `portal`; set `DATABASE_URL` and `DIRECT_URL` in Vercel. The supplied build command generates Prisma Client, applies PostgreSQL migrations and builds Next.js. The app uses no Supabase Auth or browser database credentials.
 
-## Local development
+The existing Cloudflare Sites deployment uses the same public UI with its existing D1 database. Set `SITES_BUILD_TARGET=sites` to build that target. Both targets are production websites; neither depends on a development server or localhost. Their databases are separate.
 
-Node 22.13+ and npm are required. Run `npm ci`, `npm run db:generate` only for new schema changes, then build. Apply pending local D1 SQL using the starter's Wrangler command. Run `npm run dev`; the portable local sign-in route creates a development-only identity. Hosted authentication is enforced by Sites.
+## Data and analytics
 
-Checks: `npx tsc --noEmit`, `node scripts/test-model.mjs`, `node scripts/test-route.mjs` (actual handlers against SQLite with mocked platform identity), `node scripts/test-api.mjs` against a running migrated local preview, and the Sites build helper. Database migrations are committed in `drizzle/`. Publishing applies hosted migrations.
+Excel/CSV → web upload → validated database transaction → analytics → dashboards. The visitor selects a file, reviews the preview, confirms, and sees updated results. Up to 500 records and 3 MB per workbook; JSON record batches are limited to 2 MB. Stable standard-report IDs make repeat uploads update matching records. Invalid batches save nothing. Changes create an anonymous audit trail identifying data/import actions, not user accounts.
 
-## Deployment and organizational rollout
+Facebook views remain separate from Instagram reach. Missing standard metrics are unavailable rather than observed zero. Workvivo is never ranked against public-platform engagement. Missing topics, sources and features remain Unclassified; feature comparisons exclude posts with unknown feature annotation.
 
-`.openai/hosting.json` retains Site identity and the `DB` binding. The hosted workspace is owner-private. Team roles, expanded access, data retention/backup procedures, monitoring and organizational acceptance must be configured and reviewed before a wider production rollout. The present analytics do not distinguish paid/organic reach or incorporate a randomized advocacy experiment.
+Engagement uses explicit imported totals when supplied, otherwise available likes, comments, shares and saves. Top Hits are up to ten posts with the highest reported engagement independently within Facebook and Instagram. Ties are resolved by record ID. Score = engagement divided by platform average engagement, multiplied by 100. Insights describe associations with sample sizes, not causal proof. Follower snapshots stay at account level; shared audiences are not invented for locations.
 
-Imports accept XLSX workbooks with Posts, Followers and Interactions sheets (or recognizable headers) and CSV files, up to 500 rows and 5 MB; the API limits each JSON request to 2 MB. Feature values use `|` separators. Blank IDs create records; existing IDs update them. The preview and server validate records before committing. Do not store senior names, medical details or personally identifying narratives in metric records.
+## Development and verification
 
-Verification: production build, TypeScript, analytics validation and SQL-backed API handler tests passed. Local Cloudflare runtime and browser QA were unavailable because the Windows Worker executable could not load its runtime dependency (exit 0xC0000135). Hosted binding/sign-in integration requires deployment validation.
+Node 22.x, `npm ci`, `npm run build`, `npm start`. Development is optional and uses the hosted database connection supplied through environment variables. Never commit real `.env` files; `.env.example` documents server-only variables.
 
-Excel-first workflow: download the blank template, fill the relevant sheets, select Import Excel, review all records and confirm. Common column aliases, Excel dates, DD/MM/YYYY, boolean feature flags, cached formula results and optional imported total engagement are supported. New names are added to configuration atomically with the records. Blank optional metrics become zero; source defaults to Organisation Generated. No performance data or organizational dimension values are seeded. Existing saved data is preserved on deployment.
+Prisma schema and PostgreSQL migrations live in `prisma/`; Cloudflare D1 migrations live in `drizzle/`. Supabase configuration is in `supabase/`. Database-specific repositories share the same validation and transaction plan.
 
-## Standard Social Media Report V1 workbook
+Checks cover anonymous route access, workbook parsing, official workbook imports, repeat IDs, atomic rejection, public CRUD, chart rendering and both build targets. A Supabase connection test requires the deployment's actual hosted connection values; a build without those values does not prove database connectivity.
 
-The standard sheets are Facebook, Instagram, WorkVivo, Followers, Stakeholder and KPI_Mapping. Trailing sheet spaces are accepted; the importer reads the existing headers without requiring extra columns. Facebook Views and Instagram Reach remain distinct, WorkVivo Notes are retained, and follower New_Followers remains separate from changes in total followers. Blank/NA reported metrics are unavailable, not recorded zero. Topics, features, sources and missing labels remain Unclassified. Programme attribution is derived transparently from Page/Account labels; locations come from parentheses where present, otherwise remain Unclassified. Account labels are platform-qualified and are not silently merged.
+Brand, location and account are independent. Facebook is one shared account; Instagram has brand-specific accounts. Workvivo remains separate. Dates use calendar-only single/range controls with month and year selectors. Missing legacy metadata is flagged for annotation without changing the official workbook. Pattern discovery includes features, topics, formats, brands and Top Hit patterns; findings display sample counts, comparison context and actionable tests rather than causal claims.
 
-Follower Month periods without years use a reviewable starting year inferred from earliest post dates and chronological rollover per account. Source period labels and inferred-date flags are preserved. Stakeholder rows match a unique post by date, platform and title; unmatched/ambiguous rows reject the import. Empty stakeholder sheets add no activity. KPI_Mapping objectives and Q1?Q4 plans are preserved as text and displayed in Data management.
+The Top Hits page includes summary leaders, separate Facebook and Instagram rankings, annotated feature patterns, format performance and platform comparisons, brand findings, management synthesis and recommended controlled content tests. Run node scripts/test-top-hits.mjs to verify selection and evidence rules.
 
-Stable report record IDs allow repeat uploads to update matching records. Changed identity fields (post date/title/account) create a new record; remove superseded records explicitly. Duplicate identical posts use a stable occurrence index. Standard support can be tested against a local workbook: `node scripts/test-standard-workbook.mjs <absolute workbook path>`. The source workbook is read for testing only and is not embedded in the application or committed.
+The official Followers sheet is Facebook-only regardless of legacy Platform cell labels. Counts, dates, labels and stable IDs are preserved. Existing workbook follower rows are migrated to Facebook as shared-account snapshots. Account labels do not create separate audiences. Conflicting same-date counts create gaps and are flagged for correction; identical counts are counted once.
 
-The revised standard Followers Month field uses explicit English date ranges, for example `1 Sep 2025 - 30 Sep 2025`, `Started - 1 Sep 2025`, and `28 Nov 2025 - 5 Feb 2026`. Those years are authoritative and never overridden by the legacy starting-year setting. The inferred-year control appears only when an uploaded file has periods without years. Original period text and stable snapshot identities are preserved. Earlier numeric day/month periods remain supported.
+Operational entry is available without Excel: add Facebook, Instagram and Workvivo posts, save drafts or publish, manage stakeholder interactions and KPI targets, and maintain Facebook snapshots at /followers. Saved drafts are excluded from analytics. Own changes update immediately; open pages poll shared data every 30 seconds and on focus.
+
+The facebook_followers table stores unique typed snapshot dates, counts and creation/update timestamps. Historical raw rows are preserved; explicit manual counts take precedence on their date. Monthly growth requires adjacent calendar months; YoY uses the same month one year earlier. Gaps, conflicts and zero percentage baselines remain unavailable. Top Hit/follower associations use Facebook data only and never infer individual post attribution from monthly growth.
