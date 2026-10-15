@@ -1,0 +1,4 @@
+'use client';
+import {useEffect,useState} from 'react';
+import type {AIResponse,Filters} from '../lib/intelligence/types';
+export function useDashboardBriefing(filters:Filters,revision:string,enabled:boolean){const key=JSON.stringify({filters,revision}),[state,setState]=useState<{key:string;result?:AIResponse;error?:boolean}|null>(null);useEffect(()=>{if(!enabled)return;const controller=new AbortController(),timer=setTimeout(async()=>{try{const r=await fetch('/api/dashboard-intelligence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filters}),signal:controller.signal});if(!r.ok)throw Error();const result=await r.json() as AIResponse;if(!result.report||!Array.isArray(result.facts))throw Error();setState({key,result})}catch{if(!controller.signal.aborted)setState({key,error:true})}},450);return()=>{clearTimeout(timer);controller.abort()}},[key,enabled]);return state?.key===key?state:null;}

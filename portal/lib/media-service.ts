@@ -1,0 +1,11 @@
+import {mediaFolders,maxImageBytes,assetKey} from './content-media';
+import type {Storage} from './storage-contract';
+import {publicPortalData} from './workspace-service';
+export function imageType(bytes:Uint8Array){if(bytes.length<16)throw Error('Choose a valid JPG, PNG or WEBP image.');if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255)return {type:'image/jpeg',extension:'jpg'};if([137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v))return {type:'image/png',extension:'png'};if(String.fromCharCode(...bytes.slice(0,4))==='RIFF'&&String.fromCharCode(...bytes.slice(8,12))==='WEBP')return {type:'image/webp',extension:'webp'};throw Error('Only valid JPG, JPEG, PNG and WEBP images are supported.');}
+export async function storeImage(store:Storage,bucket:{put:(key:string,bytes:Uint8Array,type:string)=>Promise<void>;delete:(key:string)=>Promise<void>},file:File,folder:string){
+ if(!mediaFolders.includes(folder as typeof mediaFolders[number]))throw Error('Choose a supported image folder.');if(!/\.(jpe?g|png|webp)$/i.test(file.name)||file.size<=0||file.size>maxImageBytes)throw Error('Choose a JPG, PNG or WEBP image no larger than 10 MB.');
+ const bytes=new Uint8Array(await file.arrayBuffer()),format=imageType(bytes);if(file.type&&file.type!==format.type&&file.type!=='application/octet-stream')throw Error('The image contents do not match its file type.');
+ const id=crypto.randomUUID(),key=folder+'/'+id+'.'+format.extension,url='/api/media?key='+encodeURIComponent(key),now=new Date().toISOString();
+ await bucket.put(key,bytes,format.type);try{await store.apply([{type:'upsert',record:{id:'media-'+id,kind:'media_asset',payload:{id:'media-'+id,key,url,mimeType:format.type,size:file.size,createdAt:now},updatedAt:now}}])}catch(e){await bucket.delete(key);throw e}return {url,key,size:file.size};
+}
+export async function publicMediaReference(store:Storage,key:string){if(key.startsWith('workvivo/'))return false;const data=await publicPortalData(store),urls=[data.home.heroImageUrl,...data.stories.flatMap(s=>[s.imageUrl,s.thumbnailUrl,...s.gallery.flatMap(g=>[g.url,g.thumbnail||''])]),...data.events.flatMap(e=>[e.imageUrl,e.thumbnailUrl,...e.gallery.flatMap(g=>[g.url,g.thumbnail||''])]),...data.partners.map(p=>p.imageUrl),...data.programmes.map(p=>p.imageUrl)];return urls.some(url=>assetKey(url||'')===key)}

@@ -1,10 +1,10 @@
 import {NextResponse,type NextRequest} from 'next/server';
 import {authenticated,automationAuthorized} from './lib/workspace-security';
-const publicPages=new Set(['/','/community','/showcase','/programmes','/stories','/impact','/workspace/login']);
+const publicPages=new Set(['/','/community','/showcase','/programmes','/stories','/impact','/activities','/partners','/what-were-doing','/workspace/login']);
 export async function middleware(request:NextRequest){
  const path=request.nextUrl.pathname;
  if(path.startsWith('/_next/')||path.startsWith('/assets/')||/\.(?:ico|svg|png|jpg|jpeg|webp|css|js|woff2?)$/.test(path))return NextResponse.next();
- if(publicPages.has(path)||/^\/(stories|programmes)\/[^/]+$/.test(path)||path==='/api/public'||path==='/api/session'){
+ if(publicPages.has(path)||/^\/(stories|programmes|activities)\/[^/]+$/.test(path)||path==='/api/media'||path==='/api/public'||path==='/api/session'){
   const response=NextResponse.next();response.headers.set('Cache-Control','no-store');response.headers.set('Content-Security-Policy',path==='/workspace/login'?"frame-ancestors 'none'":"frame-ancestors *");return response;
  }
  if(!await authenticated(request)&&!await automationAuthorized(request)){

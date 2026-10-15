@@ -4,6 +4,44 @@ The public community website and private staff Workspace have separate routes, s
 
 ## Public Portal
 
+## Executive presentation Dashboard
+
+The Workspace Dashboard now leads with an evidence-backed executive briefing and follows **What Happened? → Why Did It Happen? → What Should We Do Next?**. It adds previous-period indicators, brand and platform snapshots, a views-versus-reach comparison, stakeholder cards, recorded theme findings and three to five recommendations with supporting evidence and expected impacts framed as hypotheses. The two existing trend charts and account toggles remain. Top Hits starts with three posts per platform, with the existing Top 5 comparison available on demand. Existing AI Strategy Insights remains available in an expandable section.
+
+`app/dashboard-intelligence.ts` composes the existing overview, ranking, follower and measurement functions. Full calendar months compare with the previous calendar month; a partial single-month selection uses the same day position in the previous month (clipped at that month's end); other ranges use an immediately preceding equal-length period. Missing observations and zero baselines do not produce invented growth percentages. Latest follower counts remain independent by account; a growth comparison requires snapshots within both periods for every selected account. Stakeholder KPI/snapshot counts refer to interactions linked to posts in the selected period. General likes do not imply named stakeholder activity.
+
+`/api/dashboard-intelligence` is a protected read-only analysis endpoint. It reuses the existing Gemini provider, structured executive-report interpretation, evidence validation, persistent cache, quotas and calculated fallback. Charts and KPIs render immediately from calculated values and do not depend on AI. Briefings refresh for filter and source revisions; stale responses are ignored. Workvivo remains outside the external performance summary.
+
+Quick Actions opens the existing post and stakeholder forms on the Dashboard. A follower shortcut reuses the existing calendar/account/count form and account snapshot save action. Events use the existing publishing form in an accessible dialog. Story/promotion shortcuts select a saved external post and open its existing public editor. Saving through Dashboard shortcuts preserves the selected date range. All previous analysis, import, reporting, image and public-publishing pages remain available.
+
+Run `node scripts/test-dashboard-presentation.mjs "path/to/Social Media Report V1.xlsx"` and the analytics overview test for comparison boundaries, missing coverage, platform isolation, actual workbook results, private AI access, rendering and fallback behavior.
+
+## Image uploads and publishing
+
+Post records now optionally store `featured_image_url`, `featured_image_alt_text`, `thumbnail_url`, `gallery_images`, `show_on_public_site`, `show_on_home_page`, `show_in_community_highlights`, `show_in_stories`, `show_on_programme_page`, and approved public summary/article/category fields. These are additive keys in the existing Post JSON payload, not another posts table. No image bytes are stored in D1 or PostgreSQL. Existing analytics and the core data service remain unchanged.
+
+The Sites hosting manifest enables the private `BUCKET` R2 binding. Files use UUID paths under `facebook/`, `instagram/`, `workvivo/`, `stories/`, `events/` and `community-highlights/`. Uploads accept JPG/JPEG, PNG and WEBP up to 10 MiB each and validate signatures server-side. The browser creates separate small thumbnails. Galleries support up to twenty images with drag or button reordering and individual alt text. Remove/replace changes the record reference; it does not delete an object another record may still use.
+
+`/api/media` requires the existing Workspace session for uploads and all private images. Public reads check current published references on every request. Draft, unreferenced and Workvivo images are unavailable anonymously; unpublishing revokes public image access. Files are streamed with a fixed image MIME type and no-sniff headers. Image upload and data-save failures are reported separately; Save is disabled while uploads run.
+
+Posts can be created, illustrated and published from Data Management. Public Site Manager also edits image/public-content fields through `/api/post-content`, which only accepts those fields and preserves the current analytics record. Excel/CSV metric updates retain saved image and publication metadata when those keys are absent. Existing approved legacy public stories remain supported; direct post visibility takes precedence when explicitly set, avoiding duplicate public stories.
+
+Story and upcoming activity pages include galleries. Stories show related published activities from the same brand. Top Hits uses uploaded thumbnails without changing ranking or engagement calculations. AI summary/alt-text generation remains a future feature.
+
+For a non-Sites host, configure a **private** Supabase Storage bucket and server-only `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_MEDIA_BUCKET`. The optional Supabase adapter uses the same protected media gateway. Ensure that host permits 10 MiB request bodies; hosts with smaller function request limits require a direct/resumable storage-upload deployment adapter. The hosted Sites/R2 implementation supports the full limit.
+
+Run `node scripts/test-image-publishing.mjs` for uploads, private/public image access, revocation, the size boundary, gallery metadata, Workvivo privacy, import preservation and metric-safe CMS edits.
+
+The Public Portal and Workspace are experiences within the same application and database. The shared top-level switcher uses the existing Workspace password/session. Public navigation now includes Home, Community Highlights, What We're Doing, Stories, Upcoming Activities, Community Impact and Partners. Existing `/programmes` and `/workspace/publishing` URLs continue to work.
+
+`/workspace/site-manager` is the Public Site Manager. It extends the existing publishing tools with editable home-page headings, hero copy, image and accessibility description, independent featured-story placement, and verified event impact counts. Settings and publication metadata use the existing generic record repository; no database schema or analytics-table migration is required. Source posts are linked by `postId`, never copied into another posts dataset. Only the explicitly approved public projection is returned to visitors.
+
+Staff can select **Promote to Community Highlights** from post details or the additional Top Hits publishing control. The manager opens the existing story editor for that source post, reusing an existing publication when present. Staff review public text/images and save with Publish enabled. Unpublishing removes public visibility while preserving the source and analytics. Private descriptions, notes and metrics are not copied automatically.
+
+The AI Advisor additionally accepts management questions at `/workspace/advisor`. Its separate `/api/advisor` endpoint selects evidence from the existing analytics engine and uses the existing Gemini adapter, cache, quota and calculated fallback. It does not alter dashboard insights, provider configuration or metric calculations. Questions are private, size-limited and protected by the existing authentication and same-origin controls.
+
+Run `node scripts/test-workspace-boundary.mjs` and `node scripts/test-workspace-additions.mjs` for public projection, publication lifecycle, CMS validation, advisor evidence preservation and access-control checks.
+
 - `/`: storytelling home with a photographic hero, community highlights, verified impact, featured stories, upcoming activities and partner logos.
 - `/community`: featured Facebook and Instagram content under Community Highlights. `/showcase` redirects here.
 - `/stories`: searchable public stories with Senior, Volunteer, Community, Health Promotion and Success categories. `/stories/[id]` opens a full approved article.
@@ -86,3 +124,23 @@ Exports include standalone escaped HTML and a real OOXML .docx file with Unicode
 Automation is off by default. Enable it and select Monthly or Quarterly in the report workspace. A Sites cloud dispatcher checks POST /api/report-automation on the first of each month at 09:00 Asia/Singapore. The endpoint generates the previous completed month or, in January/April/July/October, the previous completed quarter. Automatic IDs prevent repeat archived reports for the same scheduled period; the endpoint can be retried. For other hosts, configure an equivalent scheduled POST. No email or external message is sent.
 
 Run node scripts/test-report-routes.mjs to verify calculations, archives against SQLite, report APIs, fallback/schema validation, DOCX structure, HTML escaping, automation defaults and duplicate prevention.
+
+## Workspace assistant and content studio
+
+The Workspace navigation includes AI Workspace Assistant at `/workspace/assistant`; `/workspace/advisor` remains available. The assistant uses the existing calculated evidence and Gemini provider, resolves this/last month and this/last quarter in Asia/Singapore, and can cite fixed KPI snapshots from Reports Archive. Workvivo evidence stays separate from public outreach.
+
+AI Content Studio generates editable Facebook, Instagram and Workvivo drafts in English, Simplified Chinese or both. Actions include captions, hashtags, improvement, translation, rewriting, short and long versions. Copy drafts or save them as unpublished Content Planner drafts. Gemini credentials remain server-side; `/api/content-writing` requires the Workspace session and same-origin requests and shares the existing AI quota/cache. If Gemini is unavailable, source text remains editable and analytics keep working.
+
+Brand configuration includes GLOW, SEEN and Longevity Courtyard. Each configured brand receives independent Facebook and Instagram accounts and follower selectors; future brands can be added in Configuration. Missing Longevity Courtyard snapshots remain unavailable, not zero. All-account totals require complete account coverage. Existing imported posts and follower histories are not reassigned.
+
+Workvivo keyword classification is a reviewable suggestion in post forms and the Workvivo review queue. Accepting a suggestion fills Partner Engagement type, Ecosystem Collaboration topic/category and a stakeholder content tag; staff can override or dismiss it. Content tags never create verified stakeholder interactions. These optional fields use the existing source-record JSON payload, with no new database table or blob storage.
+
+Validation: `node scripts/test-workspace-enhancements.mjs`, `node scripts/test-workspace-additions.mjs`, existing workbook analytics/account/follower/intelligence/report tests, Next.js production build, and the Sites production build.
+
+## Executive AI briefing format
+
+Analytical AI outputs use Title, Observation, What This Means, Recommended Action and Confidence Level. Supporting statistics remain available as evidence instead of primary insight headlines. Dashboard interpretation, the Workspace Assistant, monthly reports, exports and copy actions share this format. Captions remain editable public-content drafts.
+
+Confidence is a qualitative assessment of evidence limitations, not a statistical score. The application assigns Moderate only when the generated interpretation cites an existing within-platform format-cohort or matched-content comparison; other observations and calculated fallbacks remain Limited. No causal or High-confidence claim is generated from observational metrics. Provider prompts request professional, decision-oriented narratives and the prompt cache version changes independently of the daily request budget. Archived report records are not rewritten; their presentation adapts the existing fields.
+
+Additional validation: `node scripts/test-executive-briefings.mjs`.

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 fs.mkdirSync('.sites-runtime',{recursive:true});
 process.env.WORKSPACE_PASSWORD=crypto.randomUUID()+crypto.randomUUID();
-for(const file of ['lib/workspace-env.ts','lib/workspace-security.ts','lib/workspace-service.ts','app/model.ts','app/account-structure.ts','app/follower-accounts.ts','app/follower-snapshots.ts','app/top-hits.ts','lib/data-service.ts','app/import.ts','lib/storage-d1.ts','middleware.ts','app/api/workspace/route.ts','app/api/public/route.ts','app/api/session/route.ts']){
+for(const file of ['lib/workspace-env.ts','lib/workspace-security.ts','lib/workspace-service.ts','lib/public-site-config.ts','lib/content-media.ts','app/model.ts','app/account-structure.ts','app/follower-accounts.ts','app/follower-snapshots.ts','app/top-hits.ts','lib/data-service.ts','app/import.ts','lib/storage-d1.ts','middleware.ts','app/api/workspace/route.ts','app/api/public/route.ts','app/api/session/route.ts']){
  const name=file==='middleware.ts'?'middleware':file.includes('/api/')?file.split('/').at(-2)+'-route':file.split('/').at(-1).replace('.ts','');
  let source=fs.readFileSync(file,'utf8').replace(/from ['"](?:\.\.\/|\.\/)+(?:lib\/|app\/)?([\w-]+)['"]/g,"from './$1.mjs'").replace("import('../app/top-hits')","import('./top-hits.mjs')").replace("from 'next/server'","from 'next/server.js'").replace("import {env} from 'cloudflare:workers';",'const env=globalThis.workspaceTestEnv;').replace("from './storage.mjs'","from './storage-d1.mjs'");
  fs.writeFileSync('.sites-runtime/'+name+'.mjs',ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);
@@ -48,7 +48,17 @@ await saveWorkspaceRecord(store,{kind:'partner',action:'delete',record:partner})
 const programme={id:'programme-test',brand:'GLOW',overview:'An approved programme overview.',imageUrl:'',published:true};await saveWorkspaceRecord(store,{kind:'programme',action:'save',record:programme});assert.equal((await publicPortalData(store)).programmes[0].overview,programme.overview);
 await assert.rejects(()=>saveWorkspaceRecord(store,{kind:'programme',action:'save',record:{...programme,id:'duplicate-profile'}}),/existing programme/);
 await saveWorkspaceRecord(store,{kind:'publication',action:'save',record:{...story,published:true,body:'A full approved article.\n\nA second paragraph.'}});assert.equal((await publicPortalData(store)).stories[0].body,'A full approved article.\n\nA second paragraph.');assert(!('topHit' in (await publicPortalData(store)).stories[0]));
-for(const path of ['/stories','/stories/public-story','/programmes/glow','/programmes/seen'])assert.equal((await middleware(new NextRequest(origin+path))).status,200);
+const {defaultPublicHome}=await import('../.sites-runtime/public-site-config.mjs');
+assert.equal((await publicPortalData(store)).home.heroTitle,defaultPublicHome.heroTitle);
+const home={...defaultPublicHome,heroTitle:'A staff-edited public home page',heroImageUrl:'https://example.org/approved.jpg',privateNote:'PRIVATE HOME NOTE'};
+await saveWorkspaceRecord(store,{kind:'home',action:'save',record:home});assert.equal((await publicPortalData(store)).home.heroTitle,home.heroTitle);assert(!JSON.stringify((await publicPortalData(store)).home).includes('PRIVATE HOME NOTE'));
+await assert.rejects(()=>saveWorkspaceRecord(store,{kind:'home',action:'save',record:{...home,heroImageUrl:'javascript:alert(1)'}}),/HTTPS/);
+await assert.rejects(()=>saveWorkspaceRecord(store,{kind:'home',action:'save',record:{...home,id:'another-home'}}),/existing home/);
+await saveWorkspaceRecord(store,{kind:'publication',action:'save',record:{...story,published:true,featuredStory:false}});assert.equal((await publicPortalData(store)).stories[0].featuredStory,false);
+assert.equal(sql.prepare("SELECT COUNT(*) AS n FROM records WHERE kind='public_content'").get().n,1,'Promotion reuses a publication linked to the existing post.');
+await saveWorkspaceRecord(store,{kind:'publication',action:'save',record:{...story,published:false}});assert.equal((await publicPortalData(store)).stories.length,0,'Unpublishing removes public visibility without deleting the source.');assert(sql.prepare("SELECT id FROM records WHERE id=?").get(post.id));
+for(const path of ['/stories','/stories/public-story','/programmes/glow','/programmes/seen','/activities','/partners','/what-were-doing'])assert.equal((await middleware(new NextRequest(origin+path))).status,200);
+for(const path of ['/workspace/site-manager','/workspace/advisor'])assert((await middleware(new NextRequest(origin+path))).headers.get('location').includes('/workspace/login'));
 const api=await import('../.sites-runtime/workspace-route.mjs');assert.equal((await api.GET(new Request(origin+'/api/workspace'))).status,401);assert.equal((await api.GET(new Request(origin+'/api/workspace',{headers}))).status,200);
 delete process.env.WORKSPACE_PASSWORD;assert(!await security.authenticated(new Request(origin+'/workspace',{headers})));assert.equal((await session.GET(new Request(origin+'/api/session'))).status,200);
 sql.close();console.log('PASS: protected routes/APIs, signed sessions, expiration/tampering, CSRF, password throttling, secure cookies, locked unconfigured access, private-by-default publishing, Workvivo exclusion, safe public fields, persistent planner CRUD/date storage and verified impact privacy.');

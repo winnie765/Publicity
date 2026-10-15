@@ -1,0 +1,2 @@
+import {env} from 'cloudflare:workers';
+export function getMediaStorage(){const bucket=env.BUCKET;if(!bucket)throw Error('Image storage is not configured.');return {async put(key:string,bytes:Uint8Array,type:string){await bucket.put(key,bytes,{httpMetadata:{contentType:type}})},async get(key:string){const object=await bucket.get(key);return object?{body:object.body,type:object.httpMetadata?.contentType||'application/octet-stream',size:object.size}:null},async delete(key:string){await bucket.delete(key)}}}
