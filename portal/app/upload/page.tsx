@@ -1,1 +1,2 @@
-export {dynamic,default} from '../import/page';
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/workspace/upload');}

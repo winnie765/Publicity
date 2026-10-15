@@ -1,0 +1,54 @@
+import fs from 'node:fs';
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+fs.mkdirSync('.sites-runtime',{recursive:true});
+process.env.WORKSPACE_PASSWORD=crypto.randomUUID()+crypto.randomUUID();
+for(const file of ['lib/workspace-env.ts','lib/workspace-security.ts','lib/workspace-service.ts','app/model.ts','app/account-structure.ts','app/follower-accounts.ts','app/follower-snapshots.ts','app/top-hits.ts','lib/data-service.ts','app/import.ts','lib/storage-d1.ts','middleware.ts','app/api/workspace/route.ts','app/api/public/route.ts','app/api/session/route.ts']){
+ const name=file==='middleware.ts'?'middleware':file.includes('/api/')?file.split('/').at(-2)+'-route':file.split('/').at(-1).replace('.ts','');
+ let source=fs.readFileSync(file,'utf8').replace(/from ['"](?:\.\.\/|\.\/)+(?:lib\/|app\/)?([\w-]+)['"]/g,"from './$1.mjs'").replace("import('../app/top-hits')","import('./top-hits.mjs')").replace("from 'next/server'","from 'next/server.js'").replace("import {env} from 'cloudflare:workers';",'const env=globalThis.workspaceTestEnv;').replace("from './storage.mjs'","from './storage-d1.mjs'");
+ fs.writeFileSync('.sites-runtime/'+name+'.mjs',ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);
+}
+const sql=new DatabaseSync(':memory:');for(const m of JSON.parse(fs.readFileSync('drizzle/meta/_journal.json')).entries)sql.exec(fs.readFileSync('drizzle/'+m.tag+'.sql','utf8'));
+const query=(text,bindings=[])=>({bind:(...values)=>query(text,values),all:async()=>({results:sql.prepare(text).all(...bindings)}),first:async()=>sql.prepare(text).get(...bindings),run:()=>sql.prepare(text).run(...bindings)});
+globalThis.workspaceTestEnv={DB:{prepare:text=>query(text),batch:async statements=>{sql.exec('BEGIN');try{const result=statements.map(s=>s.run());sql.exec('COMMIT');return result}catch(e){sql.exec('ROLLBACK');throw e}}}};
+const security=await import('../.sites-runtime/workspace-security.mjs'),{getStorage}=await import('../.sites-runtime/storage-d1.mjs'),{saveWorkspaceRecord,publicPortalData}=await import('../.sites-runtime/workspace-service.mjs'),store=getStorage();
+const token=await security.createSession(),origin='https://portal.test',headers={cookie:security.sessionCookie+'='+token,origin,'Content-Type':'application/json'};
+assert(await security.authenticated(new Request(origin+'/workspace',{headers})));assert(!await security.authenticated(new Request(origin+'/workspace')));assert(!await security.authenticated(new Request(origin+'/workspace',{headers:{cookie:headers.cookie+'x'}})));assert(!await security.authenticated(new Request(origin+'/workspace',{headers}),Date.now()+9*3600000));
+assert.equal((await security.workspaceGuard(new Request(origin+'/api/workspace'))).status,401);assert.equal((await security.workspaceGuard(new Request(origin+'/api/workspace',{method:'POST',headers:{...headers,origin:'https://other.test'}}))).status,403);
+const {NextRequest}=await import('next/server.js'),{middleware}=await import('../.sites-runtime/middleware.mjs');
+for(const path of ['/workspace','/workspace/planner','/analytics','/followers','/reports']){const result=await middleware(new NextRequest(origin+path));assert(result.status>=300&&result.status<400);assert(result.headers.get('location').includes('/workspace/login'));}
+assert.equal((await middleware(new NextRequest(origin+'/api/data'))).status,401);assert.equal((await middleware(new NextRequest(origin+'/'))).status,200);
+const session=await import('../.sites-runtime/session-route.mjs');assert.equal((await session.POST(new Request(origin+'/api/session',{method:'POST',headers:{...headers,origin:'https://other.test'},body:JSON.stringify({password:process.env.WORKSPACE_PASSWORD})}))).status,403);
+const login=await session.POST(new Request(origin+'/api/session',{method:'POST',headers,body:JSON.stringify({password:process.env.WORKSPACE_PASSWORD})}));assert.equal(login.status,200);assert(/HttpOnly/.test(login.headers.get('set-cookie')));assert(/Secure/.test(login.headers.get('set-cookie')));
+for(let i=0;i<8;i++)assert.equal((await session.POST(new Request(origin+'/api/session',{method:'POST',headers,body:JSON.stringify({password:'wrong'})}))).status,401);
+assert.equal((await session.POST(new Request(origin+'/api/session',{method:'POST',headers,body:JSON.stringify({password:'wrong'})}))).status,429);
+const date='2026-01-01',post={id:'public-test-post',title:'Internal title',date,platform:'Facebook',account:'Facebook GLOW',brand:'GLOW',location:'Bukit Batok',type:'Reel',topic:'HHP',description:'PRIVATE NOTES',status:'published',likes:17,comments:2,shares:3,saves:0,reach:100,features:[],url:'https://www.facebook.com/example'};
+await store.apply([{type:'upsert',record:{id:post.id,kind:'posts',payload:post,updatedAt:new Date().toISOString()}},{type:'upsert',record:{id:'wv',kind:'posts',payload:{...post,id:'wv',platform:'Workvivo'},updatedAt:new Date().toISOString()}}]);
+assert.equal((await publicPortalData(store)).stories.length,0);
+const story={id:'public-story',postId:post.id,title:'A community story',summary:'An approved public narrative.',imageUrl:'https://example.com/image.jpg',section:'HHP',featured:true,published:false};await saveWorkspaceRecord(store,{action:'save',kind:'publication',record:story});assert.equal((await publicPortalData(store)).stories.length,0);
+await saveWorkspaceRecord(store,{action:'save',kind:'publication',record:{...story,published:true}});const feed=await publicPortalData(store);assert.equal(feed.stories.length,1);for(const key of ['likes','reach','account','description','engagement','stakeholder'])assert(!Object.keys(feed.stories[0]).includes(key));assert(!JSON.stringify(feed).includes('PRIVATE NOTES'));
+await assert.rejects(()=>saveWorkspaceRecord(store,{action:'save',kind:'publication',record:{...story,id:'private-wv',postId:'wv'}}),/Workvivo remains private/);
+await assert.rejects(()=>saveWorkspaceRecord(store,{action:'save',kind:'publication',record:{...story,imageUrl:'javascript:alert(1)'}}),/HTTPS/);
+const plan={id:'plan-test',title:'Next health reel',date:'2026-10-20',kind:'Post',status:'Idea',platform:'Facebook',account:'Facebook GLOW',brand:'GLOW',format:'Reel',notes:'Test senior storytelling'};await saveWorkspaceRecord(store,{action:'save',kind:'plan',record:plan});assert(sql.prepare("SELECT record_date FROM records WHERE id='plan-test'").get().record_date>0);await saveWorkspaceRecord(store,{action:'save',kind:'plan',record:{...plan,status:'Scheduled'}});assert.equal(JSON.parse(sql.prepare("SELECT payload FROM records WHERE id='plan-test'").get().payload).status,'Scheduled');await saveWorkspaceRecord(store,{action:'delete',kind:'plan',record:plan});assert(!sql.prepare("SELECT id FROM records WHERE id='plan-test'").get());
+await saveWorkspaceRecord(store,{action:'save',kind:'impact',record:{id:'impact-test',date,period:'Verified year',programmes:4,activities:12,volunteers:null,communityReach:400,source:'PRIVATE verification source',published:true}});const impact=(await publicPortalData(store)).impact;assert.equal(impact.volunteers,null);assert(!JSON.stringify(impact).includes('PRIVATE'));
+// Public storytelling records use explicit projections, separate from private planning.
+const event={id:'public-event',title:'Community gathering',date:'2099-10-20',location:'Community centre',summary:'Approved activity description',imageUrl:'',brand:'GLOW',url:'https://example.org/join',published:false,notes:'PRIVATE EVENT NOTES'};
+await saveWorkspaceRecord(store,{kind:'event',action:'save',record:event});assert.equal((await publicPortalData(store)).events.length,0);
+await saveWorkspaceRecord(store,{kind:'event',action:'save',record:{...event,published:true}});assert.equal((await publicPortalData(store)).events.length,1);assert(!JSON.stringify(await publicPortalData(store)).includes('PRIVATE EVENT NOTES'));
+assert(sql.prepare("SELECT record_date FROM records WHERE id='public-event'").get().record_date>0);
+await assert.rejects(()=>saveWorkspaceRecord(store,{kind:'event',action:'save',record:{...event,date:'2026-02-30'}}),/calendar/);
+await assert.rejects(()=>saveWorkspaceRecord(store,{kind:'event',action:'save',record:{...event,url:'javascript:alert(1)'}}),/HTTPS/);
+await saveWorkspaceRecord(store,{kind:'event',action:'save',record:{...event,date:'2000-01-01',published:true}});assert.equal((await publicPortalData(store)).events.length,0);
+await saveWorkspaceRecord(store,{kind:'event',action:'delete',record:event});
+const partner={id:'partner-test',title:'Community partner',imageUrl:'https://example.org/logo.png',url:'https://example.org',published:true};
+await saveWorkspaceRecord(store,{kind:'partner',action:'save',record:partner});assert.equal((await publicPortalData(store)).partners[0].title,partner.title);
+await assert.rejects(()=>saveWorkspaceRecord(store,{kind:'partner',action:'save',record:{...partner,imageUrl:'data:image/svg+xml,bad'}}),/HTTPS/);
+await saveWorkspaceRecord(store,{kind:'partner',action:'delete',record:partner});assert.equal((await publicPortalData(store)).partners.length,0);
+const programme={id:'programme-test',brand:'GLOW',overview:'An approved programme overview.',imageUrl:'',published:true};await saveWorkspaceRecord(store,{kind:'programme',action:'save',record:programme});assert.equal((await publicPortalData(store)).programmes[0].overview,programme.overview);
+await assert.rejects(()=>saveWorkspaceRecord(store,{kind:'programme',action:'save',record:{...programme,id:'duplicate-profile'}}),/existing programme/);
+await saveWorkspaceRecord(store,{kind:'publication',action:'save',record:{...story,published:true,body:'A full approved article.\n\nA second paragraph.'}});assert.equal((await publicPortalData(store)).stories[0].body,'A full approved article.\n\nA second paragraph.');assert(!('topHit' in (await publicPortalData(store)).stories[0]));
+for(const path of ['/stories','/stories/public-story','/programmes/glow','/programmes/seen'])assert.equal((await middleware(new NextRequest(origin+path))).status,200);
+const api=await import('../.sites-runtime/workspace-route.mjs');assert.equal((await api.GET(new Request(origin+'/api/workspace'))).status,401);assert.equal((await api.GET(new Request(origin+'/api/workspace',{headers}))).status,200);
+delete process.env.WORKSPACE_PASSWORD;assert(!await security.authenticated(new Request(origin+'/workspace',{headers})));assert.equal((await session.GET(new Request(origin+'/api/session'))).status,200);
+sql.close();console.log('PASS: protected routes/APIs, signed sessions, expiration/tampering, CSRF, password throttling, secure cookies, locked unconfigured access, private-by-default publishing, Workvivo exclusion, safe public fields, persistent planner CRUD/date storage and verified impact privacy.');

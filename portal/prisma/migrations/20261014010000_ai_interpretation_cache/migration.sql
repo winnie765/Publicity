@@ -1,0 +1,1 @@
+CREATE TABLE "ai_cache" ("id" TEXT NOT NULL PRIMARY KEY,"payload" TEXT NOT NULL,"expires_at" TIMESTAMP(3) NOT NULL,"lease_until" TIMESTAMP(3) NOT NULL,"lease_token" TEXT NOT NULL,"requests" INTEGER NOT NULL);

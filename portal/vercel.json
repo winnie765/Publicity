@@ -4,7 +4,17 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run vercel-build",
   "functions": {
-    "app/api/data/route.ts": { "maxDuration": 60 },
-    "app/api/upload/route.ts": { "maxDuration": 60 }
+    "app/api/data/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/upload/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/reports/route.ts": {
+      "maxDuration": 120
+    },
+    "app/api/report-automation/route.ts": {
+      "maxDuration": 120
+    }
   }
 }

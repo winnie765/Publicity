@@ -1,0 +1,32 @@
+import type {Storage} from './storage-contract';
+import {loadData} from './data-service';
+import {calculateMonthlyReport,monthlyEvidence,type MonthlyReport} from './monthly-report';
+import {createProvider,type ProviderConfig} from './intelligence/provider';
+import {intelligenceResponse} from './intelligence/service';
+import type {AICache,IntelligenceReport,EvidencePack} from './intelligence/types';
+export type ReportRuntime={config:ProviderConfig;cache:AICache;dailyLimit:number};
+export type ReportAutomation={enabled:boolean;frequency:'monthly'|'quarterly';updatedAt:string};
+export const automationDefault:ReportAutomation={enabled:false,frequency:'monthly',updatedAt:''};
+export async function archivedReports(store:Storage){return (await store.readRecords()).filter(r=>r.kind==='generated_report').map(r=>r.payload as MonthlyReport).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt));}
+export async function reportAutomation(store:Storage):Promise<ReportAutomation>{return (await store.readRecords()).find(r=>r.id==='monthly-report-automation'&&r.kind==='report_settings')?.payload||automationDefault;}
+export function monthlyFallback(pack:EvidencePack):IntelligenceReport{
+ const find=(pattern:RegExp)=>pack.facts.find(f=>pattern.test(f.label))||pack.facts[0],performance=find(/^Recorded performance$/),followers=find(/follower history/),stakeholder=find(/^Stakeholder/),facebook=find(/^Facebook performance/),instagram=find(/^Instagram performance/),workvivo=find(/^Workvivo performance/),hits=find(/^Top Hits/),brands=find(/^Brand /);
+ const summary=(fact:typeof performance)=>({text:fact.label+': '+fact.text,evidenceIds:[fact.id]});
+ return {summary:{text:'Review external outreach and internal ecosystem engagement separately. The recorded period comparisons and account snapshot dates below provide the basis for the next content tests; missing observations limit attribution.',evidenceIds:[performance.id]},sectionSummaries:{facebook:summary(facebook),instagram:summary(instagram),workvivo:summary(workvivo),topHits:summary(hits),brands:summary(brands),followers:summary(followers),stakeholders:summary(stakeholder),briefing:{text:'Use the platform and brand evidence to choose a small comparable content test, maintain independent follower snapshots, and complete stakeholder logs before making claims about relationship growth or audience acquisition.',evidenceIds:[performance.id,followers.id,stakeholder.id]}},insights:[{finding:'Use the recorded platform performance to plan the next format test.',explanation:'Audience mix, timing and promotion can influence engagement; a descriptive format ranking does not establish a creative effect.',recommendation:'Test one recurring format within the same platform using comparable subjects and posting conditions. Review average engagement per measured post before expanding production.',expectedImpact:'Potentially stronger engagement if the observed pattern repeats under comparable conditions; this must be tested.',evidenceIds:[performance.id]},{finding:'Follower changes require comparable observations for every account.',explanation:'Older snapshots can be carried forward, but they do not measure growth within a missing reporting period.',recommendation:'Record a verified month-end snapshot for each independent account and review account growth rates before attributing audience changes to a post.',expectedImpact:'More reliable audience-growth measurement and better-informed content experiments; no specific follower gain is predicted.',evidenceIds:[followers.id]},{finding:'Partner preferences depend on recorded stakeholder interactions.',explanation:'Likes alone cannot identify stakeholders, and an empty log does not establish lack of partner interest.',recommendation:'Log the stakeholder, linked content and interaction type during the next cycle. Test a partner-relevant story and review stakeholder comments and shares.',expectedImpact:'Improved visibility into partner relationships and potential opportunities for targeted outreach; relationship gains are not guaranteed.',evidenceIds:[stakeholder.id]}],limitations:pack.limitations};
+}
+export async function generateMonthlyReport(store:Storage,runtime:ReportRuntime,year:number,month:number,frequency:'monthly'|'quarterly'='monthly',automaticId?:string){
+ const archive=await archivedReports(store);if(automaticId){const existing=archive.find(r=>r.id===automaticId);if(existing)return existing;}
+ if(archive.filter(r=>r.generatedAt.slice(0,10)===new Date().toISOString().slice(0,10)).length>=30)throw Error('The daily report limit has been reached. Please use an archived report or try tomorrow.');
+ const report=calculateMonthlyReport(await loadData(store),year,month,frequency);if(automaticId)report.id=automaticId;
+ const pack=monthlyEvidence(report);let provider=null;try{provider=createProvider(runtime.config)}catch{}
+ report.ai=await intelligenceResponse(pack,provider,runtime.cache,runtime.dailyLimit);if(report.ai.mode==='calculated')report.ai.report=monthlyFallback(pack);
+ const updatedAt=new Date().toISOString();await store.apply([{type:'upsert',record:{id:report.id,kind:'generated_report',payload:{...report,date:report.period.end},updatedAt}},{type:'audit',entry:{id:crypto.randomUUID(),actor:automaticId?'Report automation':'Public report generator',action:'Generate '+frequency+' report',record_id:report.id,date:updatedAt}}]);return report;
+}
+export async function runReportAutomation(store:Storage,runtime:ReportRuntime,now=new Date()){
+ const setting=await reportAutomation(store);if(!setting.enabled)return {generated:false,reason:'Automation is disabled.'};
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit'}).formatToParts(now),year=Number(parts.find(p=>p.type==='year')!.value),month=Number(parts.find(p=>p.type==='month')!.value);
+ if(setting.frequency==='quarterly'&&![1,4,7,10].includes(month))return {generated:false,reason:'Next quarterly report is due after the quarter closes.'};
+ const closed=new Date(Date.UTC(year,month-2,1)),periodYear=closed.getUTCFullYear(),periodMonth=closed.getUTCMonth()+1,id='report-auto-'+setting.frequency+'-'+periodYear+'-'+String(periodMonth).padStart(2,'0');
+ const existing=(await archivedReports(store)).find(r=>r.id===id);if(existing)return {generated:false,reason:'The scheduled report is already archived.',id};
+ const report=await generateMonthlyReport(store,runtime,periodYear,periodMonth,setting.frequency,id);return {generated:true,id:report.id,label:report.period.label};
+}

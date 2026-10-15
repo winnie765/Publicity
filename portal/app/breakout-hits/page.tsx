@@ -1,2 +1,2 @@
 import {redirect} from 'next/navigation';
-export default function Page(){redirect('/top-hits');}
+export default function Page(){redirect('/workspace/breakout-hits');}

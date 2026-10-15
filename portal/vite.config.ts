@@ -53,7 +53,7 @@ export default defineConfig(async ({ command }) => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    resolve: {alias: [{find: "../../../lib/storage",replacement: fileURLToPath(new URL("./lib/storage-d1.ts",import.meta.url))}]},
+    resolve: {alias: [{find:"./workspace-env",replacement:fileURLToPath(new URL("./lib/workspace-env-d1.ts",import.meta.url))},{find: "../../../lib/ai-runtime",replacement: fileURLToPath(new URL("./lib/ai-runtime-d1.ts",import.meta.url))},{find: "../../../lib/storage",replacement: fileURLToPath(new URL("./lib/storage-d1.ts",import.meta.url))}]},
     server: {
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }

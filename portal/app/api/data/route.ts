@@ -1,7 +1,8 @@
+import {workspaceGuard} from '../../../lib/workspace-security';
 import {getStorage} from '../../../lib/storage';
 import {loadData,applyDataAction} from '@/lib/data-service';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 const json=(value:any,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
-export async function GET(){try{const store=getStorage();const [data,audit]=await Promise.all([loadData(store),store.readAudit()]);return json({...data,audit:audit.map(a=>({...a,actor:a.action.toLowerCase().includes('import')?'Workbook upload':'Data update'}))});}catch(e:any){return json({error:e.message},503);}}
-export async function POST(req:Request){try{const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return json({error:'Cross-origin request rejected.'},403);if(Number(req.headers.get('content-length')||0)>2_000_000)return json({error:'Upload too large.'},413);const body=await req.text();if(body.length>2_000_000)return json({error:'Upload too large.'},413);return json(await applyDataAction(getStorage(),JSON.parse(body)));}catch(e:any){return json({error:e.message},400);}}
+export async function GET(request:Request){const denied=await workspaceGuard(request);if(denied)return denied;try{const store=getStorage();const [data,audit]=await Promise.all([loadData(store),store.readAudit()]);return json({...data,audit:audit.map(a=>({...a,actor:a.action.toLowerCase().includes('import')?'Workbook upload':'Data update'}))});}catch(e:any){return json({error:e.message},503);}}
+export async function POST(req:Request){const denied=await workspaceGuard(req);if(denied)return denied;try{const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)return json({error:'Cross-origin request rejected.'},403);if(Number(req.headers.get('content-length')||0)>2_000_000)return json({error:'Upload too large.'},413);const body=await req.text();if(body.length>2_000_000)return json({error:'Upload too large.'},413);return json(await applyDataAction(getStorage(),JSON.parse(body)));}catch(e:any){return json({error:e.message},400);}}

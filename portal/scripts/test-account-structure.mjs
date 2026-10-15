@@ -6,12 +6,24 @@ const empty={posts:[],followers:[],interactions:[],config:structuredClone(defaul
 const labels=['GLOW (BB)','GLOW (Nanyang)','SEEN (BB)','SEEN (Nanyang)'];
 const sheet={name:'Facebook',headers:['Date','Page','Post_Title','Content_Type','Likes'],rows:labels.map((Page,i)=>({row:i+2,values:{Date:'2026-01-01',Page,Post_Title:'Explicit label '+i,Content_Type:'Reel',Likes:10+i}}))};
 const prepared=await prepareStandardWorkbook([sheet],empty),posts=prepared.batches[0].items;
-assert.equal(prepared.config.accounts.length,1);assert.equal(prepared.config.accounts[0].brand,undefined);
+assert.equal(prepared.config.accounts.length,2);assert.deepEqual(prepared.config.accounts.map(a=>a.name).sort(),['Facebook GLOW','Facebook SEEN']);
 assert.deepEqual(posts.map(p=>[p.brand,p.location]),[['GLOW','Bukit Batok'],['GLOW','Nanyang'],['SEEN','Bukit Batok'],['SEEN','Nanyang']]);
 posts[0].topic='Senior Story';posts[0].description='A recorded description';posts[0].features=['Senior'];posts[0].featuresKnown=true;
 const update=await prepareStandardWorkbook([sheet],{...empty,posts,config:prepared.config});assert.equal(update.batches[0].items[0].description,posts[0].description);assert.deepEqual(update.batches[0].items[0].features,['Senior']);
 const legacy=migrateDataset({posts:[{...posts[0],brand:undefined,programme:'GLOW',account:'Facebook · GLOW (BB)'}],followers:[],interactions:[],config:{programmes:['GLOW'],locations:['BB'],accounts:[{name:'Facebook · GLOW (BB)',platform:'Facebook',programme:'GLOW'}],topics:['Senior Story'],types:['Reel'],stakeholders:[]}});
-assert.equal(legacy.posts[0].brand,'GLOW');assert.equal(legacy.posts[0].location,'Bukit Batok');assert.equal(legacy.config.accounts[0].brand,undefined);
+assert.equal(legacy.posts[0].brand,'GLOW');assert.equal(legacy.posts[0].location,'Bukit Batok');assert.equal(legacy.config.accounts[0].brand,'GLOW');
 const evidence=Array.from({length:40},(_,i)=>({...posts[0],id:'pattern-'+i,platform:'Instagram',type:'Reel',topic:i<20?'Senior Story':'Event',likes:i<20?30:10,comments:0,shares:0,saves:0,features:[],featuresKnown:false}));
 assert(insights(evidence).some(i=>i.title.includes('Senior Story topic')&&i.lift===200));assert(!insights(evidence.slice(0,2)).some(i=>i.title.includes('topic posts')));
-console.log('PASS: one shared Facebook account, independent brand/location, legacy migration, preserved annotations and sampled topic insights.');
+console.log('PASS: separate Facebook GLOW and SEEN accounts, independent brand/location, legacy migration, preserved annotations and sampled topic insights.');
+
+const sharedName='Facebook \u00b7 Shared';
+const shared=migrateDataset({...structuredClone(empty),posts:posts.map(p=>({...p,account:sharedName})),config:{...structuredClone(prepared.config),accounts:[{name:sharedName,platform:'Facebook'}]}});
+assert.deepEqual(shared.posts.map(p=>p.account),['Facebook GLOW','Facebook GLOW','Facebook SEEN','Facebook SEEN']);
+assert.deepEqual(shared.posts.map(p=>p.id),posts.map(p=>p.id));
+assert.deepEqual(shared.posts.map(p=>p.likes),posts.map(p=>p.likes));
+assert.deepEqual(migrateDataset(structuredClone(shared)),shared,'Migration is idempotent.');
+assert(!shared.config.accounts.some(a=>a.name===sharedName));
+const {validate}=await import('../.sites-runtime/model.mjs');
+assert.throws(()=>validate('posts',{...shared.posts[0],brand:'SEEN',topic:'Unclassified'},shared.config),/account and Brand must match/);
+const unknown=migrateDataset({...structuredClone(empty),posts:[{...posts[0],brand:'Unclassified',account:sharedName}],config:{...structuredClone(prepared.config),accounts:[{name:sharedName,platform:'Facebook'}]}});
+assert.equal(unknown.posts[0].account,'Facebook Unspecified');

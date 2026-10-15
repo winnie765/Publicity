@@ -1,3 +1,2 @@
-import Portal from '../portal';
-export const dynamic='force-dynamic';
-export default function Page(){return <Portal initialPage={9}/>;}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/workspace/settings');}

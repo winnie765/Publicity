@@ -1,3 +1,2 @@
-import Portal from './portal';
-export const dynamic='force-dynamic';
-export default function Page(){return <Portal/>;}
+import PublicPortal from './public-portal';
+export default function Page(){return <PublicPortal/>;}

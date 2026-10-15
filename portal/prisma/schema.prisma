@@ -32,6 +32,8 @@ model Audit {
   @@map("portal_audit")
 }
 
+// Legacy archival table only. Account histories live in Record(kind=followers),
+// keyed by payload.account plus recordDate; application code cannot write a pooled snapshot.
 model FacebookFollower {
   id String @id @default(uuid())
   snapshotDate DateTime @unique @db.Date @map("snapshot_date")
@@ -39,4 +41,14 @@ model FacebookFollower {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   @@map("facebook_followers")
+}
+
+model AICache {
+ id String @id
+ payload String
+ expiresAt DateTime @map("expires_at")
+ leaseUntil DateTime @map("lease_until")
+ leaseToken String @map("lease_token")
+ requests Int
+ @@map("ai_cache")
 }
