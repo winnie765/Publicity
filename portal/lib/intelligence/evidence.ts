@@ -1,3 +1,4 @@
+import {followerComparison} from '../../app/follower-comparison';
 import {average,engagement,groups,insights,features,sum,type Dataset,type Post} from '../../app/model';
 import {observed,topHits,typeName} from '../../app/top-hits';
 import {followerAccounts,followerSeries} from '../../app/follower-accounts';
@@ -11,6 +12,21 @@ export function calculateEvidence(data:Dataset,scope:Scope,filters:Filters):Evid
  const facts:EvidencePack['facts']=[],limitations=['These are observational results, not causal proof. Audience size, timing, paid promotion and sample composition can affect performance.','Unreported metrics and unannotated features are unavailable, rather than observed zero.'];
  const add=(name:string,text:string)=>{if(facts.length<160)facts.push({id:'F'+String(facts.length+1).padStart(3,'0'),label:label(name),text});};
  const internal=scope==='workvivo';
+ if(scope==='followers'){
+  const comparisons=followerComparison(data,filters.start,filters.end).filter(a=>(!filters.account||a.name===filters.account)&&(!filters.platform||a.platform===filters.platform)&&(!filters.brand||a.brand===filters.brand)&&(!filters.followerSelection||(filters.followerView==='brand'?a.brand===filters.followerSelection:a.name===filters.followerSelection)));
+  for(const a of comparisons)add(a.name+' calculated growth assessment',JSON.stringify({current:a.snapshot?.followers??null,currentDate:a.snapshot?.date??null,previous:a.previous?.followers??null,previousDate:a.previous?.date??null,snapshotChange:a.growth??null,snapshotGrowthPercentage:a.growthPercentage??null,consecutiveMonthGrowthPercentage:a.monthlyRate??null,momentumPercentagePoints:a.momentum,monthlyTrend:a.rows.map(r=>({month:r.key,followers:r.followers??null,growthPercentage:r.growthPercentage})),interpretationLimit:'Momentum is the change between two consecutive monthly growth rates; missing baselines are not zero. Current snapshot is latest as of end date; trend rows use selected months.'}));
+  for(const platform of ['Facebook','Instagram']){
+   const eligible=comparisons.filter(a=>a.platform===platform&&a.snapshot&&a.monthlyRate!=null&&(!filters.start||a.snapshot.date>=filters.start));
+   for(const month of [...new Set(eligible.map(a=>a.snapshot!.date.slice(0,7)))]){
+    const cohort=eligible.filter(a=>a.snapshot!.date.startsWith(month));
+    if(cohort.length<2)continue;
+    const max=Math.max(...cohort.map(a=>a.monthlyRate!)),momentum=cohort.filter(a=>a.momentum!=null),maxMomentum=momentum.length?Math.max(...momentum.map(a=>a.momentum!)):null;
+    add(platform+' calculated account comparison',JSON.stringify({month,comparedAccounts:cohort.map(a=>a.name),highestMonthlyGrowthRate:max,highestRateAccounts:cohort.filter(a=>a.monthlyRate===max).map(a=>a.name),highestMomentum:maxMomentum,highestMomentumAccounts:momentum.filter(a=>a.momentum===maxMomentum).map(a=>a.name),slowingAccounts:momentum.filter(a=>a.momentum!<0).map(a=>a.name),decliningAccounts:cohort.filter(a=>a.monthlyRate!<0).map(a=>a.name),limitations:'Only accounts observed in the same calendar month with consecutive monthly baselines are ranked. Exact snapshot days can differ. Ties are explicit. Other accounts are not ranked.'}));
+   }
+  }
+  limitations.push('Follower rankings cover comparable observed months within each platform only. Momentum requires consecutive monthly growth rates. Missing accounts cannot be called underperforming. Content cannot explain follower movement without attribution evidence.');
+ }
+
  const followerFocus=scope==='followers'&&filters.followerView==='account'?followerAccounts(data).find(a=>a.name===filters.followerSelection):null;
  const matches=(p:Post,dates=true)=>p.status!=='draft'&&(!followerFocus||(p.account===followerFocus.name&&p.platform===followerFocus.platform))&&(!(scope==='followers'&&filters.followerView==='brand'&&filters.followerSelection)||p.brand===filters.followerSelection)&&(internal?p.platform==='Workvivo':['Facebook','Instagram'].includes(p.platform))&&(!filters.platform||p.platform===filters.platform)&&(!filters.brand||p.brand===filters.brand)&&(!filters.account||p.account===filters.account)&&(!filters.location||p.location===filters.location)&&(!dates||(!filters.start||p.date>=filters.start)&&(!filters.end||p.date<=filters.end));
  const full=data.posts.filter(p=>matches(p)),ranked=internal?null:topHits(full),posts=scope==='top-hits'?ranked!.hits:full,measured=posts.filter(observed),cutoff=filters.end||[...data.posts,...data.followers,...data.interactions].map(v=>v.date).sort().at(-1)||new Date().toISOString().slice(0,10);

@@ -1,0 +1,26 @@
+// Uses the isolated component dependencies prepared by test-public-site-manager.mjs.
+import fs from 'node:fs';
+import ts from 'typescript';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import assert from 'node:assert/strict';
+let js=ts.transpileModule(fs.readFileSync('app/configuration-manager.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText;
+js=js.replace(/import\s+['"][^'"]+\.css['"];?/g,'').replace("from './themed-select'","from './app-themed-select-tsx.mjs'");
+const path='.sites-runtime/cms-tests/configuration-ui.mjs';fs.writeFileSync(path,js);const {default:Manager}=await import('../'+path);
+const config={brands:['GLOW','SEEN','Longevity Courtyard'],locations:['Bukit Batok','Nanyang'],topics:['HHP','Volunteer Story'],types:['Reel','Image'],stakeholders:[{name:'AIC',sector:'Government'}],accounts:[{name:'Facebook GLOW',platform:'Facebook',brand:'GLOW'},{name:'Instagram SEEN',platform:'Instagram',brand:'SEEN'}],followerAccounts:[{name:'Facebook GLOW',platform:'Facebook',brand:'GLOW'}]};
+const before=JSON.stringify(config);const html=renderToStaticMarkup(React.createElement(Manager,{config,busy:false,error:'',onResetError(){},onSave(){throw Error('Rendering must never save changes');}}));
+for(const title of ['Brands','Locations','Content Categories','Content Types','Stakeholders','Platform Accounts'])assert(html.includes('aria-label="'+title+'"'));
+for(const name of ['Brand','Location','Category','Type','Stakeholder','Account'])assert(html.includes('Add '+name));
+for(const value of ['Longevity Courtyard','AIC','Government','Facebook GLOW','Instagram SEEN','Volunteer Story'])assert(html.includes(value));
+assert.equal((html.match(/type="search"/g)||[]).length,6);assert(!html.includes('<textarea'));assert(html.includes('Edit Facebook GLOW'));assert(html.includes('Delete AIC'));assert.equal(JSON.stringify(config),before);
+const empty=renderToStaticMarkup(React.createElement(Manager,{config:{...config,brands:[],locations:[],topics:[],types:[],stakeholders:[],accounts:[]},busy:true,error:'',onResetError(){},onSave:async()=>false}));assert.equal((empty.match(/No entries yet/g)||[]).length,6);assert(empty.includes('disabled=""'));
+console.log('PASS: six searchable card sections, all existing fields, add/edit/delete controls, empty/loading states, no textareas and no render-time configuration mutation.');
+const {applyDataAction}=await import('../.sites-runtime/cms-tests/lib-data-service-ts.mjs');
+const {blankPost}=await import('../.sites-runtime/cms-tests/app-model-ts.mjs');
+let records=[{id:'configuration',kind:'config',payload:structuredClone(config),updatedAt:new Date().toISOString()}],audit=[];
+const store={readRecords:async()=>structuredClone(records),readAudit:async()=>audit,apply:async changes=>{for(const change of changes){if(change.type==='upsert')records=[...records.filter(r=>r.id!==change.record.id),structuredClone(change.record)];else if(change.type==='audit')audit.push(change.entry);else throw Error('Unexpected mutation '+change.type);}}};
+const added={...structuredClone(config),brands:[...config.brands,'Future Brand']};await applyDataAction(store,{action:'config',items:added});assert(records[0].payload.brands.includes('Future Brand'));assert.deepEqual(records[0].payload.followerAccounts,config.followerAccounts);
+const post={...blankPost(),id:'post-one',title:'Existing record',date:'2026-10-01',platform:'Facebook',account:'Facebook GLOW',brand:'GLOW',location:'Bukit Batok',topic:'HHP',type:'Reel',description:'Approved activity.'};records.push({id:post.id,kind:'posts',payload:post,updatedAt:new Date().toISOString()});
+const snapshot=JSON.stringify(records);await assert.rejects(()=>applyDataAction(store,{action:'config',items:{...added,brands:added.brands.filter(v=>v!=='GLOW')}}));assert.equal(JSON.stringify(records),snapshot);
+await applyDataAction(store,{action:'config',items:config});assert(!records.find(r=>r.kind==='config').payload.brands.includes('Future Brand'));assert.deepEqual(records.find(r=>r.kind==='posts').payload,post);assert(audit.length>=2);
+console.log('PASS: existing configuration saves add/remove unused values, retain follower configuration and audit entries, block deletion of a referenced brand atomically, and leave post data unchanged.');

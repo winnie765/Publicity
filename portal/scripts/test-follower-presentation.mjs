@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+const out='.sites-runtime/follower-presentation';fs.mkdirSync(out,{recursive:true});
+const names=['model','account-structure','follower-snapshots','follower-accounts','follower-comparison','top-hits','facebook-follower-analytics','charts','display-labels','ai-intelligence','facebook-followers-panel'];
+for(const name of names){const path='app/'+name+(fs.existsSync('app/'+name+'.tsx')?'.tsx':'.ts');const source=fs.readFileSync(path,'utf8').replace(/from ['"](?:\.\.\/|\.\/)+(?:app\/|intelligence\/)?([\w-]+)['"]/g,"from './$1.mjs'");fs.writeFileSync(out+'/'+name+'.mjs',ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText);}
+fs.writeFileSync(out+'/themed-select.mjs',`import React from 'react';export default function Select({children,value}){return React.createElement('select',{value,onChange:()=>{}},children)}`);
+fs.writeFileSync(out+'/date-picker.mjs',`export const DatePicker=()=>null;export const DateRangePicker=()=>null;`);
+const {defaultConfig}=await import('../'+out+'/model.mjs'),{defaultFollowerAccounts}=await import('../'+out+'/follower-accounts.mjs'),{followerComparison}=await import('../'+out+'/follower-comparison.mjs'),{Trend}=await import('../'+out+'/charts.mjs'),{default:Panel}=await import('../'+out+'/facebook-followers-panel.mjs'),{default:AI}=await import('../'+out+'/ai-intelligence.mjs');
+const data={posts:[],followers:[],interactions:[],kpis:[],config:structuredClone(defaultConfig)};
+for(const a of defaultFollowerAccounts)for(const [date,followers] of [['2026-01-31',100],['2026-02-28',110],['2026-03-31',132]])data.followers.push({id:a.name+date,account:a.name,accountBrand:a.brand,platform:a.platform,date,followers,origin:'manual'});
+const comparison=followerComparison(data);assert.equal(comparison.length,6);assert(comparison.every(a=>a.previous.followers===110&&a.growth===22&&a.growthPercentage===20&&Math.abs(a.momentum-10)<0.00001));
+const missing=structuredClone(data);missing.followers=missing.followers.filter(f=>!(f.account==='Facebook SEEN'&&f.date==='2026-02-28'));const gap=followerComparison(missing).find(a=>a.name==='Facebook SEEN');assert.equal(gap.monthlyRate,null);assert.equal(gap.momentum,null);assert.equal(gap.previous.followers,100);
+const zero=structuredClone(data);zero.followers.find(f=>f.account==='Facebook SEEN'&&f.date==='2026-02-28').followers=0;assert.equal(followerComparison(zero).find(a=>a.name==='Facebook SEEN').monthlyRate,null);
+const html=renderToStaticMarkup(React.createElement(Panel,{data,mutate:async()=>true,busy:false,enabled:false}));assert(html.includes('Facebook Followers Growth')&&html.includes('Instagram Followers Growth'));assert.equal((html.match(/type="checkbox"/g)||[]).length,6);assert.equal((html.match(/Previous Followers/g)||[]).length,6);
+const sections=html.split('class="follower-platform-section"').slice(1);assert.equal(sections.length,2);assert(!sections[0].includes('Instagram GLOW'));assert(sections[1].includes('Instagram GLOW'));
+const rows=Array.from({length:8},(_,i)=>({month:'Month '+i,a:100,b:100,c:100}));const chart=renderToStaticMarkup(React.createElement(Trend,{data:rows,lines:['a','b','c'],labels:['A','B','C'],labelsAbove:true,unit:'Followers'}));
+const points=[...chart.matchAll(/<circle[^>]*cx="([\d.]+)" cy="([\d.]+)"/g)].map(m=>({x:+m[1],y:+m[2]}));const labels=[...chart.matchAll(/<text x="([\d.]+)" y="([\d.]+)" text-anchor="middle" fill="[^"]+" class="chart-point-label">/g)].map(m=>({x:+m[1],y:+m[2]}));assert.equal(labels.length,24);assert.equal(points.length,24);assert(labels.every(l=>l.y>=30&&points.some(p=>p.x===l.x&&l.y<p.y)));for(let i=0;i<labels.length;i++)for(let j=i+1;j<labels.length;j++)assert(Math.abs(labels[i].x-labels[j].x)>=40||Math.abs(labels[i].y-labels[j].y)>=23);
+const unavailable=renderToStaticMarkup(React.createElement(AI,{scope:'followers',filters:{},enabled:false,genuineOnly:true}));assert(unavailable.includes('temporarily unavailable'));assert(!unavailable.includes('Recommended Action')&&!unavailable.includes('Calculated strategy'));
+console.log('PASS: platform isolation, six account controls, previous counts, momentum, gaps, zero baselines, every chart point labelled above without collisions, honest AI availability.');

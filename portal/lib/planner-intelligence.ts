@@ -1,0 +1,21 @@
+import {topHits} from '../app/top-hits';
+import {engagement} from '../app/model';
+import {advisorEvidence} from './advisor-service';
+import {workspaceRecords} from './workspace-service';
+import {loadData} from './data-service';
+import type {Storage} from './storage-contract';
+import type {EvidencePack} from './intelligence/types';
+export async function plannerEvidence(store:Storage,question:unknown,stakeholder:unknown,postId:unknown=''){
+ const data=await loadData(store),records=await workspaceRecords(store),base=advisorEvidence(data,question);
+ if(typeof stakeholder!=='string'||stakeholder.length>150)throw Error('Choose a valid target stakeholder.');
+ if(typeof postId!=='string'||postId.length>200)throw Error('Choose a valid Top Hit.');
+ const active=records.plans.filter(p=>!['Published','Archived','Cancelled'].includes(p.status)),facts=[...base.facts];
+ const add=(label:string,text:string)=>facts.push({id:'PL'+String(facts.length+1).padStart(3,'0'),label,text});
+ if(postId){const sections=topHits(data.posts.filter(p=>p.status!=='draft')).sections,section=sections.find(s=>s.hits.some(p=>p.id===postId)),post=section?.hits.find(p=>p.id===postId);if(!post||!section)throw Error('Choose a current Top Hit.');add('Selected Top Hit evidence',JSON.stringify({id:post.id,title:post.title,platform:post.platform,brand:post.brand,contentType:post.type,engagement:engagement(post),topHitScore:section.score(post),platformBaseline:section.baseline,eligiblePosts:section.measured,features:post.featuresKnown===true?post.features:null,featuresVerified:post.featuresKnown===true,limitation:'Selected for highest reported engagement; recurring traits and mechanisms remain observational. No causal success driver is verified.'}));}
+ if(stakeholder){const related=data.posts.filter(p=>p.status!=='draft'&&['Facebook','Instagram'].includes(p.platform)),rows=data.interactions.filter(i=>i.stakeholder.toLowerCase()===stakeholder.toLowerCase()&&related.some(p=>p.id===i.postId)&&(!base.filters.start||i.date>=base.filters.start)&&(!base.filters.end||i.date<=base.filters.end)),buckets=new Map<string,number>();for(const row of rows){const p=related.find(p=>p.id===row.postId)!;const label=p.type+' / '+(p.topic==='Unclassified'?'Topic unavailable':p.topic);buckets.set(label,(buckets.get(label)||0)+row.count);}add('Selected stakeholder measured content preferences',JSON.stringify({stakeholder,interactionCount:rows.reduce((n,i)=>n+i.count,0),interactionRows:rows.length,rankedContent:[...buckets].sort((a,b)=>b[1]-a[1]).map(([content,count])=>({content,count})),limitation:'Only recorded interactions are measured. Zero records do not establish lack of interest.'}));}
+ add('Planner coverage',JSON.stringify({activePlans:active.length,ideas:records.ideas.filter(i=>i.status==='Open').length,campaigns:records.campaigns.length,asOf:new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'})}));
+ for(const key of ['category','platform','brand','status'] as const){const names=[...new Set(active.map(p=>p[key]||'Not yet specified'))];for(const name of names.slice(0,30)){const rows=active.filter(p=>(p[key]||'Not yet specified')===name);add('Calculated planned content mix: '+key,JSON.stringify({name,count:rows.length,sharePercent:active.length?Math.round(rows.length/active.length*1000)/10:null}));}}
+ add('Target stakeholder planning coverage',JSON.stringify({selectedStakeholder:stakeholder||null,targetedPlans:stakeholder?active.filter(p=>p.targetStakeholders?.includes(stakeholder)).length:null,scope:'Planning intent, not measured stakeholder engagement'}));
+ add('Planned campaign objectives',JSON.stringify(records.campaigns.slice(0,15).map(c=>({title:c.title,start:c.date,end:c.endDate,objective:c.objective,audience:c.audience,linkedPlans:c.linkedPlanIds.length,linkedRecordedPosts:c.linkedPostIds.length}))));
+ return {...base,scope:'insights',plannerContext:true,facts,advisoryQuestion:base.advisoryQuestion+(stakeholder?' Target stakeholder: '+stakeholder:''),limitations:[...base.limitations,'Planned content is editorial intent, never measured performance. Recommendations and expected impact are hypotheses, not promised outcomes. Missing stakeholder interaction records cannot establish a preference. No optimal content-mix allocation has been experimentally established.']} as EvidencePack&{advisoryQuestion:string};
+}

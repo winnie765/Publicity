@@ -5,7 +5,7 @@ import ExcelJS from 'exceljs';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 fs.mkdirSync('.sites-runtime',{recursive:true});
-for(const name of ['themed-select','display-labels','model','account-structure','follower-snapshots','follower-accounts','import','standard-workbook','top-hits','facebook-follower-analytics','analytics-overview','charts','ai-intelligence','post-performance-cards','analytics-ui','dashboard-intelligence','use-dashboard-briefing','executive-dashboard','social-media-analytics']){
+for(const name of ['themed-select','display-labels','model','account-structure','follower-snapshots','follower-accounts','follower-comparison','import','standard-workbook','top-hits','facebook-follower-analytics','analytics-overview','charts','ai-intelligence','post-performance-cards','analytics-ui','dashboard-intelligence','use-dashboard-briefing','executive-dashboard','social-media-analytics']){
  const file='app/'+name+(fs.existsSync('app/'+name+'.tsx')?'.tsx':'.ts');
  const source=fs.readFileSync(file,'utf8').replace("import PublicContentManagement from './public-content-management';","const PublicContentManagement=()=>null;").replace("from '../components/ui/dialog'","from './dialog.mjs'").replace(/from '\.\/([\w-]+)'/g,"from './$1.mjs'");
  fs.writeFileSync('.sites-runtime/'+name+'.mjs',ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);
@@ -29,7 +29,7 @@ const wb=new ExcelJS.Workbook();await wb.xlsx.readFile(process.argv[2]);const pr
 const external=data.posts.filter(p=>['Facebook','Instagram'].includes(p.platform));
 const props={data,posts:external,start:'2025-09-01',end:'2026-12-31',onOpen:()=>{},onNavigate:()=>{}};
 const html=renderToStaticMarkup(React.createElement(Dashboard,props));
-for(const label of ['Total Posts','Total Engagements','Total Followers','Average Engagement Per Post','Total Top Hits','Best Performing Brand','Best Performing Platform','Executive Insights','GLOW Overview','SEEN Overview','Top 3 Facebook Hits','Top 3 Instagram Hits','View Full Top Hits Analysis'])assert(html.includes(label),label);
+for(const label of ['Total Posts','Total Engagements','Total Followers','Average Engagement Per Post','Total Top Hits','Best Performing Brand','Best Performing Platform','AI EXECUTIVE BRIEFING','GLOW Overview','SEEN Overview','Top 3 Facebook Hits','Top 3 Instagram Hits','View Full Top Hits Analysis'])assert(html.includes(label),label);
 assert.equal((html.match(/class="labelled-trend"/g)||[]).length,2,'Executive dashboard has exactly two charts');
 assert.equal((html.match(/type="checkbox"/g)||[]).length,6,'Six account toggles including LC');
 assert.equal((html.match(/class="dashboard-hit"/g)||[]).length,6,'Three independently ranked posts per platform');

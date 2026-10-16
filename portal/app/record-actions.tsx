@@ -1,0 +1,6 @@
+'use client';
+import {useState} from 'react';
+import {useConfirmAction} from './confirm-action';
+export default function RecordActions({id,kind,onDeleted,edit=false}:{id:string;kind:string;onDeleted?:()=>Promise<unknown>;edit?:boolean}){const {confirm,confirmation}=useConfirmAction(),[busy,setBusy]=useState(false),[error,setError]=useState('');const base='/workspace/records?kind='+encodeURIComponent(kind);
+ return <><a className="button" href={base+'&view='+encodeURIComponent(id)}>View</a>{edit&&<a className="button" href={base+'&edit='+encodeURIComponent(id)}>Edit</a>}<button className="button destructive" disabled={busy} onClick={async()=>{if(!await confirm('Move this record to Trash?'))return;setBusy(true);setError('');try{const r=await fetch('/api/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operation:'delete',ids:[id],confirmation:'delete'})}),result=await r.json() as {error?:string};if(!r.ok)throw Error(result.error||'Could not delete the record.');await onDeleted?.();}catch(e){setError(e instanceof Error?e.message:'Please retry.')}finally{setBusy(false)}}}>Delete</button>{error&&<span className="error" role="alert">{error}</span>}{confirmation}</>;
+}

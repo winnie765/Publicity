@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+const source=fs.readFileSync('lib/content-studio.ts','utf8'),js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {studioInput,generateStudio,studioTasks}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+const input=studioInput({task:'Email Draft',language:'English + Chinese',brief:'Invite partners to discuss a proposed community activity.',audience:'Partners',brand:'GLOW',previousDraft:''});
+assert.equal(studioTasks.length,13);assert.throws(()=>studioInput({...input,brief:''}));assert.throws(()=>studioInput({...input,task:'analytics'}));assert.throws(()=>studioInput({...input,previousDraft:'x'.repeat(16001)}));
+let saved,reservations=0,releases=0;const output={title:'Partner invitation',draft:'Subject: Community activity discussion\n\nDear partners,\n[Confirm meeting details]'};
+const runtime={config:{provider:'gemini',model:'gemini-2.5-flash',apiKey:'mock'},dailyLimit:40,cache:{read:async()=>saved,reserve:async(k,t,limit)=>{assert.equal(limit,40);reservations++;return 'lease';},save:async(k,t,payload,expiresAt)=>{saved={payload,expiresAt};},release:async()=>{releases++;}}};
+const fake=async(url,options)=>{const body=JSON.parse(options.body);assert(body.systemInstruction.parts[0].text.includes('not an analytics assistant'));assert(body.systemInstruction.parts[0].text.includes('Never invent'));assert.equal(JSON.parse(body.contents[0].parts[0].text).brief,input.brief);return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}]});};
+assert.deepEqual((await generateStudio(input,runtime,fake)).output,output);assert.equal((await generateStudio(input,runtime,()=>{throw Error('Cache should avoid request');})).cached,true);assert.equal(reservations,1);
+saved=null;await assert.rejects(()=>generateStudio(input,runtime,async()=>Response.json({error:'unavailable'},{status:503})));assert.equal(releases,1);
+await assert.rejects(()=>generateStudio(input,{...runtime,config:{...runtime.config,apiKey:''}},fake));
+await assert.rejects(()=>generateStudio(input,{...runtime,cache:{...runtime.cache,reserve:async()=>null}},fake));
+assert(fs.readFileSync('app/api/content-studio/route.ts','utf8').includes('workspaceGuard(request)'));
+const portal=fs.readFileSync('app/portal.tsx','utf8');assert(portal.includes('page===14&&<AIContentStudio'));assert(!portal.includes("name:'AI Workspace Assistant'"));
+console.log('PASS: task validation, writing persona, bilingual request, shared 40/day limit, cache reuse, provider failure, quota failure, lease release and private endpoint guard. No live AI requests.');

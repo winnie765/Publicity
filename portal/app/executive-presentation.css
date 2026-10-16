@@ -5,3 +5,11 @@
 @media print{.dashboard-quick-actions,.dashboard-story-nav,.executive-presentation .section-heading>.button{display:none}.dashboard-briefing,.dashboard-actions-grid>article,.dashboard-hit{break-inside:avoid}}
 
 .dashboard-metric-notes{font-size:10px;color:var(--muted);margin:0 0 12px;line-height:1.9}.dashboard-metric-notes summary{cursor:pointer;color:var(--green)}.dashboard-metric-notes p{padding-top:10px;max-width:1000px}
+.brand-overview-container{container:brand-overview / inline-size;width:100%;min-width:0}
+.executive-presentation .brand-overview-container .brand-overview-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.brand-overview-container .brand-overview-grid>div{min-width:0}
+.brand-overview-container .brand-overview-grid strong{max-width:100%;min-height:38px;line-height:1.3;display:flex;align-items:center;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.brand-overview-container .brand-overview-grid strong.brand-text-value{font-size:20px;letter-spacing:0}
+.brand-overview-container .brand-overview-grid span{line-height:1.6;overflow-wrap:anywhere}
+@container brand-overview (max-width:620px){.executive-presentation .brand-overview-container .brand-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:24px}.brand-overview-container .brand-overview-grid strong.brand-text-value{font-size:18px}}
+@container brand-overview (max-width:320px){.brand-overview-container .brand-overview-grid strong.brand-text-value{font-size:16px}}

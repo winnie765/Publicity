@@ -1,0 +1,21 @@
+.follower-platform-overview{display:grid;grid-template-columns:minmax(0,1fr);width:100%;min-width:0;max-width:100%;gap:26px;margin:24px 0 28px}
+.follower-platform-section{width:100%;min-width:0;max-width:100%}
+.follower-platform-heading{display:flex;align-items:center;gap:13px;margin-bottom:19px}
+.follower-platform-heading h2{font-size:22px;letter-spacing:-.4px;color:var(--dark)}
+.follower-platform-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:color-mix(in srgb,var(--green) 9%,var(--white));color:var(--green)}
+.follower-platform-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;min-width:0;max-width:100%;gap:16px;align-items:stretch}
+.follower-platform-cards .follower-overview-card{display:flex;flex-direction:column;width:100%;max-width:100%;min-width:0;min-height:310px;padding:18px;margin:0;border:1px solid var(--line);border-radius:18px;background:var(--white)}
+.follower-overview-card h3{font-size:15px;line-height:1.6;min-height:48px;color:var(--dark);overflow-wrap:anywhere}
+.follower-current-label{font-size:11px;color:var(--muted);margin-top:12px}
+.follower-overview-card>strong{font-size:clamp(27px,2.5vw,35px);line-height:1.3;min-height:46px;margin:9px 0 18px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.follower-overview-card>strong.follower-value-unavailable{font-size:22px;letter-spacing:0}
+.follower-overview-card dl{display:grid;gap:11px;margin:0;margin-top:auto;border-top:1px solid var(--line);padding-top:16px}
+.follower-overview-card dl>div{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.follower-overview-card dt{font-size:11px;color:var(--muted);line-height:1.7;min-width:0;flex:1;overflow-wrap:anywhere}
+.follower-overview-card dd{font-size:12px;line-height:1.7;font-weight:600;text-align:right;margin:0;min-width:0;max-width:54%;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.follower-overview-card .follower-growth-positive{color:var(--green)}
+.follower-overview-card .follower-growth-negative{color:#b3857b}
+@media(max-width:1100px){.follower-platform-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.follower-platform-cards{grid-template-columns:1fr;gap:17px}.follower-platform-overview{gap:27px}.follower-platform-cards .follower-overview-card{min-height:290px;padding:18px}.follower-overview-card h3{min-height:0}.follower-platform-heading h2{font-size:21px}}
+
+.follower-platform-chart{width:100%;min-width:0;max-width:100%;margin-top:18px;padding:18px}.follower-platform-chart .labelled-trend{min-width:0;max-width:100%}.follower-account-toggles{display:flex;flex-wrap:wrap;gap:14px 24px;border:0;padding:0;margin:0 0 25px}.follower-account-toggles legend{font-size:12px;color:var(--muted);margin-bottom:14px}.follower-account-toggles label{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--dark);cursor:pointer}.follower-account-toggles input{accent-color:var(--green);width:17px;height:17px}
