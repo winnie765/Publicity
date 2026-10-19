@@ -1,5 +1,5 @@
-import {isImportedHistoricalPost} from './model';
 'use client';
+import {isImportedHistoricalPost} from './model';
 import OriginalPostLink from './original-post-link';
 import {useEffect,useRef,useState} from 'react';
 import {Dialog} from 'radix-ui';

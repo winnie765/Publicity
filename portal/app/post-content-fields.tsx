@@ -1,5 +1,5 @@
-import WorkvivoAssociation from './workvivo-association';
 'use client';
+import WorkvivoAssociation from './workvivo-association';
 import {useEffect,useRef} from 'react';
 import {postUrlValue} from '../lib/original-post-url';
 import VideoUpload from './video-upload';

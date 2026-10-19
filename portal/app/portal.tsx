@@ -1,6 +1,6 @@
+'use client';
 import {isImportedHistoricalPost} from './model';
 import {workvivoPosts} from '../lib/workvivo-posts';
-'use client';
 import RecordManager from './record-manager';
 import SidebarGroup from './sidebar-group';
 import ConfigurationManager from './configuration-manager';
