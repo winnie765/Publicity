@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+if(fs.existsSync('.env.local'))process.loadEnvFile('.env.local');
+const file=process.argv.find(v=>v.startsWith('--input='))?.slice(8);if(!file){console.error('Usage: node scripts/import-supabase-records.mjs --input=PRIVATE_BACKUP.json [--apply]');process.exit(1);}
+const raw=fs.readFileSync(file,'utf8');if(raw.length>20000000)throw Error('Use a backup smaller than 20 MB.');
+const source=JSON.parse(raw);if(!Array.isArray(source.records)||!source.records.length||!Array.isArray(source.audit))throw Error('Expected a complete records and audit backup.');
+if(source.records.some(r=>typeof r.id!=='string'||typeof r.kind!=='string'||!r.payload||!r.updatedAt)||new Set(source.records.map(r=>r.id)).size!==source.records.length)throw Error('Invalid or duplicate record IDs.');
+const today='budget:'+new Date().toISOString().slice(0,10);if(!Array.isArray(source.aiCache)||!source.aiCache.some(r=>r.id===today&&Number.isInteger(r.requests)&&r.requests>=0))throw Error('Include the current UTC daily AI budget in the private export, even if zero.');
+const changes=[...source.records.map(record=>({type:'insert',record})),...source.audit.map(entry=>({type:'audit',entry}))];if(changes.length>5000)throw Error('This migration exceeds the atomic transfer limit; use a direct database transfer.');
+console.log(JSON.stringify({records:source.records.length,audit:source.audit.length,apply:process.argv.includes('--apply')}));if(!process.argv.includes('--apply'))process.exit(0);
+const base=new URL(process.env.SUPABASE_URL||''),key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(base.protocol!=='https:'||base.username||base.password||!key)throw Error('Configure the server-only Supabase URL and key.');
+async function rpc(name,args={}){const r=await fetch(new URL('/rest/v1/rpc/'+name,base),{method:'POST',headers:{apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key}),'Content-Type':'application/json'},body:JSON.stringify(args),redirect:'error',signal:AbortSignal.timeout(60000)});if(!r.ok)throw Error('Supabase transfer failed. Review connectivity and schema.');const text=await r.text();return text?JSON.parse(text):null;}
+const first=await rpc('portal_read_records',{after_id:'',page_size:1});if(first.length)throw Error('Destination is not empty. No existing records have been overwritten.');
+await rpc('portal_apply_changes',{changes});await rpc('portal_import_ai_cache',{entries:source.aiCache});let records=[],after='';for(;;){const page=await rpc('portal_read_records',{after_id:after,page_size:500});if(!page.length)break;records.push(...page);after=page.at(-1).id;}
+const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
+if(records.length!==source.records.length||source.records.some(r=>{const saved=records.find(v=>v.id===r.id);return !saved||saved.kind!==r.kind||JSON.stringify(canonical(saved.payload))!==JSON.stringify(canonical(r.payload));}))throw Error('Post-transfer verification failed. Keep the previous database active.');
+console.log('All records transferred and verified. Before selecting Supabase in production, retain private media, and validate the public site and Workspace.');

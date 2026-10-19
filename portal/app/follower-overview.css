@@ -19,3 +19,20 @@
 @media(max-width:760px){.follower-platform-cards{grid-template-columns:1fr;gap:17px}.follower-platform-overview{gap:27px}.follower-platform-cards .follower-overview-card{min-height:290px;padding:18px}.follower-overview-card h3{min-height:0}.follower-platform-heading h2{font-size:21px}}
 
 .follower-platform-chart{width:100%;min-width:0;max-width:100%;margin-top:18px;padding:18px}.follower-platform-chart .labelled-trend{min-width:0;max-width:100%}.follower-account-toggles{display:flex;flex-wrap:wrap;gap:14px 24px;border:0;padding:0;margin:0 0 25px}.follower-account-toggles legend{font-size:12px;color:var(--muted);margin-bottom:14px}.follower-account-toggles label{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--dark);cursor:pointer}.follower-account-toggles input{accent-color:var(--green);width:17px;height:17px}
+
+/* Compact reporting toolbar: scoped to the Followers page only. */
+.follower-period-filters{padding:16px 20px;margin-bottom:20px;overflow:visible}
+.follower-period-filters>h3{font-size:14px;margin:0 0 12px}
+.follower-period-toolbar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:12px;align-items:end}
+.follower-period-toolbar>.date-filter,.follower-period-toolbar .date-filter-fields{display:contents}
+.follower-period-toolbar .date-filter-heading{display:none}
+.follower-period-toolbar .date-filter-field{width:100%;min-width:0;max-width:none}
+.follower-period-toolbar .date-filter-field>label{font-size:11px;line-height:16px;margin:0 0 6px}
+.follower-period-toolbar .date-quick-section{margin:0;padding:0;border:0;min-width:0;width:auto;clear:none}
+.follower-period-toolbar .date-preset-dropdown{max-width:none;gap:6px;line-height:16px}
+.follower-period-toolbar .date-filter-input,.follower-period-toolbar .themed-select-trigger,.follower-period-toolbar .follower-period-reset{height:44px;min-height:44px}
+.follower-period-toolbar .date-filter-input input{font-size:12px}
+.follower-period-toolbar .follower-period-reset{padding:10px 16px;border-radius:12px}
+.follower-period-toolbar .date-filter-error{grid-column:1/-1;margin:0}
+@media(max-width:900px){.follower-period-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.follower-period-toolbar .follower-period-reset{justify-self:end}}
+@media(max-width:480px){.follower-period-filters{padding:14px 16px}.follower-period-toolbar{grid-template-columns:minmax(0,1fr) auto;gap:12px 10px}.follower-period-toolbar .date-filter-field{grid-column:1/-1}}

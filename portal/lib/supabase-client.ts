@@ -1,0 +1,7 @@
+export type SupabaseEnvironment={[key:string]:unknown;DATABASE_PROVIDER?:unknown;SUPABASE_URL?:unknown;SUPABASE_SERVICE_ROLE_KEY?:unknown};
+export const useSupabase=(env:SupabaseEnvironment)=>env.DATABASE_PROVIDER==='supabase';
+export function supabaseRPC(env:SupabaseEnvironment,fetcher:typeof fetch=fetch){
+ let url:URL;try{url=new URL(String(env.SUPABASE_URL||''));}catch{throw Error('Configure the Supabase project URL.');}
+ const key=String(env.SUPABASE_SERVICE_ROLE_KEY||'');if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/'||!key)throw Error('Configure the server-only Supabase URL and secret key.');
+ return async <T,>(name:string,args:Record<string,unknown>={}):Promise<T>=>{if(!/^portal_[a-z_]+$/.test(name))throw Error('Unsupported database operation.');let response:Response;try{response=await fetcher(new URL('/rest/v1/rpc/'+name,url),{method:'POST',headers:{apikey:key,...(key.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+key}),'Content-Type':'application/json'},body:JSON.stringify(args),cache:'no-store',redirect:'error',signal:AbortSignal.timeout(30000)});}catch{throw Error('Supabase is unavailable. Please retry; the database has not been switched to a fallback.');}if(!response.ok)throw Error('Supabase database operation failed. Check the server connection and database migration.');if(response.status===204)return undefined as T;const text=await response.text();return text?JSON.parse(text) as T:undefined as T;};
+}

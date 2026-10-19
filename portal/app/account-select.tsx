@@ -11,9 +11,9 @@ function AccountIcon({name}:{name:string}){
  return <Icon size={16} aria-hidden="true" className="themed-select-platform"/>;
 }
 
-export default function AccountSelect({value,onChange,options}:{value:string;onChange:(value:string)=>void;options:string[]}){
+export default function AccountSelect({value,onChange,options,allAccountsLabel}:{value:string;onChange:(value:string)=>void;options:string[];allAccountsLabel?:string}){
  const id=useId();
  return <label className="filter-dropdown" htmlFor={id}><span id={id+'-label'}>Account</span>
-  <ThemedSelect id={id} aria-labelledby={id+'-label'} value={value} onValueChange={onChange} options={[...new Set(options)].map(name=>({value:name,label:name}))} renderIcon={name=><AccountIcon name={name}/>}/>
+  <ThemedSelect id={id} aria-labelledby={id+'-label'} value={value} onValueChange={onChange} options={[...new Set(options)].map(name=>({value:name,label:name==='All accounts'&&allAccountsLabel?allAccountsLabel:name}))} renderIcon={name=><AccountIcon name={name}/>}/>
  </label>;
 }

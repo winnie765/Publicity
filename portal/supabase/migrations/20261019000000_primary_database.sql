@@ -1,0 +1,190 @@
+-- Supabase primary store. Domain tables are transactionally maintained projections.
+-- Existing record IDs, complete payloads, archive/trash and all planner/CMS types are preserved.
+BEGIN;
+CREATE TABLE IF NOT EXISTS public.portal_records (id text PRIMARY KEY,kind text NOT NULL,payload jsonb NOT NULL CHECK(jsonb_typeof(payload)='object'),record_date date,updated_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS portal_records_kind_idx ON public.portal_records(kind);
+CREATE TABLE IF NOT EXISTS public.portal_audit (id text PRIMARY KEY,actor text NOT NULL,action text NOT NULL,record_id text NOT NULL,date timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS portal_audit_date_idx ON public.portal_audit(date DESC);
+CREATE TABLE IF NOT EXISTS public.portal_ai_cache (id text PRIMARY KEY,payload text NOT NULL DEFAULT '',expires_at bigint NOT NULL DEFAULT 0,lease_until bigint NOT NULL DEFAULT 0,lease_token text NOT NULL DEFAULT '',requests integer NOT NULL DEFAULT 0 CHECK(requests>=0));
+CREATE TABLE IF NOT EXISTS public.posts (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS posts_date_idx ON public.posts(record_date);
+CREATE TABLE IF NOT EXISTS public.followers_history (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS followers_history_date_idx ON public.followers_history(record_date);
+CREATE TABLE IF NOT EXISTS public.stakeholder_interactions (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS stakeholder_interactions_date_idx ON public.stakeholder_interactions(record_date);
+CREATE TABLE IF NOT EXISTS public.workvivo_posts (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS workvivo_posts_date_idx ON public.workvivo_posts(record_date);
+CREATE TABLE IF NOT EXISTS public.stories (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS stories_date_idx ON public.stories(record_date);
+CREATE TABLE IF NOT EXISTS public.events (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS events_date_idx ON public.events(record_date);
+CREATE TABLE IF NOT EXISTS public.community_highlights (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS community_highlights_date_idx ON public.community_highlights(record_date);
+CREATE TABLE IF NOT EXISTS public.community_impact (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS community_impact_date_idx ON public.community_impact(record_date);
+CREATE TABLE IF NOT EXISTS public.reports (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS reports_date_idx ON public.reports(record_date);
+CREATE TABLE IF NOT EXISTS public.media_library (id text PRIMARY KEY REFERENCES public.portal_records(id) ON DELETE CASCADE,kind text NOT NULL,payload jsonb NOT NULL,record_date date,updated_at timestamptz NOT NULL, title text GENERATED ALWAYS AS (payload->>'title') STORED,platform text GENERATED ALWAYS AS (payload->>'platform') STORED,brand text GENERATED ALWAYS AS (payload->>'brand') STORED,account text GENERATED ALWAYS AS (payload->>'account') STORED);
+CREATE INDEX IF NOT EXISTS media_library_date_idx ON public.media_library(record_date);
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS original_post_url text GENERATED ALWAYS AS (payload->>'original_post_url') STORED;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS is_workvivo_associated boolean GENERATED ALWAYS AS ((payload->>'is_workvivo_associated')='true') STORED;
+ALTER TABLE public.followers_history ADD COLUMN IF NOT EXISTS follower_count text GENERATED ALWAYS AS (payload->>'followers') STORED;
+ALTER TABLE public.followers_history ADD COLUMN IF NOT EXISTS source text GENERATED ALWAYS AS (COALESCE(payload->>'origin',payload->>'importSheet')) STORED;
+ALTER TABLE public.stakeholder_interactions ADD COLUMN IF NOT EXISTS post_id text GENERATED ALWAYS AS (payload->>'postId') STORED;
+ALTER TABLE public.stakeholder_interactions ADD COLUMN IF NOT EXISTS stakeholder text GENERATED ALWAYS AS (payload->>'stakeholder') STORED;
+ALTER TABLE public.stakeholder_interactions ADD COLUMN IF NOT EXISTS interaction_type text GENERATED ALWAYS AS (payload->>'type') STORED;
+ALTER TABLE public.stakeholder_interactions ADD COLUMN IF NOT EXISTS interaction_count text GENERATED ALWAYS AS (payload->>'count') STORED;
+ALTER TABLE public.workvivo_posts ADD COLUMN IF NOT EXISTS category text GENERATED ALWAYS AS (payload->>'workvivo_category') STORED;
+ALTER TABLE public.workvivo_posts ADD COLUMN IF NOT EXISTS workvivo_url text GENERATED ALWAYS AS (CASE WHEN payload->>'platform'='Workvivo' THEN COALESCE(payload->>'original_post_url',payload->>'url') ELSE payload->>'workvivo_url' END) STORED;
+ALTER TABLE public.workvivo_posts ADD COLUMN IF NOT EXISTS caption text GENERATED ALWAYS AS (CASE WHEN payload->>'platform'='Workvivo' THEN payload->>'description' ELSE payload->>'workvivo_caption' END) STORED;
+ALTER TABLE public.stories ADD COLUMN IF NOT EXISTS summary text GENERATED ALWAYS AS (payload->>'summary') STORED;
+ALTER TABLE public.stories ADD COLUMN IF NOT EXISTS body text GENERATED ALWAYS AS (payload->>'body') STORED;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS location text GENERATED ALWAYS AS (payload->>'location') STORED;
+ALTER TABLE public.events ADD COLUMN IF NOT EXISTS registration_url text GENERATED ALWAYS AS (payload->>'url') STORED;
+ALTER TABLE public.community_highlights ADD COLUMN IF NOT EXISTS summary text GENERATED ALWAYS AS (COALESCE(payload->>'public_summary',payload->>'summary')) STORED;
+ALTER TABLE public.media_library ADD COLUMN IF NOT EXISTS object_key text GENERATED ALWAYS AS (payload->>'key') STORED;
+ALTER TABLE public.media_library ADD COLUMN IF NOT EXISTS mime_type text GENERATED ALWAYS AS (payload->>'mimeType') STORED;
+ALTER TABLE public.media_library ADD COLUMN IF NOT EXISTS folder text GENERATED ALWAYS AS (payload->>'folder') STORED;
+CREATE TABLE IF NOT EXISTS public.brands (name text PRIMARY KEY,position integer NOT NULL);
+CREATE TABLE IF NOT EXISTS public.accounts (name text PRIMARY KEY,platform text NOT NULL,brand text,position integer NOT NULL,details jsonb NOT NULL);
+CREATE OR REPLACE FUNCTION public.portal_refresh_domains() RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $fn$
+BEGIN
+DELETE FROM public.posts d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='posts'));
+INSERT INTO public.posts(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='posts' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.followers_history d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='followers'));
+INSERT INTO public.followers_history(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='followers' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.stakeholder_interactions d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='interactions'));
+INSERT INTO public.stakeholder_interactions(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='interactions' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.workvivo_posts d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='posts' AND (r.payload->>'platform'='Workvivo' OR r.payload->>'is_workvivo_associated'='true')));
+INSERT INTO public.workvivo_posts(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='posts' AND (payload->>'platform'='Workvivo' OR payload->>'is_workvivo_associated'='true') ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.stories d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='public_content'));
+INSERT INTO public.stories(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='public_content' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.events d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='public_event'));
+INSERT INTO public.events(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='public_event' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.community_highlights d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND ((r.kind='posts' AND (r.payload->>'show_in_community_highlights'='true' OR r.payload->>'show_on_home_page'='true')) OR (r.kind='public_content' AND r.payload->>'featured'='true')));
+INSERT INTO public.community_highlights(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE (kind='posts' AND (payload->>'show_in_community_highlights'='true' OR payload->>'show_on_home_page'='true')) OR (kind='public_content' AND payload->>'featured'='true') ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.community_impact d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='community_impact'));
+INSERT INTO public.community_impact(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='community_impact' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.reports d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='generated_report'));
+INSERT INTO public.reports(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='generated_report' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.media_library d WHERE NOT EXISTS(SELECT 1 FROM public.portal_records r WHERE r.id=d.id AND (r.kind='media_asset'));
+INSERT INTO public.media_library(id,kind,payload,record_date,updated_at) SELECT id,kind,payload,record_date,updated_at FROM public.portal_records WHERE kind='media_asset' ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+DELETE FROM public.brands; INSERT INTO public.brands(name,position) SELECT value,ordinality::int FROM public.portal_records r CROSS JOIN LATERAL jsonb_array_elements_text(COALESCE(r.payload->'brands','[]'::jsonb)) WITH ORDINALITY WHERE r.kind='config' AND r.id='configuration' ON CONFLICT(name) DO NOTHING;
+DELETE FROM public.accounts; INSERT INTO public.accounts(name,platform,brand,position,details) SELECT value->>'name',value->>'platform',value->>'brand',ordinality::int,value FROM public.portal_records r CROSS JOIN LATERAL jsonb_array_elements(COALESCE(r.payload->'accounts','[]'::jsonb)) WITH ORDINALITY WHERE r.kind='config' AND r.id='configuration' ON CONFLICT(name) DO NOTHING;
+END $fn$;
+CREATE OR REPLACE FUNCTION public.portal_read_records(after_id text DEFAULT '',page_size integer DEFAULT 500) RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $fn$ SELECT COALESCE(jsonb_agg(jsonb_build_object('id',r.id,'kind',r.kind,'payload',r.payload||CASE WHEN r.record_date IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('date',r.record_date::text) END,'updatedAt',r.updated_at) ORDER BY r.id),'[]'::jsonb) FROM (SELECT * FROM public.portal_records WHERE id>after_id ORDER BY id LIMIT greatest(1,least(page_size,500))) r $fn$;
+CREATE OR REPLACE FUNCTION public.portal_read_audit() RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $fn$ SELECT COALESCE(jsonb_agg(to_jsonb(r) ORDER BY r.date DESC),'[]'::jsonb) FROM (SELECT * FROM public.portal_audit ORDER BY date DESC LIMIT 100) r $fn$;
+CREATE OR REPLACE FUNCTION public.portal_apply_changes(changes jsonb) RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $fn$
+DECLARE c jsonb; r jsonb; existing_kind text;
+BEGIN
+IF jsonb_typeof(changes)<>'array' OR jsonb_array_length(changes)>5000 THEN RAISE EXCEPTION 'Invalid change batch'; END IF;
+-- Serialize conflicting batches, including cross-record operations and recovery groups.
+PERFORM pg_catalog.pg_advisory_xact_lock(24699013);
+FOR c IN SELECT value FROM jsonb_array_elements(changes) LOOP
+IF c->>'type' IN ('upsert','insert') THEN
+ r:=c->'record';IF COALESCE(r->>'id','')='' OR COALESCE(r->>'kind','')='' OR jsonb_typeof(r->'payload')<>'object' THEN RAISE EXCEPTION 'Invalid record'; END IF;
+ SELECT kind INTO existing_kind FROM public.portal_records WHERE id=r->>'id';
+ IF existing_kind IS NOT NULL AND (c->>'type'='insert' OR existing_kind<>r->>'kind') THEN RAISE EXCEPTION 'Record ID conflict'; END IF;
+ INSERT INTO public.portal_records(id,kind,payload,record_date,updated_at) VALUES(r->>'id',r->>'kind',r->'payload',NULLIF(r->'payload'->>'date','')::date,(r->>'updatedAt')::timestamptz) ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload,record_date=EXCLUDED.record_date,updated_at=EXCLUDED.updated_at;
+ELSIF c->>'type' IN ('delete','purge','archive') THEN DELETE FROM public.portal_records WHERE id=c->>'id' AND kind=c->>'kind';
+ELSIF c->>'type'='deleteInteractions' THEN DELETE FROM public.portal_records WHERE kind='interactions' AND payload->>'postId'=c->>'postId';
+ELSIF c->>'type'='deleteAllData' THEN DELETE FROM public.portal_records WHERE kind IN ('posts','followers','interactions','kpis');
+ELSIF c->>'type'='clearAICache' THEN DELETE FROM public.portal_ai_cache WHERE id LIKE 'report:%';
+ELSIF c->>'type'='clearFacebookSnapshots' THEN NULL; -- Legacy snapshots remain archived; account histories are authoritative.
+ELSIF c->>'type'='audit' THEN r:=c->'entry';INSERT INTO public.portal_audit(id,actor,action,record_id,date) VALUES(r->>'id',r->>'actor',r->>'action',r->>'record_id',(r->>'date')::timestamptz);
+ELSE RAISE EXCEPTION 'Unknown change type'; END IF;
+END LOOP;
+PERFORM public.portal_refresh_domains();
+END $fn$;
+ALTER TABLE public.portal_records ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.portal_records FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.portal_records TO service_role;
+ALTER TABLE public.portal_audit ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.portal_audit FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.portal_audit TO service_role;
+ALTER TABLE public.portal_ai_cache ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.portal_ai_cache FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.portal_ai_cache TO service_role;
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.posts FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.posts TO service_role;
+ALTER TABLE public.followers_history ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.followers_history FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.followers_history TO service_role;
+ALTER TABLE public.stakeholder_interactions ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.stakeholder_interactions FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.stakeholder_interactions TO service_role;
+ALTER TABLE public.workvivo_posts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.workvivo_posts FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.workvivo_posts TO service_role;
+ALTER TABLE public.stories ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.stories FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.stories TO service_role;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.events FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.events TO service_role;
+ALTER TABLE public.community_highlights ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.community_highlights FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.community_highlights TO service_role;
+ALTER TABLE public.community_impact ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.community_impact FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.community_impact TO service_role;
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.reports FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.reports TO service_role;
+ALTER TABLE public.media_library ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.media_library FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.media_library TO service_role;
+ALTER TABLE public.brands ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.brands FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.brands TO service_role;
+ALTER TABLE public.accounts ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.accounts FROM anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.accounts TO service_role;
+REVOKE ALL ON FUNCTION public.portal_refresh_domains() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_refresh_domains() TO service_role;
+REVOKE ALL ON FUNCTION public.portal_read_records(text,integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_read_records(text,integer) TO service_role;
+REVOKE ALL ON FUNCTION public.portal_read_audit() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_read_audit() TO service_role;
+REVOKE ALL ON FUNCTION public.portal_apply_changes(jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_apply_changes(jsonb) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.portal_ai_cache_action(action text,cache_id text,now_ms bigint DEFAULT 0,daily_limit integer DEFAULT 40,token text DEFAULT '',content text DEFAULT '',expiry bigint DEFAULT 0) RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $fn$
+DECLARE row public.portal_ai_cache; budget text; used integer;
+BEGIN
+IF action='read' THEN SELECT * INTO row FROM public.portal_ai_cache WHERE id=cache_id;RETURN CASE WHEN FOUND THEN jsonb_build_object('payload',row.payload,'expiresAt',row.expires_at) ELSE 'null'::jsonb END;
+ELSIF action='reserve' THEN
+ IF daily_limit<0 OR daily_limit>1000 OR now_ms<=0 OR token='' THEN RAISE EXCEPTION 'Invalid AI reservation'; END IF;
+ PERFORM pg_catalog.pg_advisory_xact_lock(24699014);
+ SELECT * INTO row FROM public.portal_ai_cache WHERE id=cache_id;
+ IF FOUND AND (row.lease_until>now_ms OR row.expires_at>now_ms) THEN RETURN 'null'::jsonb; END IF;
+ budget:='budget:'||to_char(to_timestamp(now_ms/1000.0) AT TIME ZONE 'UTC','YYYY-MM-DD');
+ SELECT requests INTO used FROM public.portal_ai_cache WHERE id=budget;
+ IF COALESCE(used,0)>=daily_limit THEN RETURN 'null'::jsonb; END IF;
+ INSERT INTO public.portal_ai_cache(id,expires_at,requests) VALUES(budget,now_ms+172800000,1) ON CONFLICT(id) DO UPDATE SET requests=public.portal_ai_cache.requests+1;
+ INSERT INTO public.portal_ai_cache(id,lease_until,lease_token) VALUES(cache_id,now_ms+90000,token) ON CONFLICT(id) DO UPDATE SET lease_until=EXCLUDED.lease_until,lease_token=EXCLUDED.lease_token;
+ RETURN to_jsonb(token);
+ELSIF action='save' THEN UPDATE public.portal_ai_cache SET payload=content,expires_at=expiry,lease_until=0,lease_token='' WHERE id=cache_id AND lease_token=token;
+ELSIF action='release' THEN UPDATE public.portal_ai_cache SET lease_until=expiry,lease_token='' WHERE id=cache_id AND lease_token=token;
+ELSE RAISE EXCEPTION 'Invalid cache operation'; END IF;
+RETURN 'null'::jsonb;
+END $fn$;
+REVOKE ALL ON FUNCTION public.portal_ai_cache_action(text,text,bigint,integer,text,text,bigint) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_ai_cache_action(text,text,bigint,integer,text,text,bigint) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.portal_import_ai_cache(entries jsonb) RETURNS void LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $fn$
+DECLARE entry jsonb;
+BEGIN
+IF jsonb_typeof(entries)<>'array' OR jsonb_array_length(entries)>5000 THEN RAISE EXCEPTION 'Invalid cache transfer'; END IF;
+PERFORM pg_catalog.pg_advisory_xact_lock(24699014);
+FOR entry IN SELECT value FROM jsonb_array_elements(entries) LOOP
+IF COALESCE(entry->>'id','')='' OR COALESCE((entry->>'requests')::integer,0)<0 THEN RAISE EXCEPTION 'Invalid cache transfer'; END IF;
+INSERT INTO public.portal_ai_cache(id,payload,expires_at,lease_until,lease_token,requests) VALUES(entry->>'id',COALESCE(entry->>'payload',''),COALESCE((entry->>'expires_at')::bigint,0),0,'',COALESCE((entry->>'requests')::integer,0)) ON CONFLICT(id) DO UPDATE SET requests=greatest(public.portal_ai_cache.requests,EXCLUDED.requests);
+END LOOP;
+END $fn$;
+REVOKE ALL ON FUNCTION public.portal_import_ai_cache(jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.portal_import_ai_cache(jsonb) TO service_role;
+SELECT public.portal_refresh_domains();
+NOTIFY pgrst,'reload schema';
+COMMIT;

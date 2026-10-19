@@ -1,6 +1,7 @@
+import {withoutEmoji} from '../lib/ui-text';
 export const isSpecified=(value:string)=>!!value?.trim()&&value.trim().toLowerCase()!=='unclassified';
-export const displayLabel=(value:string|null|undefined)=>value&&isSpecified(value)?value:'Not specified';
-export const displayText=(value:string)=>value.replace(/\bUnclassified\b/gi,'Not specified');
+export const displayLabel=(value:string|null|undefined)=>value&&isSpecified(value)?withoutEmoji(value)||'Not specified':'Not specified';
+export const displayText=(value:string)=>withoutEmoji(value).replace(/\bUnclassified\b/gi,'Not specified');
 // New AI prose is validated by the provider. Preserve historical wording rather
 // than silently replacing its meaning with invented strategic advice.
 export function executiveNarrative(value:string,_fallback?:string){return displayText(value);}

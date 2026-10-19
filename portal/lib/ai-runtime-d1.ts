@@ -1,6 +1,8 @@
+import {getSupabaseAIRuntime} from './ai-runtime-supabase';
+import {useSupabase} from './supabase-client';
 import {env} from 'cloudflare:workers';
 import type {AICache} from './intelligence/types';
-export function getAIRuntime(){const db=env.DB;if(!db)throw Error('The hosted database is unavailable.');
+export function getAIRuntime(){if(useSupabase(env as unknown as Record<string,unknown>))return getSupabaseAIRuntime(env as unknown as Record<string,unknown>);const db=env.DB;if(!db)throw Error('The hosted database is unavailable.');
  const cache:AICache={
   async read(id){const row=await db.prepare('SELECT payload,expires_at FROM ai_cache WHERE id=?').bind(id).first<any>();return row?{payload:row.payload,expiresAt:row.expires_at}:null;},
   async reserve(id,now,limit){const token=crypto.randomUUID(),budget='budget:'+new Date(now).toISOString().slice(0,10);const result=await db.batch([

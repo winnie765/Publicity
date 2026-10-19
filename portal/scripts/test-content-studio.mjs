@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import ts from 'typescript';
 import assert from 'node:assert/strict';
-const source=fs.readFileSync('lib/content-studio.ts','utf8'),js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const helper=ts.transpileModule(fs.readFileSync('lib/ui-text.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText,helperUrl='data:text/javascript;base64,'+Buffer.from(helper).toString('base64');
+const source=fs.readFileSync('lib/content-studio.ts','utf8').replace("from './ui-text'",'from '+JSON.stringify(helperUrl)),js=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 const {studioInput,generateStudio,studioTasks}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
 const input=studioInput({task:'Email Draft',language:'English + Chinese',brief:'Invite partners to discuss a proposed community activity.',audience:'Partners',brand:'GLOW',previousDraft:''});
 assert.equal(studioTasks.length,13);assert.throws(()=>studioInput({...input,brief:''}));assert.throws(()=>studioInput({...input,task:'analytics'}));assert.throws(()=>studioInput({...input,previousDraft:'x'.repeat(16001)}));

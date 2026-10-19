@@ -1,7 +1,8 @@
+import {validateOriginalPostUrl} from './original-post-url';
 export type GalleryImage={url:string;alt:string;thumbnail?:string};
-export type PostContent={media_type?:'image'|'video';media_url?:string;featured_image_url?:string;featured_image_alt_text?:string;thumbnail_url?:string;gallery_images?:GalleryImage[];show_on_public_site?:boolean;show_on_home_page?:boolean;show_in_community_highlights?:boolean;show_in_stories?:boolean;show_on_programme_page?:boolean;public_summary?:string;public_article?:string;public_category?:string};
+export type PostContent={is_workvivo_associated?:boolean;workvivo_category?:string;workvivo_url?:string;workvivo_caption?:string;original_post_url?:string;media_type?:'image'|'video';media_url?:string;featured_image_url?:string;featured_image_alt_text?:string;thumbnail_url?:string;gallery_images?:GalleryImage[];show_on_public_site?:boolean;show_on_home_page?:boolean;show_in_community_highlights?:boolean;show_in_stories?:boolean;show_on_programme_page?:boolean;public_summary?:string;public_article?:string;public_category?:string};
 export const mediaFolders=['facebook','instagram','workvivo','stories','events','community-highlights','homepage','programmes','partners','general'] as const;
-export const contentFields=['media_type','media_url','featured_image_url','featured_image_alt_text','thumbnail_url','gallery_images','show_on_public_site','show_on_home_page','show_in_community_highlights','show_in_stories','show_on_programme_page','public_summary','public_article','public_category'] as const;
+export const contentFields=['is_workvivo_associated','workvivo_category','workvivo_url','workvivo_caption','original_post_url','media_type','media_url','featured_image_url','featured_image_alt_text','thumbnail_url','gallery_images','show_on_public_site','show_on_home_page','show_in_community_highlights','show_in_stories','show_on_programme_page','public_summary','public_article','public_category'] as const;
 export const visibilityFields=['show_on_public_site','show_on_home_page','show_in_community_highlights','show_in_stories','show_on_programme_page'] as const;
 export const maxImageBytes=10*1024*1024;
 export const maxGalleryImages=20;
@@ -9,6 +10,11 @@ export function assetKey(value:string){const match=/^\/api\/media\?key=([^&]+)$/
 export function safeContentImage(value:string){if(!value)return '';if(assetKey(value))return /\.(mp4|mov|webm)$/.test(assetKey(value))?'':value;try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:''}catch{return ''}}
 export function validateGallery(value:unknown):GalleryImage[]{if(value===undefined)return [];if(!Array.isArray(value)||value.length>maxGalleryImages)throw Error('Choose up to twenty gallery images.');return value.map(v=>{if(!v||typeof v.url!=='string'||v.url.length>2000||!safeContentImage(v.url)||typeof v.alt!=='string'||v.alt.length>500||v.thumbnail!==undefined&&(typeof v.thumbnail!=='string'||!safeContentImage(v.thumbnail)))throw Error('Check gallery image paths and descriptions.');return {url:v.url,alt:v.alt.trim(),...(v.thumbnail?{thumbnail:v.thumbnail}:{})}})}
 export function validateContent(value:PostContent,platform?:string,status?:string){
+ validateOriginalPostUrl(value.original_post_url);
+ if(value.is_workvivo_associated!==undefined&&typeof value.is_workvivo_associated!=='boolean')throw Error('Choose a valid Workvivo association.');
+ validateOriginalPostUrl(value.workvivo_url);
+ for(const key of ['workvivo_category','workvivo_caption'] as const)if(value[key]!==undefined&&(typeof value[key]!=='string'||value[key]!.length>(key==='workvivo_caption'?12000:100)))throw Error('Check the Workvivo fields.');
+ if(value.is_workvivo_associated&&(!['Facebook','Instagram'].includes(platform||'')||!['Partner Collaboration','Programme Update','Volunteer Recognition','Community Impact','Staff Engagement','General Update'].includes(value.workvivo_category||'')))throw Error('Choose a Workvivo category for this Facebook or Instagram post.');
  if(value.media_type!==undefined&&!['image','video'].includes(value.media_type))throw Error('Choose image or video media.');
  if(value.media_url!==undefined&&(typeof value.media_url!=='string'||value.media_url.length>2000||value.media_url&&!/\.(mp4|mov|webm)$/.test(assetKey(value.media_url))))throw Error('Choose an uploaded video.');
  if(platform!=='Workvivo'&&value.media_url&&assetKey(value.media_url).startsWith('workvivo/'))throw Error('Workvivo videos remain private.');

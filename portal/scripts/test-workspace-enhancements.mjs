@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import ts from 'typescript';
 import assert from 'node:assert/strict';
 const dir='.sites-runtime/enhancements';fs.mkdirSync(dir,{recursive:true});
-for(const file of ['app/import.ts','lib/data-service.ts','app/model.ts','app/account-structure.ts','app/follower-accounts.ts','app/follower-comparison.ts','app/follower-snapshots.ts','app/top-hits.ts','app/facebook-follower-analytics.ts','lib/intelligence/evidence.ts','lib/advisor-service.ts','lib/content-writing.ts','app/workvivo-smart-tags.tsx']){
+for(const file of ['lib/original-post-url.ts','lib/ui-text.ts','app/import.ts','lib/data-service.ts','app/model.ts','app/account-structure.ts','app/follower-accounts.ts','app/follower-comparison.ts','app/follower-snapshots.ts','app/top-hits.ts','app/facebook-follower-analytics.ts','lib/intelligence/evidence.ts','lib/advisor-service.ts','lib/content-writing.ts','app/workvivo-smart-tags.tsx']){
  const source=fs.readFileSync(file,'utf8').replace(/from ['"](?:\.\.\/|\.\/)+(?:lib\/|app\/|intelligence\/)?([\w-]+)['"]/g,"from './$1.mjs'");
  fs.writeFileSync(dir+'/'+file.split('/').at(-1).replace(/\.tsx?$/,'.mjs'),ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText);
 }
