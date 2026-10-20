@@ -61,7 +61,7 @@ export async function saveWorkspaceRecord(store:Storage,body:any){
   }else{
    const url=text(input.url??'',2000);if(url&&!safeImage(url))throw Error('Use an HTTPS website link.');
    if(kind==='public_partner'){
-    if(!imageUrl)throw Error('Add an approved partner logo URL.');record={...base,title:text(input.title,150,true),description:text(input.description??'',1800),url};
+    record={...base,title:text(input.title,150,true),description:text(input.description??'',1800),url};
    }else{
     const data=await loadData(store),brand=text(input.brand??'',100);if(brand&&!data.config.brands.includes(brand))throw Error('Choose a configured brand.');
     record={...base,title:text(input.title,300,true),date:date(input.date),location:text(input.location,300,true),summary:text(input.summary,1800,true),imageAlt:text(input.imageAlt??'',500),thumbnailUrl,gallery,brand,url};

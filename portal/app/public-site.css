@@ -30,3 +30,18 @@ html[data-theme=dark] .public-site{--ps-muted:#b3c3b8;--ps-soft:#243c30}
 .public-site .ps-social-account:hover{background:var(--ps-soft);border-color:var(--ps-green);transform:translateY(-2px);box-shadow:0 6px 18px rgb(0 0 0 / .05)}
 @media(max-width:700px){.public-site .ps-social-groups{grid-template-columns:minmax(0,1fr);gap:20px}.public-site .ps-social-group{padding:22px}.public-site .ps-social-account{padding:16px;font-size:14px;gap:12px}}
 @media(prefers-reduced-motion:reduce){.public-site .ps-social-account{transition:none}.public-site .ps-social-account:hover{transform:none}}
+
+/* Public partner showcase: scoped to the Partners section only. */
+.ps-partners-section .ps-partners-grid{grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:1fr;gap:18px;align-items:stretch}
+.ps-partners-section .ps-partner-card{min-width:0;min-height:0;height:100%;justify-content:flex-start;padding:20px 18px;gap:12px;text-align:center;border-radius:16px;box-shadow:0 3px 14px #1f382b06;transition:transform .2s,box-shadow .2s}
+.ps-partners-section .ps-partner-logo-slot{height:56px;width:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ps-partners-section .ps-partner-logo-slot img{width:100%;max-width:160px;height:56px;object-fit:contain;background:white;border-radius:6px;padding:4px}
+.ps-partners-section .ps-partner-symbol{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:var(--ps-soft);color:var(--green);font-size:16px;font-weight:700;letter-spacing:.02em;flex-shrink:0}
+.ps-partners-section .ps-partner-name{margin:0;width:100%;font-size:15px;line-height:1.4;font-weight:650;color:var(--ps-ink,var(--dark));word-break:normal;overflow-wrap:break-word;text-wrap:balance}
+.ps-partners-section .ps-partner-card p{margin:0;font-size:13px;line-height:1.6;color:var(--ps-muted);word-break:normal;overflow-wrap:break-word}
+.ps-partners-section .ps-partner-visit{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:auto;padding:7px 12px;border:1px solid var(--line);border-radius:8px;color:var(--green);font-size:12px;font-weight:600}
+.ps-partners-section .ps-partner-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px #1f382b10}
+.ps-partners-section .ps-partner-card:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+@media(max-width:1100px){.ps-partners-section .ps-partners-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.ps-partners-section .ps-partners-grid{grid-template-columns:1fr;gap:14px}}
+@media(prefers-reduced-motion:reduce){.ps-partners-section .ps-partner-card{transition:none}.ps-partners-section .ps-partner-card:hover{transform:none}}

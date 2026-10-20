@@ -1,0 +1,107 @@
+[
+  {
+    "id": "partner-quantum-tx",
+    "title": "Quantum TX",
+    "description": "Developing health and wellness technology focused on muscle health, mobility and active ageing.",
+    "url": "https://www.quantumtx.com/",
+    "imageUrl": "https://static.wixstatic.com/media/1b2606_d7bf6ece4fa54f3aae965e66aeef03ce~mv2.png",
+    "aliases": [
+      "QuantumTX"
+    ]
+  },
+  {
+    "id": "partner-suss",
+    "title": "Singapore University of Social Sciences (SUSS)",
+    "description": "Supporting lifelong learning, applied social sciences and education that contributes to communities and society.",
+    "url": "https://www.suss.edu.sg/",
+    "imageUrl": "",
+    "aliases": [
+      "SUSS",
+      "Singapore University of Social Sciences"
+    ]
+  },
+  {
+    "id": "partner-sg-cares",
+    "title": "SG Cares",
+    "description": "Connecting volunteers, organisations and community resources to support people in need and build a caring Singapore.",
+    "url": "https://www.mccy.gov.sg/sectors/resilience-and-engagement/sg-cares-movement/",
+    "imageUrl": "",
+    "aliases": []
+  },
+  {
+    "id": "partner-food-from-the-heart",
+    "title": "Food from the Heart",
+    "description": "Supporting families and individuals in need through dependable food distribution and community volunteerism.",
+    "url": "https://www.foodfromtheheart.sg/",
+    "imageUrl": "https://cdn.prod.website-files.com/6989ab63a3d4788d75b7d129/6989ab63a3d4788d75b7d242_image%203.png",
+    "aliases": []
+  },
+  {
+    "id": "partner-drone-soccer-singapore",
+    "title": "Association of Drone Soccer Singapore",
+    "description": "Promoting drone soccer through participation, skills development and opportunities to connect through sport and technology.",
+    "url": "https://dronesoccersg.org/",
+    "imageUrl": "https://dronesoccersg.org/wp-content/uploads/2022/10/smallsizelogoADSS-1024x768.png",
+    "aliases": [
+      "ADSS",
+      "Association of Drone Soccer (Singapore)"
+    ]
+  },
+  {
+    "id": "partner-imda",
+    "title": "Infocomm Media Development Authority (IMDA)",
+    "description": "Supporting Singapore's digital development and helping people and organisations participate in a digital society.",
+    "url": "https://www.imda.gov.sg/",
+    "imageUrl": "https://www.imda.gov.sg/assets/45d45448-2de8-424a-ae25-cf45b181e3d9",
+    "aliases": [
+      "IMDA",
+      "Infocomm Media Development Authority"
+    ]
+  },
+  {
+    "id": "partner-hdb",
+    "title": "Housing & Development Board (HDB)",
+    "description": "Providing homes and supporting liveable towns where neighbours can connect and build strong communities.",
+    "url": "https://www.hdb.gov.sg/",
+    "imageUrl": "",
+    "aliases": [
+      "HDB",
+      "Housing and Development Board",
+      "Housing & Development Board"
+    ]
+  },
+  {
+    "id": "partner-nac",
+    "title": "National Arts Council Singapore (NAC)",
+    "description": "Supporting Singapore's arts and artists, widening participation and bringing creative experiences into community life.",
+    "url": "https://www.nac.gov.sg/",
+    "imageUrl": "https://isomer-user-content.by.gov.sg/407/bc0bca08-a45f-4902-b9f0-740de3dd73f0/NAC_logo_highres.png",
+    "aliases": [
+      "NAC",
+      "National Arts Council",
+      "National Arts Council Singapore"
+    ]
+  },
+  {
+    "id": "partner-nuhs",
+    "title": "National University Health System (NUHS)",
+    "description": "Advancing community health through integrated healthcare, education, research and partnerships with the community.",
+    "url": "https://www.nuhs.edu.sg/",
+    "imageUrl": "https://www.nuhs.edu.sg/images/nuhslibraries/default-album/footer-logo/nuhs.png?sfvrsn=7838e2df_17",
+    "aliases": [
+      "NUHS",
+      "National University Health System"
+    ]
+  },
+  {
+    "id": "partner-republic-polytechnic",
+    "title": "Republic Polytechnic (RP)",
+    "description": "Supporting applied education, lifelong learning and student involvement in projects that contribute to the community.",
+    "url": "https://www.rp.edu.sg/",
+    "imageUrl": "https://isomer-user-content.by.gov.sg/397/debea305-557f-462b-8c58-d21400ce1ec3/rp-logo.png",
+    "aliases": [
+      "RP",
+      "Republic Polytechnic"
+    ]
+  }
+]
