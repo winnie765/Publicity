@@ -3,6 +3,7 @@ import {workspaceGuard} from '../../../lib/workspace-security';
 import {getStorage} from '../../../lib/storage';
 import {loadData,applyDataAction} from '@/lib/data-service';
 export const runtime='nodejs';
+export const maxDuration=300;
 export const dynamic='force-dynamic';
 const json=(value:any,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(request:Request){const denied=await workspaceGuard(request);if(denied)return denied;try{const store=getStorage();const [data,audit]=await Promise.all([loadData(store),store.readAudit()]);return json({...data,audit:audit.map(a=>({...a,actor:a.action.toLowerCase().includes('import')?'Workbook upload':'Data update'}))});}catch(e:any){return json({error:e.message},503);}}
