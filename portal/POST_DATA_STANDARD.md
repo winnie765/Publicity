@@ -3,19 +3,19 @@ Post data standard
 
 The Social Media Report V1 workbook is the source structure. Facebook, Instagram and Workvivo records use the same post model. Excel `Content_Type`, `Share` and `Collaboration` are separate concepts.
 
-Required post fields: platform, account, brand, location, date, title, description/caption and content format. The original post URL is optional; supplied links are validated. Content categories remain optional.
+Required manually entered post fields: platform, account, brand, location, date, title and content format. Captions are optional stored metadata and are not shown in post record forms. The original post URL is optional; supplied links are validated. Content categories remain optional.
 
-Formats are restricted to Reel, Video, Picture, Photo Album, Poster and Story. Legacy Image maps to Picture, Carousel to Photo Album and Reels to Reel. The original format label is retained. Mixed formats, Event and Shared Link require review rather than an invented media format.
+Formats are restricted to Reel, Video, Picture, Photo Album, Poster and Story. Legacy Image maps to Picture, Carousel to Photo Album and Reels to Reel. The original format label is retained. Mixed formats, Event and Shared Link retain their original labels and use Unclassified for analytics until optionally enriched; they never block Excel import.
 
-Sharing uses `is_shared_content` and `shared_from`. Collaboration uses `is_collaboration_post` and `collaborating_with`. Selecting either option requires its corresponding source or partner name.
+Sharing uses `is_shared_content` and `shared_from`. Collaboration uses `is_collaboration_post` and `collaborating_with`. All four fields are optional. Source and partner names may stay blank even when their corresponding checkbox is selected. Missing or blank workbook columns never block import.
 
 Workbook import
 ---------------
 
 1. Upload the workbook through Data Management.
-2. Review the staged records. The supplied workbook has 355 posts and lacks captions for most posts.
-3. Complete required captions, missing dimensions, partner/source names and ambiguous formats in the paginated import review.
-4. Confirm Import becomes available when every staged post meets the standard. Server validation independently enforces it.
+2. Review the staged records. The supplied workbook has 355 posts. Missing captions do not block imports.
+3. Confirm Import. Missing website-only fields do not require completion first.
+4. Review saved records and optionally enrich their metadata later. Imported records keep absent dimensions as Unclassified rather than inventing data. Valid source dates, titles, numeric metrics and account consistency are still checked.
 
 Metrics and original workbook labels remain intact. Uploading a workbook for development verification does not import its records into production.
 
