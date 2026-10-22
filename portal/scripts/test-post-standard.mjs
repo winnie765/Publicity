@@ -9,7 +9,7 @@ const {blankPost,defaultConfig}=await load('app/model.ts');
 const {workvivoPosts}=await load('lib/workvivo-posts.ts');
 const source=normalizePostStandard({...blankPost(),id:'standard-test',platform:'Facebook',account:'Facebook SEEN',brand:'SEEN',location:'Bukit Batok',title:'Community programme',date:'2026-10-20',description:'Verified programme description',type:'Reels',likes:75});
 assert.equal(source.type,'Reel');assert.equal(source.originalContentType,'Reels');assert.equal(source.likes,75);validatePostStandard(source);
-for(const key of ['platform','account','brand','location','date','title'])assert.throws(()=>validatePostStandard({...source,[key]:''}));
+for(const key of ['platform','account','brand','date','title'])assert.throws(()=>validatePostStandard({...source,[key]:''}));
 assert.throws(()=>validatePostStandard({...source,type:'Collaboration'}));validatePostStandard({...source,is_shared_content:true});validatePostStandard({...source,is_collaboration_post:true});
 validatePostStandard({...source,is_shared_content:true,shared_from:'Tzu Chi Singapore',is_collaboration_post:true,collaborating_with:'AIC'});
 const linked=prepareWorkvivoLink({...source,is_workvivo_associated:true});const separate=prepareWorkvivoLink({...linked,title:'Updated title',workvivo_sync_mode:'separate'},linked);assert.equal(workvivoPosts([separate])[0].title,source.title);assert.equal(workvivoPosts([separate])[0].description,source.description);assert.equal(workvivoPosts([separate])[0].likes,0);assert.equal(workvivoPosts([prepareWorkvivoLink({...separate,workvivo_sync_mode:'linked'},separate)])[0].title,'Updated title');assert.equal(workvivoPosts([source]).length,0);

@@ -3,7 +3,7 @@ Post data standard
 
 The Social Media Report V1 workbook is the source structure. Facebook, Instagram and Workvivo records use the same post model. Excel `Content_Type`, `Share` and `Collaboration` are separate concepts.
 
-Required manually entered post fields: platform, account, brand, location, date, title and content format. Captions are optional stored metadata and are not shown in post record forms. The original post URL is optional; supplied links are validated. Content categories remain optional.
+Required manually entered post fields: platform, account, brand, date, title and content format. Captions are optional stored metadata and are not shown in post record forms. The original post URL is optional; supplied links are validated. Content categories and Location remain optional. Locations can be blank, Bukit Batok, Nanyang or Bukit Batok + Nanyang. Blank locations are included in All locations and can be filtered as No Location.
 
 Formats are restricted to Reel, Video, Picture, Photo Album, Poster and Story. Legacy Image maps to Picture, Carousel to Photo Album and Reels to Reel. The original format label is retained. Mixed formats, Event and Shared Link retain their original labels and use Unclassified for analytics until optionally enriched; they never block Excel import.
 

@@ -1,3 +1,5 @@
+import type {BrandPageFields} from './brand-pages';
+import {brandPagesMarker} from './brand-pages';
 import {postContentTypes,validatePostStandard,prepareWorkvivoLink} from './post-standard';
 import type {PostContent} from './content-media';
 import {originalPostUrl} from './original-post-url';
@@ -15,7 +17,7 @@ export type Publication=PublishingFields&{media_type?:'image'|'video';media_url?
 export type Impact={partnershipActivities?:number|null;id:string;date:string;period:string;programmes:number|null;activities:number|null;participants?:number|null;events?:number|null;volunteers:number|null;communityReach:number|null;source:string;published:boolean};
 export type PublicEvent=PublishingFields&{id:string;title:string;date:string;location:string;summary:string;imageUrl:string;imageAlt?:string;thumbnailUrl?:string;gallery?:GalleryImage[];brand:string;url:string;published:boolean};
 export type PublicPartner=PublishingFields&{description?:string;id:string;title:string;imageUrl:string;url:string;published:boolean};
-export type ProgrammeProfile=PublishingFields&{title?:string;imageAlt?:string;thumbnailUrl?:string;gallery?:GalleryImage[];highlightIds?:string[];id:string;brand:string;overview:string;imageUrl:string;published:boolean};
+export type ProgrammeProfile=PublishingFields&BrandPageFields&{title?:string;imageAlt?:string;thumbnailUrl?:string;gallery?:GalleryImage[];highlightIds?:string[];id:string;brand:string;overview:string;imageUrl:string;published:boolean};
 export const storySections=['Community','Senior','Volunteer','Health Promotion','HHP','AAC','Success Story','Caregiver','Event','Programme'];
 const text=(value:unknown,max:number,required=false)=>{if(typeof value!=='string'||value.length>max||(required&&!value.trim()))throw Error('Check the required text fields and their length.');return value.trim();};
 const date=(value:string)=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value))||new Date(value).toISOString().slice(0,10)!==value)throw Error('Choose a valid calendar date.');return value;};
@@ -76,7 +78,9 @@ export async function saveWorkspaceRecord(store:Storage,body:any){
  await store.apply([{type:'upsert',record:{id:record.id,kind,payload:record,updatedAt:now}},audit]);return {ok:true};
 }
 export async function publicPortalData(store:Storage,today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'}),includeScheduled=false){
- const data=await loadData(store),{publications,impacts,events,partners,programmes,home}=await workspaceRecords(store);
+ const brandRows=await store.readRecords(),snapshot={...store,readRecords:async()=>brandRows};
+ const data=await loadData(snapshot),{publications,impacts,events,partners,programmes,home}=await workspaceRecords(snapshot);
+ const initialized=brandRows.find(r=>r.id===brandPagesMarker)?.payload.brands||[];
  const eligible=data.posts.filter(p=>p.status!=='draft'&&['Facebook','Instagram','Workvivo'].includes(p.platform));
  const legacy=publications.filter(p=>p.published&&(includeScheduled||(p.publishDate||eligible.find(post=>post.id===p.postId)?.date||today)<=today)).flatMap(p=>{
   const post=p.standalone?undefined:eligible.find(post=>post.id===p.postId&&(post.platform!=='Workvivo'||p.publicSource===true)&&(post.show_on_public_site===undefined||p.publicSource===true));
@@ -89,5 +93,5 @@ export async function publicPortalData(store:Storage,today=new Date().toLocaleDa
  const stories=[...legacy,...direct,...eventStories].sort((a,b)=>Number(b.pinned)-Number(a.pinned)||Number(b.featuredContent)-Number(a.featuredContent)||a.sortOrder-b.sortOrder||b.date.localeCompare(a.date));
  const latest=impacts.filter(i=>i.published&&i.date<=today).sort((a,b)=>b.date.localeCompare(a.date))[0];
  const publicHome={...defaultPublicHome,...Object.fromEntries(publicHomeFields.map(key=>[key,typeof home?.[key]==='string'?home[key]:defaultPublicHome[key]])),pageCopy:validatePageCopy(home?.pageCopy),heroImageUrl:safeImage(home?.heroImageUrl||'')};
- return {home:publicHome,stories,brands:data.config.brands.filter(b=>b!=='Unclassified'&&!programmes.some(p=>p.brand===b&&!p.published)),events:publicEvents,partners:partners.filter(p=>p.published).sort((a,b)=>(a.sortOrder??0)-(b.sortOrder??0)).map(p=>({id:p.id,title:p.title,description:p.description||'',imageUrl:safeImage(p.imageUrl),url:safeImage(p.url)})),programmes:programmes.filter(p=>p.published).map(p=>({brand:p.brand,title:p.title||'',overview:p.overview,imageUrl:safeImage(p.imageUrl),imageAlt:p.imageAlt||p.brand,thumbnailUrl:safeImage(p.thumbnailUrl||p.imageUrl),gallery:validateGallery(p.gallery),highlightIds:p.highlightIds||[]})),impact:latest?{period:latest.period,date:latest.date,programmes:latest.programmes,activities:latest.activities,participants:latest.participants??null,events:latest.events??null,volunteers:latest.volunteers,communityReach:latest.communityReach,partnershipActivities:latest.partnershipActivities??null}:null};
+ return {home:publicHome,stories,brands:[...new Set([...data.config.brands,...programmes.map(p=>p.brand)])].filter(b=>b!=='Unclassified'&&!programmes.some(p=>p.brand===b&&!p.published)&&(!initialized.includes(b)||programmes.some(p=>p.brand===b))),events:publicEvents,partners:partners.filter(p=>p.published).sort((a,b)=>(a.sortOrder??0)-(b.sortOrder??0)).map(p=>({id:p.id,title:p.title,description:p.description||'',imageUrl:safeImage(p.imageUrl),url:safeImage(p.url)})),programmes:programmes.filter(p=>p.published).map(p=>({brand:p.brand,displayName:p.displayName,subtitle:p.subtitle,focusAreas:p.focusAreas,buttonText:p.buttonText,buttonLink:p.buttonLink,showActivities:p.showActivities,showStories:p.showStories,title:p.title||'',overview:p.overview,imageUrl:safeImage(p.imageUrl),imageAlt:p.imageAlt||p.brand,thumbnailUrl:safeImage(p.thumbnailUrl||p.imageUrl),gallery:validateGallery(p.gallery),highlightIds:p.highlightIds||[]})),impact:latest?{period:latest.period,date:latest.date,programmes:latest.programmes,activities:latest.activities,participants:latest.participants??null,events:latest.events??null,volunteers:latest.volunteers,communityReach:latest.communityReach,partnershipActivities:latest.partnershipActivities??null}:null};
 }

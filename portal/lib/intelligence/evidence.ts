@@ -1,3 +1,4 @@
+import {locationMatches} from '../post-locations';
 import {workvivoPosts} from '../workvivo-posts';
 import {followerComparison} from '../../app/follower-comparison';
 import {average,engagement,groups,insights,features,sum,type Dataset,type Post} from '../../app/model';
@@ -29,7 +30,7 @@ export function calculateEvidence(data:Dataset,scope:Scope,filters:Filters):Evid
  }
 
  const followerFocus=scope==='followers'&&filters.followerView==='account'?followerAccounts(data).find(a=>a.name===filters.followerSelection):null;
- const matches=(p:Post,dates=true)=>p.status!=='draft'&&(!followerFocus||(p.account===followerFocus.name&&p.platform===followerFocus.platform))&&(!(scope==='followers'&&filters.followerView==='brand'&&filters.followerSelection)||p.brand===filters.followerSelection)&&(internal?p.platform==='Workvivo':['Facebook','Instagram'].includes(p.platform))&&(!filters.platform||p.platform===filters.platform)&&(!filters.brand||p.brand===filters.brand)&&(!filters.account||p.account===filters.account)&&(!filters.location||p.location===filters.location)&&(!dates||(!filters.start||p.date>=filters.start)&&(!filters.end||p.date<=filters.end));
+ const matches=(p:Post,dates=true)=>p.status!=='draft'&&(!followerFocus||(p.account===followerFocus.name&&p.platform===followerFocus.platform))&&(!(scope==='followers'&&filters.followerView==='brand'&&filters.followerSelection)||p.brand===filters.followerSelection)&&(internal?p.platform==='Workvivo':['Facebook','Instagram'].includes(p.platform))&&(!filters.platform||p.platform===filters.platform)&&(!filters.brand||p.brand===filters.brand)&&(!filters.account||p.account===filters.account)&&locationMatches(p.location,filters.location)&&(!dates||(!filters.start||p.date>=filters.start)&&(!filters.end||p.date<=filters.end));
  const full=sourcePosts.filter(p=>matches(p)),ranked=internal?null:topHits(full),posts=scope==='top-hits'?ranked!.hits:full,measured=posts.filter(observed),cutoff=filters.end||[...data.posts,...data.followers,...data.interactions].map(v=>v.date).sort().at(-1)||new Date().toISOString().slice(0,10);
  add(internal?'Internal ecosystem scope':'External outreach scope',(internal?'Workvivo only; never compare these engagement values directly against Facebook or Instagram.':filters.platform?filters.platform+' only; all other platforms are excluded.':'Facebook and Instagram only; Workvivo is excluded.')+' Date filter: '+(filters.start||'all recorded dates')+' through '+(filters.end||'latest recorded date')+'.');
  add('Recorded performance',posts.length+' published posts; '+measured.length+' with reported engagement; '+fmt(sum(measured,engagement))+' reported engagements; average '+(measured.length?fmt(average(measured)):'unavailable')+' engagements per measured post.');
