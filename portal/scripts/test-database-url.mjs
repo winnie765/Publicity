@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import ts from 'typescript';
+import assert from 'node:assert/strict';
+const source=ts.transpileModule(fs.readFileSync('lib/database-url.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+const {runtimeDatabaseUrl}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const original='postgresql://postgres.project:encoded%40password@aws-0-example.pooler.supabase.com:5432/postgres?schema=public';
+const runtime=new URL(runtimeDatabaseUrl(original));
+assert.equal(runtime.port,'6543');assert.equal(runtime.searchParams.get('pgbouncer'),'true');assert.equal(runtime.searchParams.get('connection_limit'),'1');assert.equal(runtime.searchParams.get('sslmode'),'require');assert.equal(runtime.searchParams.get('schema'),'public');assert.equal(runtime.password,'encoded%40password');
+assert.equal(new URL(original).port,'5432');
+assert.equal(new URL(runtimeDatabaseUrl('postgresql://user:password@localhost:5432/test')).port,'5432');
+assert.equal(new URL(runtimeDatabaseUrl('postgresql://user:password@aws-0-example.pooler.supabase.com:6543/postgres?connection_limit=15')).searchParams.get('connection_limit'),'1');
+assert.equal(runtimeDatabaseUrl(runtime.toString()),runtime.toString());
+assert.equal(runtimeDatabaseUrl('prisma://example/?api_key=test'),'prisma://example/?api_key=test');
+console.log('PASS: Supabase transaction pooling, one runtime connection, preserved credentials/query options, unchanged migration URL, non-Supabase ports and idempotence.');

@@ -1,11 +1,11 @@
+import {getPrismaClient} from './prisma-client';
 import {bulkRecordChanges,bulkRecordsSql} from './bulk-records';
 import {getSupabaseStorage} from './storage-supabase';
 import {useSupabase} from './supabase-client';
 import {recycleStorage} from './recycle-bin';
-import {Prisma,PrismaClient} from '@prisma/client';
+import {Prisma} from '@prisma/client';
 import type {Storage,Change} from './storage-contract';
-const globalPrisma=globalThis as unknown as {portalPrisma?:PrismaClient};
-function client(){if(!process.env.DATABASE_URL)throw Error('The database connection is not configured. Add DATABASE_URL and DIRECT_URL in the hosting settings.');return globalPrisma.portalPrisma??(globalPrisma.portalPrisma=new PrismaClient());}
+const client=getPrismaClient;
 export function getStorage():Storage{if(useSupabase(process.env))return getSupabaseStorage(process.env);return recycleStorage({
  async readRecords(){const rows=await client().record.findMany();return rows.map(r=>({id:r.id,kind:r.kind,payload:{...(r.payload as any),...(r.recordDate?{date:r.recordDate.toISOString().slice(0,10)}:{})},updatedAt:r.updatedAt.toISOString()}));},
  async readAudit(){const rows=await client().audit.findMany({orderBy:{date:'desc'},take:100});return rows.map(r=>({id:r.id,actor:r.actor,action:r.action,record_id:r.recordId,date:r.date.toISOString()}));},
