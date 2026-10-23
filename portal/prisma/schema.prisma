@@ -10,6 +10,7 @@ datasource db {
 }
 
 model Record {
+  masterLinks RecordMasterLink[]
   id        String   @id
   kind      String
   payload   Json
@@ -51,4 +52,25 @@ model AICache {
  leaseToken String @map("lease_token")
  requests Int
  @@map("ai_cache")
+}
+
+model MasterData {
+ id String @id
+ module String
+ name String
+ aliases Json @default("[]")
+ references RecordMasterLink[]
+ @@unique([module,name])
+ @@map("portal_master_data")
+}
+
+model RecordMasterLink {
+ recordId String @map("record_id")
+ field String
+ masterId String @map("master_id")
+ record Record @relation(fields:[recordId], references:[id], onDelete:Cascade, onUpdate:NoAction)
+ master MasterData @relation(fields:[masterId], references:[id], onDelete:NoAction, onUpdate:NoAction)
+ @@id([recordId,field])
+ @@index([masterId], map:"portal_record_master_links_master_idx")
+ @@map("portal_record_master_links")
 }
