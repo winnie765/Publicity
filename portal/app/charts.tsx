@@ -12,11 +12,11 @@ export function Bars({data,metric='average',unit}:{data:any[];metric?:string;uni
  return <div className="labelled-bars"><p className="chart-measure">{description}</p>{data.map((d,i)=>{const known=available(d),value=known?number(d[metric],metric==='average'?1:0):'Not recorded';return <div className="labelled-bar-row" key={d.name}><div className="bar-category"><span>{d.name}</span>{typeof d.posts==='number'&&<small>{number(d.posts)} {d.posts===1?'post':'posts'}</small>}</div><div className="labelled-bar-track" role="img" aria-label={`${d.name}: ${value} ${description}`}><div style={{width:known?`${Math.max(0,d[metric])/maximum*100}%`:'0%',background:tones[i%tones.length]}}/></div><strong className={known?'bar-value':'bar-value unavailable'}>{value}</strong></div>})}{!data.length&&<p className="empty">No records in this selection.</p>}</div>;
 }
 
-export function Trend({data,lines=['engagement'],labels=['Engagement'],unit,colorKeys,labelsAbove=false}:{data:any[];lines?:string[];labels?:string[];unit?:string;colorKeys?:string[];labelsAbove?:boolean}){
+export function Trend({data,lines=['engagement'],labels=['Engagement'],unit,colorKeys,labelsAbove=false,emptyState}:{emptyState?:React.ReactNode;data:any[];lines?:string[];labels?:string[];unit?:string;colorKeys?:string[];labelsAbove?:boolean}){
  const palette=lines.map(line=>tones[Math.max(0,(colorKeys||lines).indexOf(line))%tones.length]);
  const decimals=labels.some(l=>l.includes('%'))?1:0,showValue=(v:number)=>number(v,decimals);
  const id=useId().replaceAll(':',''),axisLabel=unit||(labels.length===1?labels[0]:'Reported engagements');
- if(!data.length||!lines.length)return <p className="empty">No monthly data in this selection.</p>;
+ if(!data.length||!lines.length)return emptyState??<p className="empty">No monthly data in this selection.</p>;
  const valid=(d:any,k:string)=>typeof d[k]==='number'&&Number.isFinite(d[k]);
  const values=data.flatMap(d=>lines.filter(k=>valid(d,k)).map(k=>d[k]));
  const highest=Math.max(...values,0),rawStep=(highest||1)/4,power=10**Math.floor(Math.log10(rawStep)),fraction=rawStep/power,step=Math.max(1,(fraction<=1?1:fraction<=2?2:fraction<=5?5:10)*power),top=Math.max(step,Math.ceil(highest/step)*step),lower=Math.min(0,Math.floor(Math.min(...values,0)/step)*step);
