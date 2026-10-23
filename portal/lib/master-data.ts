@@ -39,7 +39,7 @@ export function resolveMasterReferences(record:Record<string,any>,kind:string,co
     record.account=matchMasterName(accounts.map(a=>a.name),record.account)||cleanMasterName(record.account);
   }
   if(kind==='posts'&&typeof record.type==='string'){
-    record.type=matchMasterName(config.types,record.type)||cleanMasterName(record.type);
+    record.type=matchMasterName(config.types,record.type==='Unclassified'&&record.originalContentType?record.originalContentType:record.type)||cleanMasterName(record.type);
     if(record.content_type)record.content_type=record.type;
   }
   if(kind==='interactions'&&typeof record.stakeholder==='string'){
