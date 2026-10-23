@@ -2,7 +2,7 @@ import type {Storage,Change} from './storage-contract';
 import {brandPagesMarker,defaultBrandCopy,defaultBrandPage} from './brand-pages';
 /** Register the already-public built-in brands once; never reseed a deleted page. */
 export async function ensureBrandPages(store:Storage){
- const rows=await store.readRecords();if(rows.some(r=>r.id===brandPagesMarker))return;
+ let rows=await store.readRecords(['config','cms_initialization','programme_profile']);if(rows.some(r=>r.id===brandPagesMarker))return;rows=[...rows,...await store.readRecords(['trash','archive'])];
  const now=new Date().toISOString(),changes:Change[]=[];
  for(const brand of Object.keys(defaultBrandCopy)){
   const removed=rows.some(r=>['trash','archive'].includes(r.kind)&&r.payload.original?.kind==='programme_profile'&&r.payload.original.payload.brand===brand);

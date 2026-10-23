@@ -7,9 +7,10 @@ import {DatabaseSync} from 'node:sqlite';
 const sql=new DatabaseSync(':memory:');for(const m of JSON.parse(fs.readFileSync('drizzle/meta/_journal.json')).entries)sql.exec(fs.readFileSync('drizzle/'+m.tag+'.sql','utf8'));
 const query=(text,bindings=[])=>({bind:(...values)=>query(text,values),first:async()=>sql.prepare(text).get(...bindings),all:async()=>({results:sql.prepare(text).all(...bindings)}),run:async()=>sql.prepare(text).run(...bindings),execute:()=>/^\s*SELECT/i.test(text)?{results:sql.prepare(text).all(...bindings)}:{results:[],meta:sql.prepare(text).run(...bindings)}});
 globalThis.reportTestEnv={DB:{prepare:text=>query(text),batch:async statements=>{sql.exec('BEGIN');try{const values=statements.map(s=>s.execute());sql.exec('COMMIT');return values}catch(e){sql.exec('ROLLBACK');throw e}}}};
-for(const file of ['lib/storage-d1.ts','lib/recycle-bin.ts','lib/ai-runtime-d1.ts','app/api/reports/route.ts','app/api/report-automation/route.ts']){
+fs.writeFileSync('.sites-runtime/next-server.mjs','export const after=task=>{globalThis.pendingReportTasks??=[];globalThis.pendingReportTasks.push(task)}');
+for(const file of ['lib/ai-runtime-supabase.ts','lib/storage-supabase.ts','lib/supabase-client.ts','lib/storage-d1.ts','lib/recycle-bin.ts','lib/ai-runtime-d1.ts','app/api/reports/route.ts','app/api/report-automation/route.ts']){
  const name=file.includes('report-automation')?'report-automation-route':file.includes('/reports/')?'report-route':file.split('/').at(-1).replace('.ts','');
- const code=fs.readFileSync(file,'utf8').replace("import {env} from 'cloudflare:workers';",'const env=globalThis.reportTestEnv;').replace("from '../../../lib/storage'","from './storage-d1.mjs'").replace("from '../../../lib/ai-runtime'","from './ai-runtime-d1.mjs'").replace(/from ['"](?:\.\.\/|\.\/)+(?:lib\/)?([\w-]+)['"]/g,"from './$1.mjs'");
+ const code=fs.readFileSync(file,'utf8').replace("from 'next/server'","from './next-server.mjs'").replace("import {env} from 'cloudflare:workers';",'const env=globalThis.reportTestEnv;').replace("from '../../../lib/storage'","from './storage-d1.mjs'").replace("from '../../../lib/ai-runtime'","from './ai-runtime-d1.mjs'").replace(/from ['"](?:\.\.\/|\.\/)+(?:lib\/)?([\w-]+)['"]/g,"from './$1.mjs'");
  fs.writeFileSync('.sites-runtime/'+name+'.mjs',ts.transpileModule(code,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);
 }
 const {GET,POST}=await import('../.sites-runtime/report-route.mjs'),{POST:run}=await import('../.sites-runtime/report-automation-route.mjs');

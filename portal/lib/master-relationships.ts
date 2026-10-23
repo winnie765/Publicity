@@ -75,10 +75,12 @@ export function masterRows(rows:StoredRecord[]){
 
 /** All readers (CMS, reports, analytics, recovery) resolve through the same registry. */
 export function masterStorage(base:Storage):Storage{return {...base,
-  readRecords:async()=>masterRows(await base.readRecords()),
+  ...(base.readRecordsByIds?{readRecordsByIds:async(ids:readonly string[])=>{const [rows,config]=await Promise.all([base.readRecordsByIds!(ids),base.readRecords(['config'])]);return masterRows([...config,...rows]).filter(row=>ids.includes(row.id));}}:{}),
+  ...(base.readRecord?{readRecord:async(id:string)=>{const [row,config]=await Promise.all([base.readRecord!(id),base.readRecords(['config'])]);return row?masterRows([...config,row]).find(value=>value.id===id)||null:null;}}:{}),
+  readRecords:async kinds=>masterRows(await base.readRecords(kinds?[...new Set(['config',...kinds])]:undefined)),
   async apply(changes){
     if(!changes.some(change=>change.type==='upsert'||change.type==='insert'))return base.apply(changes);
-    const rows=await base.readRecords(),saved=rows.find(row=>row.id==='configuration'&&row.kind==='config');
+    const rows=await base.readRecords(['config']),saved=rows.find(row=>row.id==='configuration'&&row.kind==='config');
     const update=changes.find(change=>change.type==='upsert'&&change.record.id==='configuration');
     const config=update?.type==='upsert'?withMasterRegistry(update.record.payload):saved?withMasterRegistry(saved.payload):undefined;
     if(!config)return base.apply(changes);

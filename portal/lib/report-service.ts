@@ -1,3 +1,4 @@
+import type {ReportIndexRow} from './report-index';
 import type {Storage} from './storage-contract';
 import {loadData} from './data-service';
 import {calculateMonthlyReport,monthlyEvidence,type MonthlyReport} from './monthly-report';
@@ -7,18 +8,20 @@ import type {AICache,IntelligenceReport,EvidencePack} from './intelligence/types
 export type ReportRuntime={config:ProviderConfig;cache:AICache;dailyLimit:number};
 export type ReportAutomation={enabled:boolean;frequency:'monthly'|'quarterly';updatedAt:string};
 export const automationDefault:ReportAutomation={enabled:false,frequency:'monthly',updatedAt:''};
-export async function archivedReports(store:Storage){return (await store.readRecords()).filter(r=>r.kind==='generated_report').map(r=>r.payload as MonthlyReport).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt));}
-export async function reportAutomation(store:Storage):Promise<ReportAutomation>{return (await store.readRecords()).find(r=>r.id==='monthly-report-automation'&&r.kind==='report_settings')?.payload||automationDefault;}
+export async function reportIndex(store:Storage):Promise<ReportIndexRow[]>{if(store.readReportIndex)return store.readReportIndex();return (await archivedReports(store)).map(report=>({id:report.id,label:report.period.label,frequency:report.period.frequency,generatedAt:report.generatedAt,mode:report.ai?.mode||'calculated',posts:report.current.posts}));}
+export async function archivedReport(store:Storage,id:string):Promise<MonthlyReport|undefined>{if(store.readRecord){const row=await store.readRecord(id);return row?.kind==='generated_report'?row.payload:undefined;}return (await archivedReports(store)).find(report=>report.id===id);}
+export async function archivedReports(store:Storage){return (await store.readRecords(['config','generated_report'])).filter(r=>r.kind==='generated_report').map(r=>r.payload as MonthlyReport).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt));}
+export async function reportAutomation(store:Storage):Promise<ReportAutomation>{return (await store.readRecords(['config','report_settings'])).find(r=>r.id==='monthly-report-automation'&&r.kind==='report_settings')?.payload||automationDefault;}
 export function monthlyFallback(pack:EvidencePack):IntelligenceReport{
  return calculatedReport(pack);
 }
-export async function generateMonthlyReport(store:Storage,runtime:ReportRuntime,year:number,month:number,frequency:'monthly'|'quarterly'='monthly',automaticId?:string){
- const archive=await archivedReports(store);if(automaticId){const existing=archive.find(r=>r.id===automaticId);if(existing)return existing;}
+export async function generateMonthlyReport(store:Storage,runtime:ReportRuntime,year:number,month:number,frequency:'monthly'|'quarterly'='monthly',automaticId?:string,deferAI?:(task:()=>Promise<void>)=>void){
+ const archive=await reportIndex(store);if(automaticId){const existing=archive.find(r=>r.id===automaticId);if(existing)return (await archivedReport(store,automaticId))!;}
  if(archive.filter(r=>r.generatedAt.slice(0,10)===new Date().toISOString().slice(0,10)).length>=30)throw Error('The daily report limit has been reached. Please use an archived report or try tomorrow.');
  const report=calculateMonthlyReport(await loadData(store),year,month,frequency);if(automaticId)report.id=automaticId;
  const pack=monthlyEvidence(report);let provider=null;try{provider=createProvider(runtime.config)}catch{}
- report.ai=await intelligenceResponse(pack,provider,runtime.cache,runtime.dailyLimit);if(report.ai.mode==='calculated')report.ai.report=monthlyFallback(pack);
- const updatedAt=new Date().toISOString();await store.apply([{type:'upsert',record:{id:report.id,kind:'generated_report',payload:{...report,date:report.period.end},updatedAt}},{type:'audit',entry:{id:crypto.randomUUID(),actor:automaticId?'Report automation':'Public report generator',action:'Generate '+frequency+' report',record_id:report.id,date:updatedAt}}]);return report;
+ report.ai=await intelligenceResponse(pack,deferAI?null:provider,runtime.cache,runtime.dailyLimit);if(report.ai.mode==='calculated')report.ai.report=monthlyFallback(pack);if(deferAI&&provider)report.aiStatus='pending';
+ const updatedAt=new Date().toISOString();await store.apply([{type:'upsert',record:{id:report.id,kind:'generated_report',payload:{...report,date:report.period.end},updatedAt}},{type:'audit',entry:{id:crypto.randomUUID(),actor:automaticId?'Report automation':'Public report generator',action:'Generate '+frequency+' report',record_id:report.id,date:updatedAt}}]);if(deferAI&&provider)deferAI(async()=>{try{const ai=await intelligenceResponse(pack,provider,runtime.cache,runtime.dailyLimit);const existing=(await store.readRecords(['config','generated_report'])).find(row=>row.id===report.id&&row.kind==='generated_report');if(!existing)return;const enriched={...existing.payload,ai,aiStatus:ai.mode==='gemini'?'complete':'unavailable'};await store.apply([{type:'upsert',record:{...existing,payload:enriched,updatedAt:new Date().toISOString()}}]);}catch{/* The calculated report remains available even if enrichment fails. */}});return report;
 }
 export async function runReportAutomation(store:Storage,runtime:ReportRuntime,now=new Date()){
  const setting=await reportAutomation(store);if(!setting.enabled)return {generated:false,reason:'Automation is disabled.'};
