@@ -1,5 +1,6 @@
 'use client';
 import {postContentTypes} from '../lib/post-standard';
+import IntelligenceSection from './intelligence-section';
 import PostRelationshipsFields from './post-relationships-fields';
 import WorkvivoAssociation from './workvivo-association';
 import OriginalPostLink from './original-post-link';
@@ -48,6 +49,7 @@ export default function ContentPlanner({data}:{data:Dataset}){
 
  return <div className="content-planner-workspace">{confirmation}<a className="text-button" href="/workspace/records?kind=content_plan">View All Plans, Bulk Actions &amp; Trash</a>
  <header className="cp-header"><div><span className="eyebrow">YOUR CONTENT WORKSPACE</span><h2>A thoughtful plan. A stronger community.</h2><p>Shape the story, organise the work and create your next post.</p></div><a className="button" href="/workspace/reports">Open Monthly Reports <ArrowRight size={15}/></a></header>
+ <IntelligenceSection title="Planning Overview" description="Your planned content, ideas and campaigns in one workspace."><div className="three-col">{[{label:'Planned Content',value:records.plans.length},{label:'Content Ideas',value:records.ideas.length},{label:'Campaigns',value:records.campaigns.length}].map(item=><div className="metric" key={item.label}><div>{item.label}</div><strong>{item.value.toLocaleString('en-SG')}</strong><small>Saved in your content workspace</small></div>)}</div></IntelligenceSection>
  <div className="cp-quick-actions" aria-label="Planner quick actions">{['Facebook','Instagram','Workvivo'].map(p=><button className="button" key={p} onClick={()=>newPlan(p)}><Plus size={15}/>New {p} Post</button>)}<button className="button" onClick={newCampaign}><Plus size={15}/>New Campaign</button><button className="button" onClick={newIdea}><Plus size={15}/>New Idea</button><button className="button" onClick={()=>writing()}>Generate Caption</button><button className="button" onClick={()=>writing('Generate Captions','English + Chinese')}>Generate Bilingual Content</button><button className="button" onClick={()=>writing('Generate Hashtags')}>Generate Hashtags</button></div>
  <nav className="cp-tabs" aria-label="Content workspace sections">{tabs.map(({id,label,Icon})=><button key={id} aria-current={tab===id?'page':undefined} className={tab===id?'active':''} onClick={()=>{setTab(id);setQuery('');if(id==='pipeline')setStatus('')}}><Icon size={17}/>{label}{id==='ideas'&&<span>{records.ideas.filter(i=>i.status==='Open').length}</span>}</button>)}</nav>
  {error&&<p className="error" role="alert">{error}</p>}{notice&&<p className="cp-save-status" role="status"><Check size={15}/>{notice}<button className="text-button" onClick={()=>setNotice('')} aria-label="Dismiss save message">Dismiss</button></p>}
