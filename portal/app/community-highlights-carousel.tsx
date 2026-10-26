@@ -7,9 +7,9 @@ import {RichStoryContent} from './rich-story-editor';
 import PublicStoryMedia from './public-story-media';
 import PublicGallery from './public-gallery';
 import './community-highlights-carousel.css';
-export default function CommunityHighlightsCarousel({stories,description}:{stories:PublicStory[];description?:string}){
+export default function CommunityHighlightsCarousel({stories,description,title="Community Highlights"}:{stories:PublicStory[];description?:string;title?:string}){
  const selected=stories.filter(s=>s.featured),signature=selected.map(s=>s.id).join('|');
- return <PublicSection id="community" eyebrow="MEANINGFUL MOMENTS. SHARED TOGETHER." title="Community Highlights" description={description}>{selected.length?<Carousel key={signature} stories={selected}/>:<EmptyPublicContent>Community highlights will be shared here soon.</EmptyPublicContent>}</PublicSection>;
+ return <PublicSection id="community" eyebrow="MEANINGFUL MOMENTS. SHARED TOGETHER." title={title} description={description}>{selected.length?<Carousel key={signature} stories={selected}/>:<EmptyPublicContent>Community highlights will be shared here soon.</EmptyPublicContent>}</PublicSection>;
 }
 function Carousel({stories}:{stories:PublicStory[]}){
  const track=useRef<HTMLDivElement>(null),[active,setActive]=useState(0);
