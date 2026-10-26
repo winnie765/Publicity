@@ -1,3 +1,4 @@
+import WorkspaceShell from '../workspace-shell';
 import type {Metadata} from 'next';
 export const metadata:Metadata={title:'Tzu Chi | Private Workspace',robots:{index:false,follow:false}};
-export default function WorkspaceLayout({children}:{children:React.ReactNode}){return children;}
+export default function WorkspaceLayout({children}:{children:React.ReactNode}){return <WorkspaceShell>{children}</WorkspaceShell>;}
