@@ -1,4 +1,4 @@
-export const datePresets=['Today','Yesterday','Last 7 Days','Last 30 Days','Last 90 Days','This Month','Last Month','This Quarter','This Year','Custom Range'] as const;
+export const datePresets=['This Month','This Year','Custom Range'] as const;
 export type DatePreset=typeof datePresets[number];
 export function parseFilterDate(input:string):string|null{
  const value=input.trim();if(!value)return '';
@@ -22,13 +22,7 @@ export function presetFilterDates(preset:DatePreset,now=new Date()):[string,stri
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
  const part=(name:string)=>Number(parts.find(p=>p.type===name)!.value),year=part('year'),month=part('month')-1,day=part('day');
  const end=new Date(Date.UTC(year,month,day)),start=new Date(end);
- if(preset==='Yesterday'){start.setUTCDate(day-1);end.setUTCDate(day-1);}
- if(preset==='Last 7 Days')start.setUTCDate(day-7);
- if(preset==='Last 30 Days')start.setUTCDate(day-30);
- if(preset==='Last 90 Days')start.setUTCDate(day-90);
  if(preset==='This Month')start.setUTCDate(1);
- if(preset==='Last Month'){start.setUTCMonth(month-1,1);end.setUTCDate(0);}
- if(preset==='This Quarter')start.setUTCMonth(Math.floor(month/3)*3,1);
  if(preset==='This Year')start.setUTCMonth(0,1);
  return [start.toISOString().slice(0,10),end.toISOString().slice(0,10)];
 }
