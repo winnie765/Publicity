@@ -16,7 +16,7 @@ export function Trend({data,lines=['engagement'],labels=['Engagement'],unit,colo
  const palette=lines.map(line=>tones[Math.max(0,(colorKeys||lines).indexOf(line))%tones.length]);
  const decimals=labels.some(l=>l.includes('%'))?1:0,showValue=(v:number)=>number(v,decimals);
  const id=useId().replaceAll(':',''),axisLabel=unit||(labels.length===1?labels[0]:'Reported engagements');
- if(!data.length||!lines.length)return emptyState??<p className="empty">No monthly data in this selection.</p>;
+ if(!data.length||!lines.length)return <div className="labelled-trend">{emptyState??<p className="empty">No monthly data in this selection.</p>}</div>;
  const valid=(d:any,k:string)=>typeof d[k]==='number'&&Number.isFinite(d[k]);
  const values=data.flatMap(d=>lines.filter(k=>valid(d,k)).map(k=>d[k]));
  const highest=Math.max(...values,0),rawStep=(highest||1)/4,power=10**Math.floor(Math.log10(rawStep)),fraction=rawStep/power,step=Math.max(1,(fraction<=1?1:fraction<=2?2:fraction<=5?5:10)*power),top=Math.max(step,Math.ceil(highest/step)*step),lower=Math.min(0,Math.floor(Math.min(...values,0)/step)*step);
