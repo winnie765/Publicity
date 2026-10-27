@@ -3,7 +3,7 @@ const encoder=new TextEncoder();
 export const sessionCookie='tzuchi_workspace';
 const lifetime=8*60*60;
 const hex=(bytes:ArrayBuffer)=>Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
-export const passwordConfigured=()=>workspacePassword().length>=16;
+export const passwordConfigured=()=>workspacePassword().length>=8;
 export const automationConfigured=()=>automationSecret().length>=32;
 export async function automationAuthorized(request:Request){if(new URL(request.url).pathname!=='/api/report-automation'||!automationConfigured())return false;const supplied=request.headers.get('authorization')?.replace(/^Bearer /,'')||'',a=new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(supplied))),b=new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(automationSecret())));let difference=0;for(let i=0;i<a.length;i++)difference|=a[i]^b[i];return difference===0;}
 async function key(){return crypto.subtle.importKey('raw',encoder.encode(workspacePassword()),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);}

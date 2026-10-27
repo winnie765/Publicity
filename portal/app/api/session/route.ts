@@ -5,7 +5,7 @@ const json=(value:unknown,status=200,headers:Record<string,string>={})=>Response
 export async function GET(request:Request){return json({authenticated:await authenticated(request),configured:passwordConfigured()});}
 export async function POST(request:Request){
  if(request.headers.get('origin')!==new URL(request.url).origin)return json({error:'Open Workspace access on this website.'},403);
- if(!passwordConfigured())return json({error:'Workspace access is locked until WORKSPACE_PASSWORD is configured as a hosting secret (at least 16 characters).'},503);
+ if(!passwordConfigured())return json({error:'Workspace access is locked until WORKSPACE_PASSWORD is configured as a hosting secret (at least 8 characters).'},503);
  try{
   const text=await request.text();if(text.length>1000)return json({error:'Request is too large.'},413);const body=JSON.parse(text);
   if(body.action==='logout')return json({ok:true},200,{'Set-Cookie':cookieHeader(request,'',true)});
