@@ -27,3 +27,6 @@
 
 /* Graph cards always occupy a full row throughout the workspace. */
 .app-shell :is(.card,.follower-platform-section,.intelligence-parent):has(.labelled-trend,.labelled-bars,.recharts-wrapper,.chart-scroll){grid-column:1 / -1;min-width:0;width:100%}.app-shell .two-col:has(>section .labelled-trend,>section .labelled-bars,>section .chart-scroll){grid-template-columns:minmax(0,1fr)}
+
+/* Destructive actions use one clear danger treatment across the workspace and dialogs. */
+:is(.app-shell,[role="dialog"]) :is(.button,.icon-button):is(.danger,.destructive){background:#b63e35;color:#fff;border:1px solid #b63e35}:is(.app-shell,[role="dialog"]) :is(.button,.icon-button):is(.danger,.destructive):hover{background:#963028;border-color:#963028}:is(.app-shell,[role="dialog"]) :is(.button,.icon-button):is(.danger,.destructive):disabled{opacity:.55;cursor:not-allowed}
