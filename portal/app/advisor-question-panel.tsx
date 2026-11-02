@@ -4,7 +4,7 @@ import {Sparkles} from 'lucide-react';
 import type {AIResponse} from '../lib/intelligence/types';
 import {displayText,executiveNarrative} from './display-labels';
 import {ExecutiveInsightCard} from './ai-intelligence';
-const questions=['What should I post this month?','What content performed best last quarter?','What attracts AIC engagement?','Compare GLOW, SEEN and Longevity Courtyard.','What are this month’s key insights?','Summarize our latest reports.'];
+const questions=['What should I post this month?','What content performed best last month?','What attracts AIC engagement?','Compare GLOW, SEEN and Longevity Courtyard.','What are this month’s key insights?','Summarize our latest reports.'];
 export default function AdvisorQuestionPanel(){
  const [question,setQuestion]=useState(''),[answer,setAnswer]=useState<{question:string;scope:string;analysis:AIResponse}|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),controller=useRef<AbortController|null>(null);
  useEffect(()=>()=>controller.current?.abort(),[]);

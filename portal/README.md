@@ -115,19 +115,19 @@ Provider reference: [Google generateContent API](https://ai.google.dev/api/gener
 
 ## Monthly Report Generator
 
-Open /reports or use Generate Monthly Report on the dashboard. Select a month and year; quarterly mode covers the quarter containing that month. Reports contain eleven executive sections, previous-period comparisons, independent account follower baselines, separate Workvivo results, stakeholder counts, Gemini briefings and three to five recommendations with evidence and hypothetical expected impact. Missing observations remain unavailable. The portal clearly labels calculated fallbacks when Gemini is unavailable or its response fails validation.
+Open /reports or use Generate Monthly Report on the dashboard. Select a month and year. Reporting is monthly only. Reports contain eleven executive sections, previous-period comparisons, independent account follower baselines, separate Workvivo results, stakeholder counts, Gemini briefings and three to five recommendations with evidence and hypothetical expected impact. Missing observations remain unavailable. The portal clearly labels calculated fallbacks when Gemini is unavailable or its response fails validation.
 
 Generated reports and automation settings use the existing durable record repository with kinds generated_report and report_settings. No additional database migration is required on PostgreSQL/Supabase or D1. Source-data deletion does not delete archived snapshots. Configuration changes validate operational record kinds only. The Reports Archive preserves each generation as a fixed version.
 
 Exports include standalone escaped HTML and a real OOXML .docx file with Unicode text. PDF uses a print-ready A4 report in a separate tab; choose Save as PDF in the browser print dialog. Pop-ups must be permitted for that action. Copy Summary uses the browser clipboard on HTTPS.
 
-Automation is off by default. Enable it and select Monthly or Quarterly in the report workspace. A Sites cloud dispatcher checks POST /api/report-automation on the first of each month at 09:00 Asia/Singapore. The endpoint generates the previous completed month or, in January/April/July/October, the previous completed quarter. Automatic IDs prevent repeat archived reports for the same scheduled period; the endpoint can be retried. For other hosts, configure an equivalent scheduled POST. No email or external message is sent.
+Automation is off by default. Enable monthly automation in the report workspace. A Sites cloud dispatcher checks POST /api/report-automation on the first of each month at 09:00 Asia/Singapore. The endpoint generates the previous completed month. Automatic IDs prevent repeat archived reports for the same scheduled period; the endpoint can be retried. For other hosts, configure an equivalent scheduled POST. No email or external message is sent.
 
 Run node scripts/test-report-routes.mjs to verify calculations, archives against SQLite, report APIs, fallback/schema validation, DOCX structure, HTML escaping, automation defaults and duplicate prevention.
 
 ## Workspace assistant and content studio
 
-The Workspace navigation includes AI Workspace Assistant at `/workspace/assistant`; `/workspace/advisor` remains available. The assistant uses the existing calculated evidence and Gemini provider, resolves this/last month and this/last quarter in Asia/Singapore, and can cite fixed KPI snapshots from Reports Archive. Workvivo evidence stays separate from public outreach.
+The Workspace navigation includes AI Workspace Assistant at `/workspace/assistant`; `/workspace/advisor` remains available. The assistant uses the existing calculated evidence and Gemini provider, resolves this/last month in Asia/Singapore, and can cite fixed KPI snapshots from Reports Archive. Workvivo evidence stays separate from public outreach.
 
 AI Content Studio generates editable Facebook, Instagram and Workvivo drafts in English, Simplified Chinese or both. Actions include captions, hashtags, improvement, translation, rewriting, short and long versions. Copy drafts or save them as unpublished Content Planner drafts. Gemini credentials remain server-side; `/api/content-writing` requires the Workspace session and same-origin requests and shares the existing AI quota/cache. If Gemini is unavailable, source text remains editable and analytics keep working.
 

@@ -15,9 +15,7 @@ export function advisorEvidence(data:Dataset,value:unknown,now=new Date()):Evide
  const facebook=/facebook/.test(q),instagram=/instagram/.test(q);if(facebook!==instagram&&scope!=='workvivo')filters.platform=facebook?'Facebook':'Instagram';
  const mentioned=data.config.brands.filter(b=>{const index=q.indexOf(b.toLowerCase());return index>=0&&!/[a-z0-9]/i.test(q[index-1]||'')&&!/[a-z0-9]/i.test(q[index+b.length]||'');});if(mentioned.length===1)filters.brand=mentioned[0];
  const local=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now),part=(key:string)=>Number(local.find(p=>p.type===key)!.value),year=part('year'),month=part('month')-1,iso=(y:number,m:number,d:number)=>new Date(Date.UTC(y,m,d)).toISOString().slice(0,10);
- if(/last quarter|previous quarter/.test(q)){const start=Math.floor(month/3)*3-3;filters.start=iso(year,start,1);filters.end=iso(year,start+3,0);}
- else if(/this quarter|current quarter/.test(q)){filters.start=iso(year,Math.floor(month/3)*3,1);filters.end=iso(year,month,part('day'));}
- else if(/last month|previous month/.test(q)){filters.start=iso(year,month-1,1);filters.end=iso(year,month,0);}
+ if(/last month|previous month/.test(q)){filters.start=iso(year,month-1,1);filters.end=iso(year,month,0);}
  else if(/this month|current month|month's/.test(q)){filters.start=iso(year,month,1);filters.end=iso(year,month,part('day'));}
  const pack=calculateEvidence(data,scope,filters);
  // Focus existing calculated facts; no new measurements or AI calculations.

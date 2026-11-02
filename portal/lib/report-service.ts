@@ -6,16 +6,17 @@ import {createProvider,type ProviderConfig} from './intelligence/provider';
 import {calculatedReport,intelligenceResponse} from './intelligence/service';
 import type {AICache,IntelligenceReport,EvidencePack} from './intelligence/types';
 export type ReportRuntime={config:ProviderConfig;cache:AICache;dailyLimit:number};
-export type ReportAutomation={enabled:boolean;frequency:'monthly'|'quarterly';updatedAt:string};
+export type ReportAutomation={enabled:boolean;frequency:'monthly';updatedAt:string};
 export const automationDefault:ReportAutomation={enabled:false,frequency:'monthly',updatedAt:''};
-export async function reportIndex(store:Storage):Promise<ReportIndexRow[]>{if(store.readReportIndex)return store.readReportIndex();return (await archivedReports(store)).map(report=>({id:report.id,label:report.period.label,frequency:report.period.frequency,generatedAt:report.generatedAt,mode:report.ai?.mode||'calculated',posts:report.current.posts}));}
-export async function archivedReport(store:Storage,id:string):Promise<MonthlyReport|undefined>{if(store.readRecord){const row=await store.readRecord(id);return row?.kind==='generated_report'?row.payload:undefined;}return (await archivedReports(store)).find(report=>report.id===id);}
-export async function archivedReports(store:Storage){return (await store.readRecords(['config','generated_report'])).filter(r=>r.kind==='generated_report').map(r=>r.payload as MonthlyReport).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt));}
-export async function reportAutomation(store:Storage):Promise<ReportAutomation>{return (await store.readRecords(['config','report_settings'])).find(r=>r.id==='monthly-report-automation'&&r.kind==='report_settings')?.payload||automationDefault;}
+export async function reportIndex(store:Storage):Promise<ReportIndexRow[]>{if(store.readReportIndex)return (await store.readReportIndex()).filter(report=>report.frequency==='monthly');return (await archivedReports(store)).map(report=>({id:report.id,label:report.period.label,frequency:report.period.frequency,generatedAt:report.generatedAt,mode:report.ai?.mode||'calculated',posts:report.current.posts}));}
+export async function archivedReport(store:Storage,id:string):Promise<MonthlyReport|undefined>{if(store.readRecord){const row=await store.readRecord(id);return row?.kind==='generated_report'&&row.payload.period?.frequency==='monthly'?row.payload:undefined;}return (await archivedReports(store)).find(report=>report.id===id);}
+export async function archivedReports(store:Storage){return (await store.readRecords(['config','generated_report'])).filter(r=>r.kind==='generated_report'&&r.payload.period?.frequency==='monthly').map(r=>r.payload as MonthlyReport).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt));}
+export async function reportAutomation(store:Storage):Promise<ReportAutomation>{const saved=(await store.readRecords(['config','report_settings'])).find(r=>r.id==='monthly-report-automation'&&r.kind==='report_settings')?.payload;return saved?.frequency==='monthly'?{enabled:saved.enabled===true,frequency:'monthly',updatedAt:saved.updatedAt||''}:automationDefault;}
 export function monthlyFallback(pack:EvidencePack):IntelligenceReport{
  return calculatedReport(pack);
 }
-export async function generateMonthlyReport(store:Storage,runtime:ReportRuntime,year:number,month:number,frequency:'monthly'|'quarterly'='monthly',automaticId?:string,deferAI?:(task:()=>Promise<void>)=>void){
+export async function generateMonthlyReport(store:Storage,runtime:ReportRuntime,year:number,month:number,frequency:'monthly'='monthly',automaticId?:string,deferAI?:(task:()=>Promise<void>)=>void){
+ if(frequency!=='monthly')throw Error('Choose monthly reporting.');
  const archive=await reportIndex(store);if(automaticId){const existing=archive.find(r=>r.id===automaticId);if(existing)return (await archivedReport(store,automaticId))!;}
  if(archive.filter(r=>r.generatedAt.slice(0,10)===new Date().toISOString().slice(0,10)).length>=30)throw Error('The daily report limit has been reached. Please use an archived report or try tomorrow.');
  const report=calculateMonthlyReport(await loadData(store),year,month,frequency);if(automaticId)report.id=automaticId;
@@ -26,7 +27,6 @@ export async function generateMonthlyReport(store:Storage,runtime:ReportRuntime,
 export async function runReportAutomation(store:Storage,runtime:ReportRuntime,now=new Date()){
  const setting=await reportAutomation(store);if(!setting.enabled)return {generated:false,reason:'Automation is disabled.'};
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Singapore',year:'numeric',month:'2-digit'}).formatToParts(now),year=Number(parts.find(p=>p.type==='year')!.value),month=Number(parts.find(p=>p.type==='month')!.value);
- if(setting.frequency==='quarterly'&&![1,4,7,10].includes(month))return {generated:false,reason:'Next quarterly report is due after the quarter closes.'};
  const closed=new Date(Date.UTC(year,month-2,1)),periodYear=closed.getUTCFullYear(),periodMonth=closed.getUTCMonth()+1,id='report-auto-'+setting.frequency+'-'+periodYear+'-'+String(periodMonth).padStart(2,'0');
  const existing=(await archivedReports(store)).find(r=>r.id===id);if(existing)return {generated:false,reason:'The scheduled report is already archived.',id};
  const report=await generateMonthlyReport(store,runtime,periodYear,periodMonth,setting.frequency,id);return {generated:true,id:report.id,label:report.period.label};
