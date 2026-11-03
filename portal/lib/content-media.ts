@@ -28,3 +28,6 @@ export function validateContent(value:PostContent,platform?:string,status?:strin
  if(value.show_on_public_site&&status!=='draft'){if(!value.public_summary?.trim())throw Error('Add an approved public summary before publishing.');if(value.featured_image_url&&!value.featured_image_alt_text?.trim())throw Error('Add a description for the featured image.');}
 }
 export function validatePublicImages(urls:string[]){if(urls.some(v=>assetKey(v).startsWith('workvivo/')))throw Error('Workvivo images remain private.');}
+
+/** Bundled legacy/demo artwork is never live CMS content. */
+export function databaseImageSource(value:string){return /^\/(?:images|brand)\//i.test(value)?'':safeContentImage(value);}
