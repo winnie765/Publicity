@@ -11,3 +11,5 @@ Each successful upload saves a media_asset database record containing its stable
 Deploy the application changes for the live website to use this flow. Updating .env.local changes local development only.
 
 Validation: scripts/test-supabase-images.mjs uses mocked Supabase requests to check bucket initialization, credentials, uploads, retrieval and Media Library registration without touching a live project.
+
+Media deletion checks explicit media fields in active content records. Trash, archived copies, saved editing drafts, audit/cache entries and copied source snapshots are not dependencies. Hidden but active saved content remains a dependency and is identified by its content title. Blocked deletes log image ID, file name, content type, record ID and matching field names. The Media Library Find Orphaned Files action lists application image objects missing from media_asset metadata; single and bulk deletion validate those files against the same active-content references.
