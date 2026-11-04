@@ -1,3 +1,4 @@
+import type {WorkvivoInteraction} from '../lib/workvivo-interaction-types';
 import type {MasterRegistry,MasterReferences} from '../lib/master-relationships';
 import {postLocations} from '../lib/post-locations';
 import {postContentTypes,type PostRelationships} from '../lib/post-standard';
@@ -8,7 +9,7 @@ export type Follower=MasterReferences & {id:string;date:string;account:string;fo
 export type Interaction=MasterReferences & {id:string;postId:string;stakeholder:string;sector:string;type:string;date:string;count:number;organization?:string};
 export type Config={masterRegistry?:MasterRegistry;followerAccounts?:{name:string;platform:string;brand?:string}[];brands:string[];locations:string[];accounts:{name:string;platform:string;brand?:string}[];topics:string[];types:string[];stakeholders:{name:string;sector:string}[]};
 export type Kpi=MasterReferences & {id:string;objectiveId:string;description:string;account:string;platforms:string[];brand?:string;target?:string;month?:string;year?:number};
-export type Dataset={kpis?:Kpi[];posts:Post[];followers:Follower[];interactions:Interaction[];config:Config};
+export type Dataset={workvivoInteractions?:WorkvivoInteraction[];kpis?:Kpi[];posts:Post[];followers:Follower[];interactions:Interaction[];config:Config};
 export const features=['Senior','Teacher','Volunteer','Staff','Community Partner','Testimonial','Health Content','Event Content'];
 export const sources=['Organisation Generated','Community Generated','Senior Generated','Shared Post','Tagged Post','Unclassified'];
 export const defaultConfig:Config={brands:['GLOW','SEEN','Longevity Courtyard'],locations:[...postLocations],accounts:[],topics:[],types:[],stakeholders:[]};
