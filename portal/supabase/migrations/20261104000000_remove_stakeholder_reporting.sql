@@ -72,12 +72,24 @@ WHERE kind IN ('trash','archive') AND payload->'original'->>'kind'='generated_re
  AND (payload->'original'->'payload') IS DISTINCT FROM pg_temp.social_performance_report(payload->'original'->'payload');
 DROP FUNCTION pg_temp.social_performance_report(jsonb);
 
-DELETE FROM public.portal_ai_cache
-WHERE payload LIKE '%Publicity automated data quality%'
- OR payload LIKE '%Publicity reporting target%'
- OR payload LIKE '%Publicity data quality%'
- OR payload LIKE '%Publicity stakeholder%'
- OR payload LIKE '%Calculated publicity decision support%';
+-- Prisma stores AI responses in ai_cache; Supabase RPC storage uses portal_ai_cache.
+-- Either or both may exist. Resolve the relation before issuing a DELETE.
+DO $cache_cleanup$
+DECLARE cache_table text;
+BEGIN
+ FOREACH cache_table IN ARRAY ARRAY['ai_cache','portal_ai_cache'] LOOP
+  IF to_regclass('public.'||cache_table) IS NOT NULL THEN
+   EXECUTE format($delete_cache$
+    DELETE FROM public.%I
+    WHERE payload LIKE '%%Publicity automated data quality%%'
+     OR payload LIKE '%%Publicity reporting target%%'
+     OR payload LIKE '%%Publicity data quality%%'
+     OR payload LIKE '%%Publicity stakeholder%%'
+     OR payload LIKE '%%Calculated publicity decision support%%'
+   $delete_cache$,cache_table);
+  END IF;
+ END LOOP;
+END $cache_cleanup$;
 
 -- Supabase's domain projections mirror portal_records. Prisma-only stores may omit them.
 DO $cleanup$
