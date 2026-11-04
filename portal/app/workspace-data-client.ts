@@ -1,4 +1,3 @@
-import {stakeholderOptions} from '../lib/stakeholder-options';
 import type {Dataset} from './model';
 import {readApiResponse} from '../lib/api-response';
 
@@ -23,7 +22,6 @@ export function workspaceData(url:string,force=false):Promise<any>{
 /** Optimistic state is local to this screen and is rolled back if the write fails. */
 export function optimisticDataset(data:Dataset,body:any):Dataset{
   const next=structuredClone(data);
-  if(body.action==='recordStakeholderInteraction'){const known=next.config.stakeholders.find(value=>value.name===body.stakeholder);next.interactions.push({id:body.id,postId:body.post_id,post_id:body.post_id,stakeholder:body.stakeholder,stakeholder_id:body.stakeholder_id,sector:known?.sector||stakeholderOptions.find(([name])=>name===body.stakeholder)?.[1]||'Partners',type:body.interaction_type,interaction_type:body.interaction_type,date:body.interaction_date,interaction_date:body.interaction_date,count:1,notes:body.notes||''});return next;}
   if(body.action==='config'){next.config=structuredClone(body.items);return next;}
   if(body.action==='deleteAll'){next.posts=[];next.followers=[];next.interactions=[];next.kpis=[];return next;}
   if(body.action==='delete'){

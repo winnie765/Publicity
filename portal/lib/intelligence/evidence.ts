@@ -1,4 +1,3 @@
-import {publicityIntelligence} from '../publicity-intelligence';
 import {locationMatches} from '../post-locations';
 import {workvivoPosts} from '../workvivo-posts';
 import {followerComparison} from '../../app/follower-comparison';
@@ -14,7 +13,6 @@ const percent=(change:number,base:number)=>base>0?fmt(change/base*100)+'%':'unav
 export function calculateEvidence(data:Dataset,scope:Scope,filters:Filters):EvidencePack{
  const facts:EvidencePack['facts']=[],limitations=['These are observational results, not causal proof. Audience size, timing, paid promotion and sample composition can affect performance.','Unreported metrics and unannotated features are unavailable, rather than observed zero.'];
  const add=(name:string,text:string)=>{if(facts.length<160)facts.push({id:'F'+String(facts.length+1).padStart(3,'0'),label:label(name),text});};
- if(['executive','stakeholders','insights'].includes(scope)){const publicity=publicityIntelligence({...data,posts:data.posts.filter(post=>(!filters.brand||post.brand===filters.brand)&&(!filters.platform||post.platform===filters.platform)&&(!filters.account||post.account===filters.account)&&(!filters.location||locationMatches(post.location,filters.location)))},filters.start,filters.end);add('Publicity automated data quality',JSON.stringify({total:publicity.quality.total,validated:publicity.quality.validated,completeness:publicity.quality.completeness,validationRate:publicity.quality.validationRate,duplicateRecords:publicity.quality.duplicateRecords,missing:publicity.quality.missing}));for(const group of publicity.groups)add('Publicity reporting target '+group.name,JSON.stringify(group));limitations.push('Stakeholder engagement is total audience engagement on distinctly linked posts, not activity attributed to a stakeholder. Logged interactions are separately counted; absent logs do not establish absent interest. Data validation is automatic and does not indicate human approval.');}
  const internal=scope==='workvivo', sourcePosts=internal?workvivoPosts(data.posts):data.posts;
  if(scope==='followers'){
   const comparisons=followerComparison(data,filters.start,filters.end).filter(a=>(!filters.account||a.name===filters.account)&&(!filters.platform||a.platform===filters.platform)&&(!filters.brand||a.brand===filters.brand)&&(!filters.followerSelection||(filters.followerView==='brand'?a.brand===filters.followerSelection:a.name===filters.followerSelection)));

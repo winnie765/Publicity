@@ -1,3 +1,4 @@
+import {monthlyPerformanceReport} from './monthly-report-scope';
 import type {ReportIndexRow} from './report-index';
 import type {Storage} from './storage-contract';
 import {loadData} from './data-service';
@@ -9,8 +10,8 @@ export type ReportRuntime={config:ProviderConfig;cache:AICache;dailyLimit:number
 export type ReportAutomation={enabled:boolean;frequency:'monthly';updatedAt:string};
 export const automationDefault:ReportAutomation={enabled:false,frequency:'monthly',updatedAt:''};
 export async function reportIndex(store:Storage):Promise<ReportIndexRow[]>{if(store.readReportIndex)return (await store.readReportIndex()).filter(report=>report.frequency==='monthly');return (await archivedReports(store)).map(report=>({id:report.id,label:report.period.label,frequency:report.period.frequency,generatedAt:report.generatedAt,mode:report.ai?.mode||'calculated',posts:report.current.posts}));}
-export async function archivedReport(store:Storage,id:string):Promise<MonthlyReport|undefined>{if(store.readRecord){const row=await store.readRecord(id);return row?.kind==='generated_report'&&row.payload.period?.frequency==='monthly'?row.payload:undefined;}return (await archivedReports(store)).find(report=>report.id===id);}
-export async function archivedReports(store:Storage){return (await store.readRecords(['config','generated_report'])).filter(r=>r.kind==='generated_report'&&r.payload.period?.frequency==='monthly').map(r=>r.payload as MonthlyReport).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt));}
+export async function archivedReport(store:Storage,id:string):Promise<MonthlyReport|undefined>{if(store.readRecord){const row=await store.readRecord(id);return row?.kind==='generated_report'&&row.payload.period?.frequency==='monthly'?monthlyPerformanceReport(row.payload):undefined;}return (await archivedReports(store)).find(report=>report.id===id);}
+export async function archivedReports(store:Storage){return (await store.readRecords(['config','generated_report'])).filter(r=>r.kind==='generated_report'&&r.payload.period?.frequency==='monthly').map(r=>monthlyPerformanceReport(r.payload as MonthlyReport)).sort((a,b)=>b.generatedAt.localeCompare(a.generatedAt));}
 export async function reportAutomation(store:Storage):Promise<ReportAutomation>{const saved=(await store.readRecords(['config','report_settings'])).find(r=>r.id==='monthly-report-automation'&&r.kind==='report_settings')?.payload;return saved?.frequency==='monthly'?{enabled:saved.enabled===true,frequency:'monthly',updatedAt:saved.updatedAt||''}:automationDefault;}
 export function monthlyFallback(pack:EvidencePack):IntelligenceReport{
  return calculatedReport(pack);
