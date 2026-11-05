@@ -55,6 +55,10 @@ export function masterPayload(value:any,registry:MasterRegistry,writing=false,re
     const entry=registry[module].find(entry=>entry.id===value[idField]);
     if(entry)result[field]=entry.name;
   }
+  const stakeholderName=(name:string)=>registry.stakeholders.find(entry=>[entry.name,...entry.aliases].some(value=>masterKey(value)===masterKey(name)))?.name||name;
+  if(typeof result.shared_from==='string'&&result.shared_from)result.shared_from=stakeholderName(result.shared_from);
+  if(typeof result.collaborating_with==='string'&&result.collaborating_with)result.collaborating_with=result.collaborating_with.split(';').map((name:string)=>stakeholderName(name.trim())).filter(Boolean).join('; ');
+  if(Array.isArray(result.targetStakeholders))result.targetStakeholders=result.targetStakeholders.map((name:unknown)=>typeof name==='string'?stakeholderName(name):name);
   // Brand card display names are master labels; editorial subtitles remain unchanged.
   if(result.brand_id&&typeof result.displayName==='string'){
     const entry=registry.brands.find(entry=>entry.id===result.brand_id);
@@ -84,7 +88,7 @@ export function masterStorage(base:Storage):Storage{return {...base,
     const update=changes.find(change=>change.type==='upsert'&&change.record.id==='configuration');
     const config=update?.type==='upsert'?withMasterRegistry(update.record.payload):saved?withMasterRegistry(saved.payload):undefined;
     if(!config)return base.apply(changes);
-    const mapped:Change[]=changes.map(change=>change.type==='upsert'||change.type==='insert'?{...change,record:{...change.record,payload:change.record.kind==='config'?config:masterPayload(change.record.payload,config.masterRegistry!,true)}}:change);
+    const mapped:Change[]=changes.map(change=>{if(change.type!=='upsert'&&change.type!=='insert')return change;const payload=change.record.kind==='config'?config:masterPayload(change.record.payload,config.masterRegistry!,true);if(change.record.kind==='workvivo_interaction'&&payload.stakeholder_id)delete payload.stakeholder;return {...change,record:{...change.record,payload}};});
     if(!update&&JSON.stringify(saved?.payload.masterRegistry)!==JSON.stringify(config.masterRegistry))mapped.unshift({type:'upsert',record:{id:'configuration',kind:'config',payload:config,updatedAt:new Date().toISOString()}});
     return base.apply(mapped);
   }

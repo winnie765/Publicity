@@ -18,7 +18,8 @@
     "sites:dev": "node scripts/run-framework.mjs dev",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:d1:generate": "drizzle-kit generate"
+    "db:d1:generate": "drizzle-kit generate",
+    "test:user-guide": "node scripts/test-user-guide.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

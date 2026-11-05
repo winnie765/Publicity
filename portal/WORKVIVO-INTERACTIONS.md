@@ -2,9 +2,9 @@
 
 Open a Workvivo post from Workvivo Insights or view a native/associated post in Post Library. In **Stakeholder Interactions**, click **Add Interaction**, choose the stakeholder and action, select the interaction date, optionally enter notes, and save.
 
-There is no separate stakeholder reporting page or sidebar item. Interaction records belong to the current saved post ID. Supported stakeholders reuse Configuration master identities, including aliases after a rename. Supported default names are added to Configuration on first use; arbitrary names are not accepted through the form.
+There is no separate stakeholder reporting page or sidebar item. Interaction records belong to the current saved post ID. Stakeholder choices come only from active Configuration records. Add or rename stakeholders in Configuration; there is no separate Workvivo list or automatic creation on first use. Selections use stable master IDs, so renamed labels resolve throughout Workvivo and reporting. An open interaction form refreshes its choices after workspace changes or when the browser regains focus.
 
-New records use the existing generic record store with kind `workvivo_interaction`. They contain the post ID, stakeholder master ID, interaction type, date, optional notes, and a count of one. Repeated submissions with the same record ID do not add another interaction. No new database table, migration, or environment variable is required.
+New records use the existing generic record store with kind `workvivo_interaction`. They contain the post ID, stakeholder master ID, interaction type, date, optional notes, and a count of one. Stakeholder names are resolved for display rather than stored in new interaction payloads. Configuration saves also backfill IDs on existing linked logs. Repeated submissions with the same record ID do not add another interaction. No new database table, migration, or environment variable is required.
 
 Workvivo-associated Facebook/Instagram posts retain their original post ID. Their Workvivo actions are distinct from external engagement metrics and external interaction logs. Existing imported interactions linked to native Workvivo posts remain available in the internal summary.
 
@@ -13,5 +13,7 @@ Workvivo Insights includes stakeholder, theme, partner and monthly interaction s
 New monthly report snapshots include these summaries within **Workvivo Performance**. They do not add a standalone stakeholder report or AIC/GRA section. Workvivo-specific AI commentary must cite explicit Workvivo interaction evidence. Notes are shown in post details and are not passed into analytics or AI reporting evidence.
 
 Deleting or archiving a post moves its Workvivo logs into the same recovery group; restoring that group restores the logs. Removing a Workvivo association excludes its logs from current internal analytics without deleting the historical records.
+
+Deleting a stakeholder that is referenced by saved records marks it inactive instead. Historical interactions and analytics remain available. Inactive entries display a badge in Configuration and can be reactivated using the Active stakeholder setting in Edit. Unused entries can be deleted.
 
 Validation: `node scripts/test-workvivo-interactions.mjs` and `node scripts/test-monthly-reports.mjs`.

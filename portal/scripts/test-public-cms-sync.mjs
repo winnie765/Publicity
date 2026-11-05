@@ -36,3 +36,19 @@ for(const title of ['Title Only','Omitted Description','Whitespace Description']
 const missingTitle=await cms.POST(request({kind:'home',action:'publish',record:{...optionalDescriptions,values:[{title:'',description:''}]},baseUpdatedAt:(await read()).entries.find(e=>e.id===home.id).updatedAt}));
 assert.equal(missingTitle.status,400,'value title remains required');
 console.log('PASS: values with blank, omitted or whitespace-only descriptions publish and render; titles remain required.');
+
+// Several public cards may belong to the same configured brand.
+const existingPage=(await read()).records.programmes.find(page=>page.brand==='SEEN');
+assert(existingPage,'default SEEN page exists');
+const addedPage={...existingPage,id:crypto.randomUUID(),displayName:'New Community Initiative',overview:'A new public brand card.',published:true};
+await send({kind:'programme',action:'publish',record:addedPage,baseUpdatedAt:''});
+let cardFeed=await publicPortalData(getStorage());
+let cardHtml=renderToStaticMarkup(React.createElement(Portal,{initialData:cardFeed}));
+assert(cardHtml.includes('New Community Initiative'),'new same-brand page appears publicly');
+assert(cardFeed.programmes.some(page=>page.overview===existingPage.overview),'original page is preserved');
+await send({kind:'programme',action:'visibility',record:{id:addedPage.id,published:false},baseUpdatedAt:(await read()).entries.find(entry=>entry.id===addedPage.id).updatedAt});
+cardFeed=await publicPortalData(getStorage());
+cardHtml=renderToStaticMarkup(React.createElement(Portal,{initialData:cardFeed}));
+assert(!cardHtml.includes('New Community Initiative'),'hidden page disappears');
+assert(cardFeed.brands.includes('SEEN'),'hiding one page preserves other visible pages of that brand');
+console.log('PASS: additional same-brand cards publish and render; independent hiding preserves the existing brand page.');

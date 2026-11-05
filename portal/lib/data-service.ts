@@ -31,11 +31,18 @@ export async function applyDataAction(store:Storage,body:any,historicalImport=tr
  if(edit){renameMasterEntry(next,edit);if(edit.module==='accounts'&&next.followerAccounts)next.followerAccounts=next.followerAccounts.map(account=>account.name===edit.from?{...account,name:edit.to}:account);}
  if(brandEdit)for(const previous of config.accounts){const current=next.accounts.find(account=>account.name===previous.name)||next.accounts.find(account=>account.platform===previous.platform&&account.brand===brandEdit.to&&previous.brand===brandEdit.from);if(current&&current.name!==previous.name&&next.masterRegistry?.accounts.some(entry=>entry.name===previous.name))renameMasterEntry(next,{module:'accounts',from:previous.name,to:current.name});}
  if(!rename)prepareBrandDeletion(config,next,known);
+ // Retain referenced stakeholder identities for history, but remove them from new-entry selectors.
+ for(const stakeholder of config.stakeholders){
+  const entry=config.masterRegistry?.stakeholders.find(row=>row.name===stakeholder.name);
+  if(next.stakeholders.some(row=>row.name===stakeholder.name||row.name===edit?.to&&edit?.module==='stakeholders'&&edit.from===stakeholder.name))continue;
+  const referenced=(value:any):boolean=>{if(Array.isArray(value))return value.some(item=>typeof item==='string'?item===stakeholder.name:referenced(item));if(!value||typeof value!=='object')return false;return value.stakeholder_id===entry?.id&&!!entry||value.stakeholder===stakeholder.name||value.shared_from===stakeholder.name||typeof value.collaborating_with==='string'&&value.collaborating_with.split(';').some((name:string)=>name.trim()===stakeholder.name)||Object.values(value).some(item=>typeof item==='object'&&referenced(item));};
+  if(known.some(row=>row.kind!=='config'&&referenced(row.payload)))next.stakeholders.push({...stakeholder,active:false});
+ }
  const resolved=withMasterRegistry(next);validateConfig(resolved);
  const updated=known.map(row=>({...row,payload:masterPayload(rename?rename.references(row.payload):row.payload,resolved.masterRegistry!)}));
  for(const row of updated.filter(row=>['posts','followers','interactions','kpis'].includes(row.kind))){const payload=row.payload;validate(row.kind,row.kind==='posts'&&payload.status==='draft'?{...payload,title:payload.title||'Untitled draft',description:payload.description||'Draft',importSheet:'draft'}:payload,resolved);}
  // Backfill the stable IDs in the same commit as the name change, including CMS and recovery copies.
- for(const row of updated){if(['config','generated_report','report'].includes(row.kind))continue;const original=rawKnown.find(old=>old.id===row.id);if(JSON.stringify(row.payload)!==JSON.stringify(original?.payload))changes.push({type:'upsert',record:{...row,updatedAt:now}});}
+ for(const row of updated){if(['config','generated_report','report'].includes(row.kind))continue;const original=rawKnown.find(old=>old.id===row.id);if(row.kind==='workvivo_interaction'&&row.payload.stakeholder_id||JSON.stringify(row.payload)!==JSON.stringify(original?.payload))changes.push({type:'upsert',record:{...row,updatedAt:now}});}
  config=resolved;saveConfig();audit(edit?'Rename '+edit.module+' '+edit.from+' to '+edit.to:'Update configuration','configuration');await store.apply(changes);return {ok:true};
  }
  if(action==='deleteAll'){if(body.confirmation!=='DELETE ALL')throw Error('Type DELETE ALL to confirm removal of all shared data.');changes.push({type:'deleteAllData'},{type:'clearFacebookSnapshots'},{type:'clearAICache'});audit('Delete all posts, followers, stakeholder interactions and KPI mappings','all-data');await store.apply(changes);return {ok:true};}
