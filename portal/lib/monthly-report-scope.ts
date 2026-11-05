@@ -14,6 +14,7 @@ export function monthlyPerformanceReport(report:MonthlyReport):MonthlyReport{
  if(!allowed(ai.report.summary)){delete result.ai;result.aiStatus='unavailable';return result;}
  ai.facts=ai.facts.filter(fact=>!excluded.has(fact.id));
  ai.report.insights=ai.report.insights.filter(insight=>allowed({text:[insight.title,insight.finding,insight.explanation,insight.recommendation,insight.expectedImpact].join(' '),evidenceIds:insight.evidenceIds}));
+ if(ai.report.chartInsights)ai.report.chartInsights=ai.report.chartInsights.filter(insight=>allowed({text:[insight.title,insight.finding,insight.explanation,insight.recommendation,...(insight.possibleFactors||[])].join(' '),evidenceIds:insight.evidenceIds}));
  if(ai.report.sectionSummaries)ai.report.sectionSummaries=Object.fromEntries(Object.entries(ai.report.sectionSummaries).filter(([key,item])=>key!=='stakeholders'&&allowed(item)));
  ai.report.limitations=ai.report.limitations.filter(text=>!stakeholderText.test(text));
  return result;

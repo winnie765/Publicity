@@ -1,0 +1,52 @@
+import fs from 'node:fs';import path from 'node:path';import ts from 'typescript';import assert from 'node:assert/strict';import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';
+const out='.sites-runtime/analytics-decision-tests';fs.mkdirSync(out,{recursive:true});const compiled=new Set();
+function compile(file){const id=file.replace(/[/.]/g,'-')+'.mjs';if(compiled.has(file))return id;compiled.add(file);let source=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText.replace(/import\s+['"][^'"]+\.css['"];?/g,'').replaceAll("from 'next/server'","from 'next/server.js'").replaceAll("from 'next/link'","from 'next/link.js'").replaceAll("from 'next/navigation'","from 'next/navigation.js'");source=source.replace(/(from\s*|import\s*\()(['"])([^'"]+)\2/g,(match,prefix,q,target)=>{if(!target.startsWith('.'))return match;const base=path.posix.normalize(path.posix.join(path.posix.dirname(file),target)),next=['.ts','.tsx','/index.ts','/index.tsx'].map(s=>base+s).find(p=>fs.existsSync(p));return next?prefix+q+'./'+compile(next)+q:match});fs.writeFileSync(out+'/'+id,source);return id;}
+const load=async file=>import('../'+out+'/'+compile(file));
+
+const {decisionAnalysis,growthPeriod}=await load('lib/analytics-decision.ts');
+const {blankPost,defaultConfig}=await load('app/model.ts');
+const {calculateEvidence}=await load('lib/intelligence/evidence.ts');
+const {validateReport,GeminiProvider}=await load('lib/intelligence/provider.ts');
+const {DecisionAnalysisView,default:DecisionSupport}=await load('app/analytics-decision-support.tsx');
+const {calculateMonthlyReport,monthlyEvidence}=await load('lib/monthly-report.ts');
+const {reportSections,reportHTML}=await load('lib/report-document.ts');
+assert.deepEqual(growthPeriod('2026-01-15','qoq'),{start:'2026-01-01',end:'2026-03-31',previousStart:'2025-10-01',previousEnd:'2025-12-31',label:'Quarter-on-Quarter'});
+assert.equal(growthPeriod('2024-03-01','mom').previousEnd,'2024-02-29');
+assert.equal(growthPeriod('2024-02-29','yoy').previousEnd,'2023-02-28');
+assert.throws(()=>growthPeriod('2026-02-31','mom'));
+const post=(id,date,likes,type='Reel',platform='Facebook',brand='GLOW')=>({...blankPost(),id,date,likes,type,platform,brand,account:platform+' '+brand,title:'Recorded content',status:'published',views:likes*5,reportedMetrics:['likes','views'],is_shared_content:false,is_collaboration_post:false});
+const rows=[];for(const month of ['02','03'])for(let i=0;i<6;i++)rows.push(post(month+'-'+i,'2026-'+month+'-'+String(i+1).padStart(2,'0'),month==='03'&&i<3?30:10,i<3?'Reel':'Picture'));
+const data={posts:[...rows,post('internal','2026-03-10',5000,'Video','Workvivo'),post('other-brand','2026-03-11',9000,'Reel','Facebook','SEEN'),post('instagram','2026-03-11',400,'Reel','Instagram'),post('future','2026-05-01',9999)],followers:[{id:'before',account:'Facebook GLOW',date:'2026-02-28',followers:100},{id:'current',account:'Facebook GLOW',date:'2026-03-31',followers:110}],interactions:[],config:{...structuredClone(defaultConfig),accounts:[{name:'Facebook GLOW',platform:'Facebook',brand:'GLOW'},{name:'Instagram GLOW',platform:'Instagram',brand:'GLOW'}]}};
+const filters={brand:'GLOW',platform:'Facebook',start:'2026-03-01',end:'2026-03-31'},analysis=decisionAnalysis(data,'social',filters);
+const engagement=analysis.metrics.find(row=>row.id==='facebook-engagement');assert.equal(engagement.current,120);assert.equal(engagement.benchmark,60);assert.equal(engagement.percentage,100);assert.equal(engagement.difference,60);
+assert.equal(analysis.historical[0].current,20);assert.equal(analysis.historical[0].benchmark,10);assert.equal(analysis.historical[0].ratio,2);assert(analysis.historical.some(row=>row.platform==='Facebook GLOW'));
+assert.equal(analysis.metrics.find(row=>row.id==='followers-Facebook GLOW').percentage,10);assert(analysis.charts.find(row=>row.id==='facebook-type').observation.includes('Reel'));
+assert(!analysis.charts.some(row=>/repeated in all/.test(row.observation)),'a single month is not called consistent');
+assert.equal(analysis.organisationBenchmarks.enabled,false);
+const empty=decisionAnalysis({...data,posts:[],followers:[]},'social',filters);assert(empty.metrics.every(row=>row.current===null&&row.percentage===null));
+const zero=decisionAnalysis({...data,posts:[post('zero','2026-02-01',0),post('positive','2026-03-01',5)]},'social',filters).metrics.find(row=>row.id==='facebook-engagement');assert.equal(zero.difference,5);assert.equal(zero.percentage,null);assert.equal(zero.ratio,null);
+const conflict=decisionAnalysis({...data,followers:[...data.followers,{id:'conflict',account:'Facebook GLOW',date:'2026-03-31',followers:999}]},'followers',filters).metrics.find(row=>row.id==='followers-Facebook GLOW');assert.equal(conflict.current,null,'conflicting snapshots are unavailable');
+const internal=decisionAnalysis(data,'workvivo',{start:'2026-03-01',end:'2026-03-31'});assert.equal(internal.metrics.find(row=>row.id==='workvivo-engagement').current,5000);assert(!internal.metrics.some(row=>row.platform==='Facebook'));
+const yearly=decisionAnalysis(data,'social',filters,'yoy');assert.equal(yearly.period.previousStart,'2025-03-01');assert.equal(yearly.metrics.find(row=>row.id==='facebook-engagement').benchmark,null);
+const quarterly=decisionAnalysis(data,'social',filters,'qoq');assert.equal(quarterly.period.start,'2026-01-01');assert.equal(quarterly.period.previousStart,'2025-10-01');
+const pack=calculateEvidence(data,'social',filters);assert(pack.chartBriefs.length);assert(pack.facts.some(fact=>fact.id==='B001'));assert(pack.chartBriefs.every(chart=>pack.facts.some(fact=>fact.id===chart.factId)));
+const strategy={category:'recommendation',title:'Review Comparable Content',confidenceLevel:'Low',confidenceReason:'The explanation has limited coverage.',finding:'Recorded results support a focused content test.',explanation:'Coverage and composition affect how useful the comparison is.',recommendation:'Test comparable content on the same account and review average engagement.',possibleFactors:['Content mix may contribute; this is an untested hypothesis.'],evidenceIds:[pack.chartBriefs[0].factId]};
+const answer={summary:{text:'Review the calculated comparison before deciding the next test.',evidenceIds:strategy.evidenceIds},insights:[strategy],chartInsights:pack.chartBriefs.map(chart=>({...strategy,chartId:chart.id,evidenceIds:[chart.factId]})),limitations:['Observational results do not establish causation.']};
+assert.equal(validateReport(answer,pack).chartInsights.length,pack.chartBriefs.length);
+assert.throws(()=>validateReport({...answer,chartInsights:[]},pack));
+assert.throws(()=>validateReport({...answer,chartInsights:answer.chartInsights.map((item,index)=>index===1?{...item,evidenceIds:[pack.chartBriefs[0].factId]}:item)},pack));
+assert.throws(()=>validateReport({...answer,chartInsights:answer.chartInsights.map(item=>({...item,possibleFactors:['Results were caused by the format.']}))},pack));
+assert(validateReport({...answer,summary:{...answer.summary,text:'Quarter-on-Quarter analysis supports a comparable content test.'}},pack));
+let providerRequest;const provider=new GeminiProvider('test','gemini-2.5-flash',async(_url,options)=>{providerRequest=JSON.parse(options.body);return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(answer)}]}}]})});await provider.interpret(pack);assert(providerRequest.generationConfig.responseSchema.required.includes('chartInsights'));assert(providerRequest.systemInstruction.parts[0].text.includes('Possible Contributing Factors'));
+const html=renderToStaticMarkup(React.createElement(DecisionAnalysisView,{analysis}));for(const label of ['Key Takeaways','What improved?','What declined?','What drove performance?','What should we do next?','Benchmark','Observation','Why It Matters','Recommended Action','Possible Contributing Factors','Historical Average','Calculated insights'])assert(html.includes(label),label);assert(!html.includes('AI-enhanced analysis'));
+const controls=renderToStaticMarkup(React.createElement(DecisionSupport,{data,scope:'social',filters,enabled:false}));for(const label of ['Month-on-Month','Quarter-on-Quarter','Year-on-Year'])assert(controls.includes(label));assert(controls.includes('disabled=""'));
+const report=calculateMonthlyReport(data,2026,3);assert.equal(report.period.frequency,'monthly');assert.equal(reportSections(report).length,10);assert(report.performanceAnalysis);const exported=reportHTML(report);assert(exported.includes('Historical Benchmark'));assert(exported.includes('Possible Contributing Factors'));assert(!/Quarterly Report|Quarter-on-Quarter|\bQ[1-4]\b/.test(exported));assert(monthlyEvidence(report).chartBriefs.length);
+console.log('PASS: calendar boundaries, independent platforms/accounts, missing/zero/conflicting baselines, historical averages, guarded chart AI, hypotheses, responsive analysis UI, disabled external benchmarks and monthly-only report exports.');
+
+
+const repeatedPosts=[];for(const month of ['01','02','03'])for(let i=0;i<4;i++)repeatedPosts.push(post(month+'-repeat-'+i,'2026-'+month+'-'+String(i+1).padStart(2,'0'),i<2?20:10,i<2?'Reel':'Picture'));
+const repeated=decisionAnalysis({...data,posts:repeatedPosts},'social',{...filters,start:'2026-01-01'});assert(repeated.charts.find(chart=>chart.id==='facebook-type').observation.includes('repeated in all 3 comparable'));
+assert(repeated.takeaways.drivers.includes('not a proven cause'));
+const seasonalPosts=[];for(const year of [2024,2025])for(let month=1;month<=9;month++)for(const platform of ['Facebook','Instagram'])seasonalPosts.push(post(year+'-'+month+'-'+platform,year+'-'+String(month).padStart(2,'0')+'-01',month===(platform==='Facebook'?3:4)?100:10,'Picture',platform));
+const seasonal=decisionAnalysis({...data,posts:seasonalPosts},'social',{start:'2024-01-01',end:'2025-12-31'});assert(seasonal.charts.find(chart=>chart.id==='seasonality-Facebook').observation.includes('(03)'));assert(seasonal.charts.find(chart=>chart.id==='seasonality-Instagram').observation.includes('(04)'));
+console.log('PASS: consistent format leads require repeated comparable months; seasonal patterns remain isolated by platform.');

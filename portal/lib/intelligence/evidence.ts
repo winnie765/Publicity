@@ -1,3 +1,4 @@
+import {decisionAnalysis} from '../analytics-decision';
 import {workvivoInteractionSummary} from '../workvivo-interaction-analytics';
 import {locationMatches} from '../post-locations';
 import {workvivoPosts} from '../workvivo-posts';
@@ -62,5 +63,8 @@ export function calculateEvidence(data:Dataset,scope:Scope,filters:Filters):Evid
  if(!measured.some(p=>p.featuresKnown===true))limitations.push('Content features have limited or no verified annotations. Do not infer senior, volunteer, teacher, health or HHP features from titles.');
  if(scope==='top-hits')limitations.push('This report covers only the independently selected Facebook and Instagram Top Hits.');
  if(internal)limitations.push('Workvivo represents internal ecosystem engagement; external audience metrics are excluded.');
- return {version:'evidence-v3-workspace',scope,filters,facts,limitations};
+ const analysis=['executive','social','top-hits','followers','workvivo'].includes(scope)?decisionAnalysis(data,scope,filters):undefined;
+ const chartBriefs=analysis?.charts.map((chart,index)=>{const factId='C'+String(index+1).padStart(3,'0');facts.push({id:factId,label:chart.title,text:JSON.stringify({observation:chart.observation,meaning:chart.meaning,action:chart.action,possibleFactors:chart.possibleFactors,confidence:chart.confidence})});return {...chart,factId};});
+ if(analysis){facts.push({id:'B001',label:'Calculated performance benchmarks',text:JSON.stringify({period:analysis.period,currentAndBenchmark:analysis.metrics,historicalAverage:analysis.historical})});limitations.push(...analysis.limitations);}
+ return {version:'evidence-v4-decisions',scope,filters,facts,limitations,...(chartBriefs?{chartBriefs}:{})};
 }
