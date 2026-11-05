@@ -6,7 +6,7 @@ export const publicHomeFields=["valuesTitle","respectTitle","respectDescription"
 export function validateAdditionalValues(value:unknown):{title:string;description:string}[]{
  if(value===undefined)return [];
  if(!Array.isArray(value)||value.length>47)throw Error('Use up to 50 values.');
- return value.map(item=>{if(!item||typeof item.title!=='string'||!item.title.trim()||item.title.length>300||typeof item.description!=='string'||!item.description.trim()||item.description.length>1800)throw Error('Enter a title and description for each value.');return {title:item.title.trim(),description:item.description.trim()};});
+ return value.map(item=>{if(!item||typeof item.title!=='string'||!item.title.trim()||item.title.length>300)throw Error('Enter a title for each value (up to 300 characters).');if(item.description!=null&&(typeof item.description!=='string'||item.description.length>1800))throw Error('Use up to 1800 characters for each value description.');return {title:item.title.trim(),description:(item.description??'').trim()};});
 }
 
 export function validateManagedValues(value:unknown){if(value===undefined)return undefined;if(!Array.isArray(value)||value.length>50)throw Error('Use up to 50 values.');return validateAdditionalValues(value.slice(0,47)).concat(value.length>47?validateAdditionalValues(value.slice(47)):[]).map((item,index)=>({...item,hidden:value[index]?.hidden===true}));}
