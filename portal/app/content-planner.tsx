@@ -1,4 +1,5 @@
 'use client';
+import FieldLabel,{hasRequiredControl} from './field-label';
 import ContentImage from './content-image';
 import {notifyWorkspaceChange} from './workspace-data-client';
 import {postContentTypes} from '../lib/post-standard';
@@ -25,7 +26,7 @@ const blankPlan=(date=today(),platform='',brand='',account=''):Plan=>({id:crypto
 const tabs=[{id:'calendar',label:'Calendar',Icon:CalendarDays},{id:'pipeline',label:'Pipeline',Icon:Columns3},{id:'ideas',label:'Idea Bank',Icon:Lightbulb},{id:'campaigns',label:'Campaigns',Icon:Target},{id:'studio',label:'AI Content Studio',Icon:Sparkles},{id:'strategy',label:'Strategy & Mix',Icon:Target},{id:'inspiration',label:'Top Hits Inspiration',Icon:Flame},{id:'notes',label:'Notebook',Icon:NotebookPen}];
 type Records={plans:Plan[];ideas:PlannerIdea[];campaigns:PlannerCampaign[];notes:PlannerNote[];events:PublicEvent[]};
 const initial:Records={plans:[],ideas:[],campaigns:[],notes:[],events:[]};
-const Field=({label,children}:{label:string;children:React.ReactNode})=><label className="field">{label}{children}</label>;
+const Field=({label,children}:{label:string;children:React.ReactNode})=><label className="field"><FieldLabel required={hasRequiredControl(children)||['Scheduled / Planned Date','Start Date','End Date'].includes(label)}>{label}</FieldLabel>{children}</label>;
 export default function ContentPlanner({data}:{data:Dataset}){
  const [records,setRecords]=useState<Records>(initial),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[tab,setTab]=useState('calendar'),[date,setDate]=useState(today()),[calendarView,setCalendarView]=useState<'month'|'week'>('month'),[ideaPriority,setIdeaPriority]=useState(''),[ideaStatus,setIdeaStatus]=useState(''),[query,setQuery]=useState(''),[brand,setBrand]=useState(''),[platform,setPlatform]=useState(''),[status,setStatus]=useState(''),[inspirationPostId,setInspirationPostId]=useState(''),[drag,setDrag]=useState(''),[dropStage,setDropStage]=useState(''),[editor,setEditor]=useState<Plan|null>(null),[idea,setIdea]=useState<PlannerIdea|null>(null),[campaign,setCampaign]=useState<PlannerCampaign|null>(null),[note,setNote]=useState<PlannerNote|null>(null),[studio,setStudio]=useState({key:0,language:'English + Chinese',action:'Generate Captions',platform:'',event:'',description:'',brand:'',sourcePlan:undefined as Plan|undefined});
  const {confirm,confirmation}=useConfirmAction();

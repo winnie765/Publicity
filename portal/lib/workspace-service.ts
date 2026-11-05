@@ -61,7 +61,7 @@ export async function saveWorkspaceRecord(store:Storage,body:any){
   const thumbnailUrl=text(input.thumbnailUrl??'',2000);if(thumbnailUrl&&!safeImage(thumbnailUrl))throw Error('Choose a valid thumbnail.');const gallery=validateGallery(input.gallery);validatePublicImages([imageUrl,thumbnailUrl,...gallery.flatMap(g=>[g.url,g.thumbnail||''])]);const base={...publishingFields(input),id:input.id,imageUrl,published:input.published};
   if(kind==='programme_profile'){
    const data=await loadData(store),brand=text(input.brand,100,true,'Brand');if(!data.config.brands.includes(brand))throw Error('Choose a configured brand.');
-   record={...base,...programmeExtras(input),descriptionSource:'user',title:text(input.title??'',300,false,'Title'),imageAlt:text(input.imageAlt??'',500,false,'Image description'),thumbnailUrl,brand,overview:text(input.overview??'',5000,input.published,'Description')};
+   record={...base,...programmeExtras(input),descriptionSource:'user',title:text(input.title??'',300,false,'Title'),imageAlt:text(input.imageAlt??'',500,false,'Image description'),thumbnailUrl,brand,overview:text(input.overview??'',5000,false,'Description')};
   }else{
    const url=text(input.url??'',2000);if(url&&!safeImage(url))throw Error('Use an HTTPS website link.');
    if(kind==='public_partner'){

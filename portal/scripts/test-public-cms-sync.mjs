@@ -53,13 +53,13 @@ assert(!cardHtml.includes('New Community Initiative'),'hidden page disappears');
 assert(cardFeed.brands.includes('SEEN'),'hiding one page preserves other visible pages of that brand');
 console.log('PASS: additional same-brand cards publish and render; independent hiding preserves the existing brand page.');
 
-for(const [patch,expected] of [[{overview:''},'Description'],[{overview:'x'.repeat(5001)},'Description'],[{brand:''},'Brand']]){
+for(const [patch,expected] of [[{overview:'x'.repeat(5001)},'Description'],[{brand:''},'Brand']]){
  const response=await cms.POST(request({kind:'programme',action:'publish',record:{...addedPage,id:crypto.randomUUID(),...patch},baseUpdatedAt:''}));
  assert.equal(response.status,400);const problem=await response.json();assert(problem.error.includes(expected),problem.error);assert(!problem.error.includes('Check the required text fields'),problem.error);
 }
 const completedPage={...addedPage,id:crypto.randomUUID(),displayName:'Completed Brand Page',overview:'A description written by the user.',subtitle:'',focusAreas:[],imageUrl:''};
 await send({kind:'programme',action:'publish',record:completedPage,baseUpdatedAt:''});assert((await publicPortalData(getStorage())).programmes.some(page=>page.displayName==='Completed Brand Page'));
-console.log('PASS: brand publishing identifies missing Brand/Description and description length; a completed new page publishes with optional fields blank.');
+console.log('PASS: brand publishing identifies missing Brand and excessive description length; a completed new page publishes with optional fields blank.');
 
 const retiredDescription='Supporting seniors through active ageing, community participation, wellness activities and meaningful social connections.';
 const seededPage={...existingPage,id:'legacy-description-test',overview:retiredDescription};delete seededPage.descriptionSource;
@@ -81,3 +81,22 @@ const orderedFeed=await publicPortalData(getStorage()),orderedHtml=renderToStati
 const staleOrder=await cms.POST(request(orderRequest));assert.equal(staleOrder.status,400,'stale editor cannot overwrite a newer order');
 const incompleteOrder=await cms.POST(request({...orderRequest,order:orderRequest.order.slice(1)}));assert.equal(incompleteOrder.status,400,'partial requests cannot drop cards from the order');
 console.log('PASS: brand positions persist, public order matches, content/visibility/drafts remain intact, and stale or incomplete reorders are rejected.');
+
+for(const description of ['',undefined,'   ']){
+ const record={...addedPage,id:crypto.randomUUID(),displayName:'Optional Description Page',overview:description};
+ await send({kind:'programme',action:'publish',record,baseUpdatedAt:''});
+ const saved=(await read()).records.programmes.find(page=>page.id===record.id);assert.equal(saved.overview,'');assert.equal(saved.published,true);
+ const publicData=await publicPortalData(getStorage());const pages=publicData.programmes.filter(page=>page.displayName==='Optional Description Page');assert(pages.length);
+ const html=renderToStaticMarkup(React.createElement(Showcase,{data:{...publicData,brands:['SEEN'],programmes:pages},renderStories:()=>null}));assert(!html.includes('ps-programme-description'),'no default description is substituted');
+}
+console.log('PASS: brand pages publish with empty, omitted or whitespace-only descriptions; no fallback wording is shown.');
+
+const {default:FieldLabel,hasRequiredControl}=await mod('app/field-label.tsx');
+const requiredLabel=renderToStaticMarkup(React.createElement(FieldLabel,{required:true},'Post Title'));
+assert(requiredLabel.includes('required-marker'));assert(requiredLabel.includes('aria-label="Required"'));assert(!requiredLabel.includes('(required)'));
+assert(!renderToStaticMarkup(React.createElement(FieldLabel,{required:false},'Description')).includes('required-marker'));
+assert(hasRequiredControl(React.createElement('div',null,React.createElement('input',{required:true}))));assert(!hasRequiredControl(React.createElement('input',{required:false})));
+const {default:ContentEditor}=await mod('app/cms-content-editor.tsx');const editorHtml=renderToStaticMarkup(React.createElement(ContentEditor,{editor:{kind:'programme',record:{...completedPage,overview:''},baseUpdatedAt:''},data:await loadData(store),publications:[],onChange:()=>{},onImageBusy:()=>{}}));
+assert(editorHtml.includes('Brand <span class="required-marker"'),'brand displays an asterisk');
+assert(editorHtml.includes('Description (optional)</span>'),'optional description is unmarked');assert(!editorHtml.includes('(required)'));
+console.log('PASS: accessible required markers, conditional optional labels, nested planner controls and brand editor requirements.');

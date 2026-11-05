@@ -90,3 +90,5 @@ section.filters{display:block;padding:24px}.filters-top-row{display:flex;align-i
 @media(max-width:760px){.public-header .public-brand{flex-basis:100%;min-width:0;max-width:460px}.public-header .public-workspace-link{margin-left:0}.public-header nav{gap:20px}.public-footer .official-public-footer-logo{width:100%;max-width:350px}.public-footer{align-items:flex-start}.public-hero-art .official-logo-mark{width:155px;padding:9px}.official-topbar-logo{width:40px}.workspace-access .official-logo-full{padding:7px}.official-sidebar-brand .official-logo-mark{width:95px}}
 
 .official-logo-text{display:flex;align-items:center;justify-content:center;background:transparent!important;color:var(--green);font-weight:650;font-size:16px;padding:8px;text-align:center}.official-logo-text.official-logo-mark{font-size:20px;min-height:42px}
+
+.field-label{display:block;color:inherit}.required-marker{display:inline!important;color:#b42318!important;font-weight:700;margin-inline-start:3px}html[data-theme="dark"] .required-marker{color:#ff8a80!important}

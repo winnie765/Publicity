@@ -1,4 +1,6 @@
 'use client';
+import FieldLabel from './field-label';
+
 import {useId} from 'react';
 import {BookOpen,Check,Globe,Home,Layers,Lock,Star} from 'lucide-react';
 import type {Post} from './model';
@@ -20,7 +22,7 @@ export default function PublicPublishingFields({post,onChange}:{post:Post;onChan
     <header className="publishing-card-heading"><span className="publishing-card-icon"><Globe size={21}/></span><div><h3 id={id}>Public Publishing</h3><p>Where should this appear publicly?</p></div></header>
     <div className="public-destination-label" id={id+'-destinations'}>Publish To <small>Select all that apply.</small></div>
     <div className="public-destination-grid" role="group" aria-labelledby={id+'-destinations'}>{destinations.map(({key,title,description,icon:Icon})=><button key={key} type="button" className="public-destination" aria-pressed={selected.includes(key)} onClick={()=>onChange(toggleDestination(post,key))}><Icon size={20}/><span><strong>{title}</strong><small>{description}</small></span><span className="public-destination-check" aria-hidden="true">{selected.includes(key)&&<Check size={13}/>}</span></button>)}</div>
-    <label className="field">Public Summary<textarea maxLength={1800} required={post.show_on_public_site} value={post.public_summary||''} onChange={e=>onChange({public_summary:e.target.value})}/><small>This public summary is shown on the website. Internal notes and analytics remain private.</small></label>
+    <label className="field"><FieldLabel required={post.show_on_public_site}>Public Summary</FieldLabel><textarea maxLength={1800} required={post.show_on_public_site} value={post.public_summary||''} onChange={e=>onChange({public_summary:e.target.value})}/><small>This public summary is shown on the website. Internal notes and analytics remain private.</small></label>
     {stories&&<div className="public-story-fields"><label className="field">Story Category<ThemedSelect value={post.public_category||'Community'} onValueChange={value=>onChange({public_category:value})}>{['Community','Senior','Volunteer','Health Promotion','HHP','AAC','Success Story','Event','Programme'].map(value=><option key={value}>{value}</option>)}</ThemedSelect></label><label className="field">Public Article<textarea rows={8} maxLength={20000} value={post.public_article||''} onChange={e=>onChange({public_article:e.target.value})}/><small>Separate paragraphs with a blank line.</small></label></div>}
   </section>;
 }
