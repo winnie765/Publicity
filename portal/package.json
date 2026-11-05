@@ -20,7 +20,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:d1:generate": "drizzle-kit generate",
     "test:user-guide": "node scripts/test-user-guide.mjs",
-    "test:analytics": "node scripts/test-analytics-decisions.mjs"
+    "test:analytics": "node scripts/test-analytics-decisions.mjs",
+    "test:content-intelligence": "node scripts/test-content-intelligence.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -11,7 +11,7 @@ import type {PublicHomeSettings} from '../lib/public-site-config';
 import type {GalleryImage} from '../lib/content-media';
 import ExperienceSwitcher from './experience-switcher';
 import {Card} from '../components/ui/card';
-export type PublicStory={media_type?:'image'|'video';media_url?:string;bodyFormat?:string;author?:string;pinned?:boolean;id:string;title:string;summary:string;body:string;imageUrl:string;section:string;brand:string;platform:string;date:string;url:string;featured:boolean;featuredStory?:boolean;showInStories?:boolean;showOnProgramme?:boolean;imageAlt?:string;thumbnailUrl?:string;gallery?:GalleryImage[]};
+export type PublicStory={featuredContent?:boolean;media_type?:'image'|'video';media_url?:string;bodyFormat?:string;author?:string;pinned?:boolean;id:string;title:string;summary:string;body:string;imageUrl:string;section:string;brand:string;platform:string;date:string;url:string;featured:boolean;featuredStory?:boolean;showInStories?:boolean;showOnProgramme?:boolean;imageAlt?:string;thumbnailUrl?:string;gallery?:GalleryImage[]};
 export type PublicActivity={featuredStory?:boolean;featured?:boolean;showOnProgramme?:boolean;id:string;title:string;date:string;location:string;summary:string;brand:string;url:string;imageUrl:string;imageAlt?:string;thumbnailUrl?:string;gallery?:GalleryImage[]};
 export const displayDate=(date:string)=>new Date(date+'T12:00:00').toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
 export const storyCategory=(section:string)=>({Senior:'Senior Stories',Volunteer:'Volunteer Stories',Caregiver:'Caregiver Stories',Programme:'Programme Stories','Success Story':'Success Stories',HHP:'Health Promotion','Health Promotion':'Health Promotion'}[section]||'Community Stories');
