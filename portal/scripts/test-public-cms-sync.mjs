@@ -69,3 +69,15 @@ assert.equal((await read()).records.programmes.find(page=>page.id===seededPage.i
 await send({kind:'programme',action:'publish',record:{...seededPage,overview:'My own brand description.'},baseUpdatedAt:(await read()).entries.find(entry=>entry.id===seededPage.id).updatedAt});assert((await publicPortalData(getStorage())).programmes.some(page=>page.overview==='My own brand description.'));
 const {default:Showcase}=await mod('app/programme-showcase.tsx');const emptyDescriptionHtml=renderToStaticMarkup(React.createElement(Showcase,{data:{brands:['SEEN'],programmes:[]},renderStories:()=>null}));assert(!emptyDescriptionHtml.includes('ps-programme-description'),'no description fallback when a page does not exist');
 console.log('PASS: old seeded description is cleared, authored description is preserved, and absent brand pages have no fallback description.');
+
+const beforeOrdering=await read(),savedBrandPages=beforeOrdering.records.programmes;
+await send({kind:'programme',action:'draft',record:{...existingPage,overview:'Unpublished editorial changes.'},baseUpdatedAt:beforeOrdering.entries.find(entry=>entry.id===existingPage.id).updatedAt});
+const orderedIds=[completedPage.id,...savedBrandPages.filter(page=>page.id!==completedPage.id).map(page=>page.id)].reverse();orderedIds.splice(orderedIds.indexOf(completedPage.id),1);orderedIds.unshift(completedPage.id);
+const orderRequest={kind:'programme',action:'reorder',order:orderedIds.map(id=>({id,baseUpdatedAt:beforeOrdering.entries.find(entry=>entry.id===id).updatedAt}))};
+await send(orderRequest);
+const afterOrdering=await read();for(const [index,id] of orderedIds.entries()){const page=afterOrdering.records.programmes.find(page=>page.id===id);assert.equal(page.sortOrder,index);const {sortOrder,...content}=page;assert.deepEqual(content,savedBrandPages.find(page=>page.id===id),'reordering preserves content and visibility');}
+const orderedDraft=afterOrdering.drafts.find(draft=>draft.record.id===existingPage.id);assert.equal(orderedDraft.record.overview,'Unpublished editorial changes.');assert.equal(orderedDraft.baseUpdatedAt,afterOrdering.entries.find(entry=>entry.id===existingPage.id).updatedAt);
+const orderedFeed=await publicPortalData(getStorage()),orderedHtml=renderToStaticMarkup(React.createElement(Showcase,{data:orderedFeed,renderStories:()=>null}));assert.equal(orderedHtml.match(/<h3>([^<]*)<\/h3>/)[1],'Completed Brand Page','public cards use the chosen order across brands and repeated-brand pages');
+const staleOrder=await cms.POST(request(orderRequest));assert.equal(staleOrder.status,400,'stale editor cannot overwrite a newer order');
+const incompleteOrder=await cms.POST(request({...orderRequest,order:orderRequest.order.slice(1)}));assert.equal(incompleteOrder.status,400,'partial requests cannot drop cards from the order');
+console.log('PASS: brand positions persist, public order matches, content/visibility/drafts remain intact, and stale or incomplete reorders are rejected.');
