@@ -100,3 +100,7 @@ const {default:ContentEditor}=await mod('app/cms-content-editor.tsx');const edit
 assert(editorHtml.includes('Brand <span class="required-marker"'),'brand displays an asterisk');
 assert(editorHtml.includes('Description (optional)</span>'),'optional description is unmarked');assert(!editorHtml.includes('(required)'));
 console.log('PASS: accessible required markers, conditional optional labels, nested planner controls and brand editor requirements.');
+
+const partnerEditorHtml=renderToStaticMarkup(React.createElement(ContentEditor,{editor:{kind:'partner',record:{id:'new-partner',title:'New Partner',description:'',imageUrl:'',published:true},baseUpdatedAt:''},data:await loadData(store),publications:[],onChange:()=>{},onImageBusy:()=>{}}));
+assert(!partnerEditorHtml.includes('Featured Image Alt Text'));assert(!partnerEditorHtml.includes('Choose Featured Image from Library'));assert(partnerEditorHtml.includes('image-upload-trigger'),'partner logo upload remains available');assert(editorHtml.includes('Featured Image Alt Text'),'other content editors retain alt text');
+console.log('PASS: partner editor omits alt text and library button while keeping direct uploads and other editors intact.');
