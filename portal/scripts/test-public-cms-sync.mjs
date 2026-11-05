@@ -52,3 +52,20 @@ cardHtml=renderToStaticMarkup(React.createElement(Portal,{initialData:cardFeed})
 assert(!cardHtml.includes('New Community Initiative'),'hidden page disappears');
 assert(cardFeed.brands.includes('SEEN'),'hiding one page preserves other visible pages of that brand');
 console.log('PASS: additional same-brand cards publish and render; independent hiding preserves the existing brand page.');
+
+for(const [patch,expected] of [[{overview:''},'Description'],[{overview:'x'.repeat(5001)},'Description'],[{brand:''},'Brand']]){
+ const response=await cms.POST(request({kind:'programme',action:'publish',record:{...addedPage,id:crypto.randomUUID(),...patch},baseUpdatedAt:''}));
+ assert.equal(response.status,400);const problem=await response.json();assert(problem.error.includes(expected),problem.error);assert(!problem.error.includes('Check the required text fields'),problem.error);
+}
+const completedPage={...addedPage,id:crypto.randomUUID(),displayName:'Completed Brand Page',overview:'A description written by the user.',subtitle:'',focusAreas:[],imageUrl:''};
+await send({kind:'programme',action:'publish',record:completedPage,baseUpdatedAt:''});assert((await publicPortalData(getStorage())).programmes.some(page=>page.displayName==='Completed Brand Page'));
+console.log('PASS: brand publishing identifies missing Brand/Description and description length; a completed new page publishes with optional fields blank.');
+
+const retiredDescription='Supporting seniors through active ageing, community participation, wellness activities and meaningful social connections.';
+const seededPage={...existingPage,id:'legacy-description-test',overview:retiredDescription};delete seededPage.descriptionSource;
+await store.apply([{type:'upsert',record:{id:seededPage.id,kind:'programme_profile',payload:seededPage,updatedAt:new Date().toISOString()}}]);
+const withoutDefault=await publicPortalData(getStorage());assert(!withoutDefault.programmes.some(page=>page.overview===retiredDescription),'old seeded descriptions are not public content');
+assert.equal((await read()).records.programmes.find(page=>page.id===seededPage.id).overview,'','CMS opens old seeded descriptions blank');
+await send({kind:'programme',action:'publish',record:{...seededPage,overview:'My own brand description.'},baseUpdatedAt:(await read()).entries.find(entry=>entry.id===seededPage.id).updatedAt});assert((await publicPortalData(getStorage())).programmes.some(page=>page.overview==='My own brand description.'));
+const {default:Showcase}=await mod('app/programme-showcase.tsx');const emptyDescriptionHtml=renderToStaticMarkup(React.createElement(Showcase,{data:{brands:['SEEN'],programmes:[]},renderStories:()=>null}));assert(!emptyDescriptionHtml.includes('ps-programme-description'),'no description fallback when a page does not exist');
+console.log('PASS: old seeded description is cleared, authored description is preserved, and absent brand pages have no fallback description.');
