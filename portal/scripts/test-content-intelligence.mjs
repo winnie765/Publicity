@@ -48,9 +48,34 @@ const publicTarget=story('post-target','2026-10-31'),publicOld=story('post-peer-
 const showcases=publicContentShowcases([publicOld,publicTarget,workvivoStory,scheduled],peers.concat(target),{},'2026-11-05');assert.equal(showcases.latestPosts[0],publicTarget.id);assert.deepEqual(showcases.periods['30d'].trending,[publicTarget.id]);assert(showcases.periods.ytd.engagement.includes(publicOld.id));assert(!showcases.periods['30d'].engagement.includes(publicOld.id));assert(!JSON.stringify(showcases).includes('workvivo-excerpt'));assert(!JSON.stringify(showcases).includes('scheduled'));assert(!JSON.stringify(showcases).includes('ratio'));assert(!JSON.stringify(showcases).includes('average'));
 await store.apply([{type:'upsert',record:{id:target.id,kind:'posts',payload:{...target,show_on_public_site:true,show_in_stories:true,public_summary:'Approved public summary.'},updatedAt:new Date().toISOString()}},{type:'upsert',record:{id:'private-secret',kind:'posts',payload:post('private-secret','2026-10-31',0,{title:'PRIVATE TITLE',notes:'PRIVATE NOTES',views:987654321,reportedMetrics:['likes'],show_on_public_site:false}),updatedAt:new Date().toISOString()}}]);
 const publicFeed=await publicPortalData(getStorage(),'2026-11-05');assert(publicFeed.showcases.latestPosts.includes('post-target'));const publicJson=JSON.stringify(publicFeed.showcases);for(const secret of ['private-secret','PRIVATE TITLE','PRIVATE NOTES','987654321'])assert(!publicJson.includes(secret));
+// Existing post records feed public cards without requiring a duplicate CMS entry or summary.
+const {validateContent}=await mod('lib/content-media.ts');assert.doesNotThrow(()=>validateContent({show_on_public_site:true,public_summary:''},'Facebook','published'));
+const automatic=post('automatic-no-summary','2026-11-03',0,{show_on_public_site:true,show_in_community_highlights:true,public_summary:'',notes:'INTERNAL AUTOMATIC NOTES',description:'INTERNAL CAPTION',is_workvivo_associated:true});
+const promotionOnly=post('promotion-only','2026-11-02',4,{show_on_public_site:undefined,show_on_home_page:true,public_summary:''});
+const privateFlag=post('private-flag','2026-11-04',90,{show_on_public_site:false,show_on_home_page:true});
+const futurePublic=post('future-public','2027-01-01',80,{show_on_public_site:true});
+const draftPublic=post('draft-public','2026-11-04',70,{status:'draft',show_on_public_site:true});
+const nativePublic=post('native-public','2026-11-04',60,{platform:'Workvivo',show_on_public_site:true});
+await store.apply([automatic,promotionOnly,privateFlag,futurePublic,draftPublic,nativePublic].map(payload=>({type:'upsert',record:{id:payload.id,kind:'posts',payload,updatedAt:new Date().toISOString()}})));
+const autoFeed=await publicPortalData(store,'2026-11-05');
+assert(autoFeed.showcases.latestPosts.includes('post-automatic-no-summary'));
+assert(autoFeed.showcases.latestPosts.includes('post-promotion-only'));
+assert(autoFeed.showcases.periods['30d'].featured.includes('post-automatic-no-summary'),'zero-metric Community Highlights still qualifies as featured');
+const automaticCard=autoFeed.stories.find(row=>row.id==='post-automatic-no-summary');assert.equal(automaticCard.summary,'');assert.equal(automaticCard.title,automatic.title);assert.equal(automaticCard.platform,'Facebook');
+for(const secret of ['INTERNAL AUTOMATIC NOTES','INTERNAL CAPTION','post-private-flag','post-future-public','post-draft-public','post-native-public'])assert(!JSON.stringify(autoFeed).includes(secret));
+// An incomplete legacy CMS record cannot suppress a directly public post.
+await store.apply([{type:'upsert',record:{id:'incomplete-copy',kind:'public_content',payload:{id:'incomplete-copy',postId:automatic.id,publicSource:true},updatedAt:new Date().toISOString()}}]);
+assert((await publicPortalData(store,'2026-11-05')).stories.some(row=>row.id==='post-'+automatic.id));
+// Explicit CMS hiding and scheduling remain authoritative.
+for(const publication of [{id:'incomplete-copy',postId:automatic.id,publicSource:true,published:false},{id:'scheduled-copy',postId:promotionOnly.id,publicSource:true,published:true,publishDate:'2027-01-01'}])await store.apply([{type:'upsert',record:{id:publication.id,kind:'public_content',payload:publication,updatedAt:new Date().toISOString()}}]);
+const hiddenFeed=await publicPortalData(store,'2026-11-05');assert(!hiddenFeed.stories.some(row=>row.id==='post-'+automatic.id));assert(!hiddenFeed.stories.some(row=>row.id==='post-'+promotionOnly.id));
+const linkedOld=story('linked-old','2026-11-04'),linkedNew=story('linked-new','2026-10-01');
+const ordered=publicContentShowcases([linkedOld,linkedNew],peers.concat(target),{'linked-old':'peer-a','linked-new':'target'},'2026-11-05');assert.equal(ordered.latestPosts[0],'linked-new','sort by source Post Date, not CMS excerpt publication date');assert(!ordered.periods['30d'].engagement.includes('linked-old'));
+
 const {defaultPublicHome}=await mod('lib/public-site-config.ts');await send({kind:'home',action:'publish',record:{...defaultPublicHome,showcasesEnabled:false},baseUpdatedAt:''});assert.equal((await publicPortalData(getStorage(),'2026-11-05')).showcases,undefined);
 const homeEntry=(await read()).entries.find(entry=>entry.id===defaultPublicHome.id);await send({kind:'home',action:'publish',record:{...defaultPublicHome,showcasesEnabled:true,showcaseDefaultPeriod:'90d',showcaseTitle:'Our Community In Focus'},baseUpdatedAt:homeEntry.updatedAt});const enabledFeed=await publicPortalData(getStorage(),'2026-11-05');assert(enabledFeed.showcases);assert.equal(enabledFeed.home.showcaseDefaultPeriod,'90d');assert.equal(enabledFeed.home.showcaseTitle,'Our Community In Focus');
 const {default:PostUI}=await mod('app/post-content-intelligence.tsx'),postHtml=renderToStaticMarkup(React.createElement(PostUI,{post:target,data:{posts:rows,followers:[],interactions:[],config}}));for(const label of ['Post Performance Analysis','Observation','Why It Performed This Way','Possible Contributing Factors','Recommended Actions','Add to Content Planner'])assert(postHtml.includes(label));
 const {default:PublicUI}=await mod('app/public-content-showcases.tsx'),publicHtml=renderToStaticMarkup(React.createElement(PublicUI,{stories:enabledFeed.stories,showcases:enabledFeed.showcases}));for(const label of ['Most Recent Posts','Trending Now','Last 30 Days','Last 90 Days','Year-to-Date'])assert(publicHtml.includes(label));
+const emptyHtml=renderToStaticMarkup(React.createElement(PublicUI,{stories:[],showcases:publicContentShowcases([],[],{},'2026-11-05')}));assert(emptyHtml.includes('No posts available.'));assert(emptyHtml.includes('Most Recent Posts'));
 console.log('PASS: historical peer comparisons, missing/zero metrics, verified themes, platform isolation, source feed validation/cache/outages, protected APIs, public approval/privacy, automatic rankings, CMS controls and structured post explanations.');
 

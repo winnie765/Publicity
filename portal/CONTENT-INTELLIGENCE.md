@@ -22,12 +22,12 @@ Topic counts measure publisher-category mentions among retrieved updates. They d
 
 **Public Site Manager → Content Showcases** controls the new public section's heading, description, visibility and default performance period. The public page offers Last 30 Days, Last 90 Days and Year-to-Date selections.
 
-- Latest posts, stories and highlights sort by their approved publication date.
+- Latest posts use the source Post Date (newest first); standalone stories and highlights use their publication date. Linked public excerpts are deduplicated by source post.
 - Top posts rank positive reported engagement, reach or views.
-- Featured collections prioritise administrator selections, then measured shares and engagement.
+- Featured collections prioritise Homepage Feature, Community Highlight and administrator selections, then measured shares and engagement. A flagged post does not need positive metrics to be featured.
 - Trending Now requires engagement at least 1.5x each of the platform, account and format baselines, with at least three measured peers for each. It is not a real-time velocity measure.
 
-Only story IDs already eligible for the approved public feed are emitted. Hidden, draft, scheduled and Workvivo content is excluded. Ranking uses private metrics server-side, but metric values, peer averages, internal notes and private post IDs are not serialized into the public showcase payload. Changing a post's approval or visibility automatically removes it from the collections on the next public refresh.
+Existing posts with a public destination enter the public feed directly; no duplicate CMS record or Public Summary is needed. Summary stays blank when omitted and never falls back to internal text. Explicit Not Public wins over stale promotion flags. Incomplete linked CMS records cannot suppress public posts; explicit CMS Hide or scheduled publication remains authoritative. Empty collections display "No posts available." Only story IDs already eligible for the approved public feed are emitted. Hidden, draft, scheduled and Workvivo content is excluded. Ranking uses private metrics server-side, but metric values, peer averages, internal notes and private post IDs are not serialized into the public showcase payload. Changing a post's approval or visibility automatically removes it from the collections on the next public refresh.
 
 ## Storage and verification
 

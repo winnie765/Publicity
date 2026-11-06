@@ -25,7 +25,7 @@ export function validateContent(value:PostContent,platform?:string,status?:strin
  const gallery=validateGallery(value.gallery_images);
  if(platform==='Workvivo'&&visibilityFields.some(k=>value[k]))throw Error('Workvivo posts and images remain private.');
  if(platform!=='Workvivo'&&[value.featured_image_url,value.thumbnail_url,...gallery.map(g=>g.url)].some(v=>v&&assetKey(v).startsWith('workvivo/')))throw Error('Workvivo images cannot be published as external content.');
- if(value.show_on_public_site&&status!=='draft'){if(!value.public_summary?.trim())throw Error('Add an approved public summary before publishing.');if(value.featured_image_url&&!value.featured_image_alt_text?.trim())throw Error('Add a description for the featured image.');}
+ if(value.show_on_public_site&&status!=='draft'){if(value.featured_image_url&&!value.featured_image_alt_text?.trim())throw Error('Add a description for the featured image.');}
 }
 export function validatePublicImages(urls:string[]){if(urls.some(v=>assetKey(v).startsWith('workvivo/')))throw Error('Workvivo images remain private.');}
 
