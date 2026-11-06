@@ -7,3 +7,5 @@ export function safeOriginalPostUrl(value:unknown):string{
 }
 export function originalPostUrl(post:PostSourceLink):string{return safeOriginalPostUrl(postUrlValue(post));}
 export function validateOriginalPostUrl(value:unknown){if(value===undefined||value==='')return;if(typeof value!=='string'||!safeOriginalPostUrl(value))throw Error('Original Post URL must be a valid HTTP or HTTPS link, up to 2000 characters, without embedded credentials.');}
+
+export function publicSocialPostUrl(value:unknown):string{const safe=safeOriginalPostUrl(value);if(!safe)return '';const url=new URL(safe);return url.protocol==='https:'&&['facebook.com','www.facebook.com','m.facebook.com','fb.watch','instagram.com','www.instagram.com'].includes(url.hostname)?url.href:'';}
