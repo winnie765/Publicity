@@ -11,10 +11,9 @@ import './publishing-information.css';
 const destinations=[
   {key:'automatic',title:'Automatic Showcases',description:'Published posts are selected automatically by performance and recency.',icon:Globe},
   {key:'private',title:'Not Public',description:'Keep this post inside the workspace.',icon:Lock},
-  {key:'highlights',title:'Community Highlights',description:'Share a community update.',icon:Star},
   {key:'stories',title:'Stories',description:'Publish a public story or article.',icon:BookOpen},
   {key:'programme',title:'Programme Page',description:'Include this on its brand page.',icon:Layers},
-  {key:'homepage',title:'Homepage Feature',description:'Feature on the homepage and in Community Highlights.',icon:Home},
+  {key:'homepage',title:'Homepage Feature',description:'Prioritise this post in Featured Posts.',icon:Home},
 ] satisfies {key:PublicDestination;title:string;description:string;icon:typeof Home}[];
 
 export default function PublicPublishingFields({post,onChange}:{post:Post;onChange:(patch:Partial<Post>)=>void}){

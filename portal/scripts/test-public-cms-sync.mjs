@@ -18,8 +18,8 @@ await send({kind:'home',action:'publish',record:home,baseUpdatedAt:''});
 const feed=await publicPortalData(getStorage());for(const key of ['valuesTitle','respectTitle','respectDescription','highlightsTitle','brandsTitle','storiesTitle','socialTitle','facebookGlowLabel','facebookGlowLink','partnersTitle'])assert.equal(feed.home[key],home[key],key+' persisted into public feed');
 const {default:Portal}=await mod('app/public-portal.tsx');const html=renderToStaticMarkup(React.createElement(Portal,{initialData:{...feed,partners:[{id:'partner',title:'Partner',imageUrl:'',url:''}]}}));
 assert.deepEqual(feed.home.additionalValues,home.additionalValues);
-for(const text of ['Compassion','Supporting one another.','Our Shared Values','Dignity','Every person matters.','Our Community Moments','Meet Our Brands','Connect With Us','Follow GLOW','https://www.facebook.com/customglow','Our Trusted Partners'])assert(html.includes(text),text+' rendered publicly');
-assert(!html.includes('PEOPLE AT THE HEART OF IT ALL'));assert(!html.includes('Search stories, programmes and people'));assert(!html.includes('id="stories"'));
+for(const text of ['Compassion','Supporting one another.','Our Shared Values','Dignity','Every person matters.','Meet Our Brands','Connect With Us','Follow GLOW','https://www.facebook.com/customglow','Our Trusted Partners'])assert(html.includes(text),text+' rendered publicly');
+assert(!html.includes('Our Community Moments'));assert(!html.includes('Community highlights will be shared here soon.'));assert(!html.includes('PEOPLE AT THE HEART OF IT ALL'));assert(!html.includes('Search stories, programmes and people'));assert(!html.includes('id="stories"'));
 const result=await cms.POST(request({kind:'home',action:'publish',record:{...home,facebookGlowLink:'javascript:alert(1)'},baseUpdatedAt:(await read()).entries.find(e=>e.id===home.id).updatedAt}));assert.equal(result.status,400,'unsafe social links rejected');
 console.log('PASS: CMS settings persist, active sections render, retired story section stays absent, and unsafe social URLs are rejected.');
 

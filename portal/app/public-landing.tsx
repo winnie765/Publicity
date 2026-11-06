@@ -5,7 +5,6 @@ import PublicStoryMedia from './public-story-media';
 import ProgrammeShowcase from './programme-showcase';
 import PublicValues from './public-values';
 import PublicSocialLinks from './public-social-links';
-import CommunityHighlightsCarousel from './community-highlights-carousel';
 import PublicGallery from './public-gallery';
 import {RichStoryContent} from './rich-story-editor';
 import {PublicSection,EmptyPublicContent,PartnerCard,storyCategory,displayDate,type PublicStory} from './public-components';
@@ -15,5 +14,5 @@ function Story({story}:{story:PublicStory}){return <article className="ps-conten
 export default function PublicLanding({data}:{data:PublicData}){
  const home={...defaultPublicHome,...data.home};
  const cards=(rows:PublicStory[])=>rows.length?<div className="ps-card-grid">{rows.map(s=><Story key={s.id} story={s}/>)}</div>:<EmptyPublicContent>New community stories will be shared here soon.</EmptyPublicContent>;
- return <><PublicValues settings={home}/><CommunityHighlightsCarousel stories={data.stories} title={home.highlightsTitle} description={home.highlightsDescription}/><PublicSection id="programmes" eyebrow="OUR BRANDS" title={home.brandsTitle}><ProgrammeShowcase data={data} renderStories={cards}/></PublicSection>{home.showcasesEnabled!==false&&data.showcases&&<PublicContentShowcases title={home.showcaseTitle} description={home.showcaseDescription} stories={data.stories} showcases={data.showcases} defaultPeriod={home.showcaseDefaultPeriod} rankingMethod={home.showcaseRankingMethod}/>}<PublicSocialLinks settings={home}/>{data.partners.length>0&&<PublicSection id="partners" eyebrow="STRONGER TOGETHER" title={home.partnersTitle} description={home.partnersDescription} className="ps-partners-section"><div className="ps-partners-grid">{data.partners.map(p=><PartnerCard key={p.id} partner={p}/>)}</div></PublicSection>}</>;
+ return <><PublicValues settings={home}/><PublicSection id="programmes" eyebrow="OUR BRANDS" title={home.brandsTitle}><ProgrammeShowcase data={data} renderStories={cards}/></PublicSection>{home.showcasesEnabled!==false&&data.showcases&&<PublicContentShowcases title={home.showcaseTitle} description={home.showcaseDescription} stories={data.stories} showcases={data.showcases} defaultPeriod={home.showcaseDefaultPeriod} rankingMethod={home.showcaseRankingMethod}/>}<PublicSocialLinks settings={home}/>{data.partners.length>0&&<PublicSection id="partners" eyebrow="STRONGER TOGETHER" title={home.partnersTitle} description={home.partnersDescription} className="ps-partners-section"><div className="ps-partners-grid">{data.partners.map(p=><PartnerCard key={p.id} partner={p}/>)}</div></PublicSection>}</>;
 }
