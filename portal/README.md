@@ -2,6 +2,10 @@
 
 The public community website and private staff Workspace have separate routes, server access controls and data projections. The latest architecture supersedes the earlier all-public/no-login design.
 
+## Current workspace
+
+The November 2026 navigation, recovery, AI Analyst and personal Dashboard Builder improvements are documented in [PRODUCT-IMPROVEMENTS.md](PRODUCT-IMPROVEMENTS.md). Use the in-app User Guide for current workflows. Older sections below retain implementation history and may describe public sections or labels that have since been retired. No retired feature is restored by these improvements.
+
 ## Public Portal
 
 ## Executive presentation Dashboard

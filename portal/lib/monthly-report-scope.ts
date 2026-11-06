@@ -6,7 +6,7 @@ const stakeholderText=/\bstakeholders?\b|\b(?:AIC|GRA|NCSS|MSF)\b|\b(?:social se
 export function monthlyPerformanceReport(report:MonthlyReport):MonthlyReport{
  const result=structuredClone(report) as MonthlyReport&{publicity?:unknown;stakeholders?:unknown};
  delete result.publicity;delete result.stakeholders;
- result.limitations=result.limitations.filter(text=>!stakeholderText.test(text));
+ result.limitations=(result.limitations||[]).filter(text=>!stakeholderText.test(text));
  const ai=result.ai;if(!ai)return result;
  const excluded=new Set(ai.facts.filter(fact=>stakeholderText.test(fact.label)&&!/^Workvivo stakeholder interaction/i.test(fact.label)).map(fact=>fact.id));
  const internal=new Set(ai.facts.filter(fact=>/^Workvivo\b/i.test(fact.label)).map(fact=>fact.id));

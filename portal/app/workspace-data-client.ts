@@ -16,7 +16,8 @@ export function workspaceData(url:string,force=false):Promise<any>{
   if(prior?.pending)return prior.pending;
   if(!force&&prior?.value&&Date.now()-prior.at<15000)return Promise.resolve(prior.value);
   const entry:Entry={...prior,at:prior?.at||0};
-  entry.pending=fetch(url,{cache:'no-store'}).then(async response=>{const data=await readApiResponse(response);if(!response.ok)throw Error(response.status===401?'Sign in again to continue.':data.error||'Records could not be loaded.');entry.value=data;entry.at=Date.now();return data;}).finally(()=>{entry.pending=undefined});
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),25000);
+  entry.pending=fetch(url,{cache:'no-store',signal:controller.signal}).then(async response=>{const data=await readApiResponse(response);if(!response.ok)throw Error(response.status===401?'Sign in again to continue.':data.error||'Records could not be loaded.');entry.value=data;entry.at=Date.now();return data;}).catch(error=>{if(controller.signal.aborted)throw Error('Loading took too long. Your saved records are unchanged. Try Again to reconnect.');throw error;}).finally(()=>{clearTimeout(timeout);entry.pending=undefined});
   cache.set(url,entry);return entry.pending;
 }
 /** Optimistic state is local to this screen and is rolled back if the write fails. */

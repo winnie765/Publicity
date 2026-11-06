@@ -1,6 +1,6 @@
 # Analytics decision support
 
-The Executive Dashboard, Facebook, Instagram, Top Hits, Followers and Workvivo pages share Key Takeaways, calendar comparison controls, benchmark cards and chart-level explanations. New monthly report snapshots include this evidence and preserve the ten-section export structure. Older snapshots remain readable without these optional additions.
+The Executive Dashboard, Top Hits and Followers pages expose the shared Growth Analysis and Key Takeaways UI. It has been removed from the Facebook, Instagram and Workvivo pages; their existing metrics and other analysis remain available. Calendar comparison calculations, benchmark evidence and chart-level explanations are still used by the existing reporting services. New monthly report snapshots include this evidence and preserve the ten-section export structure. Older snapshots remain readable without these optional additions.
 
 ## Comparison rules
 

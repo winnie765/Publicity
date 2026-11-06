@@ -21,7 +21,8 @@
     "db:d1:generate": "drizzle-kit generate",
     "test:user-guide": "node scripts/test-user-guide.mjs",
     "test:analytics": "node scripts/test-analytics-decisions.mjs",
-    "test:content-intelligence": "node scripts/test-content-intelligence.mjs"
+    "test:content-intelligence": "node scripts/test-content-intelligence.mjs",
+    "test:workspace-product": "node scripts/test-workspace-product.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

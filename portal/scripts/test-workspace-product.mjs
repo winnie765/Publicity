@@ -1,0 +1,30 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/workspace-product-tests');
+const {default:Navigation}=await load('app/workspace-navigation.tsx');
+const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props));
+for(const [page,platform,href] of [[0,'Overview','/workspace'],[19,'Overview','/workspace/analyst'],[20,'Overview','/workspace/dashboard-builder'],[11,'Instagram','/workspace/analytics/instagram']]){
+ const html=render(Navigation,{page,platform});
+ assert(html.includes('Staff Workspace'));assert(html.includes('Analytics Dashboard'));assert(html.includes('Administration'));assert(html.includes('Social Media Posts'));assert(html.includes('Content Workspace'));
+ assert(html.includes('href="'+href+'"'));assert(html.includes('aria-current="page"'));
+ for(const route of ['/workspace/reports','/workspace/import','/workspace/settings','/workspace/records?kind=posts','/workspace/trash','/workspace/compare','/workspace/outreach','/workspace/insights','/workspace/assistant','/workspace/planner','/workspace/site-manager'])assert(html.includes('href="'+route+'"'),route);
+ assert(html.indexOf('Content Intelligence')<html.indexOf('Content Workspace'));assert(!html.includes('Reports Archive'));
+}
+const {defaultDashboardLayout,parseDashboardLayout}=await load('lib/dashboard-layout.ts');
+assert.deepEqual(parseDashboardLayout(defaultDashboardLayout),defaultDashboardLayout);
+for(const invalid of [null,{}, {...defaultDashboardLayout,widgets:[]},{...defaultDashboardLayout,widgets:['overview','overview']},{...defaultDashboardLayout,widgets:['arbitrary']},{...defaultDashboardLayout,title:''},{...defaultDashboardLayout,platform:'Workvivo'},{...defaultDashboardLayout,title:'x'.repeat(101)}])assert.equal(parseDashboardLayout(invalid),null);
+const layout={...defaultDashboardLayout,widgets:['posts','overview'],title:'Staff review'};const parsed=parseDashboardLayout(layout);assert.deepEqual(parsed.widgets,['posts','overview']);parsed.widgets.push('trend');assert.equal(layout.widgets.length,2,'saved preferences are copied');
+const {default:Builder}=await load('app/dashboard-builder.tsx'),{blankPost,defaultConfig}=await load('app/model.ts');
+const post={...blankPost(),id:'public',platform:'Facebook',brand:'GLOW',account:'Facebook GLOW',title:'Measured external post',type:'Reel',date:'2026-10-01',likes:12,status:'published',reportedMetrics:['likes']};
+const data={posts:[post,{...post,id:'internal',platform:'Workvivo',likes:99999}],followers:[],interactions:[],config:structuredClone(defaultConfig)};
+const builder=render(Builder,{data,onOpen(){}});for(const text of ['AI DASHBOARD BUILDER','Save Layout','Reset Layout','Performance Overview','Engagement Trend','Content Formats','Ask AI for dashboard recommendations','this browser'])assert(builder.includes(text),text);const builderText=builder.replace(/<[^>]+>/g,' ');assert(!builderText.includes('99,999'));assert(!builderText.includes('100,011'));assert(builder.includes('12'));assert(builder.includes('aria-label="Dashboard preview"'));
+const postcss=await import('postcss');postcss.default.parse(fs.readFileSync('app/workspace-product.css','utf8'));
+const {default:Recovery}=await load('app/workspace/error.tsx');const recovery=render(Recovery,{error:Error('PRIVATE DATABASE ERROR'),reset(){}});for(const text of ['Try Again','Open Dashboard','User Guide'])assert(recovery.includes(text));assert(!recovery.includes('PRIVATE DATABASE ERROR'));
+const {readApiResponse}=await load('lib/api-response.ts');await assert.rejects(()=>readApiResponse(new Response('<html>upstream</html>',{status:503})),error=>!error.message.includes('Vercel')&&!error.message.includes('import')&&error.message.includes('HTTP 503'));
+const {reportIndex}=await load('lib/report-service.ts');let kinds;const index=await reportIndex({readRecords:async requested=>{kinds=requested;return [{id:'legacy',kind:'generated_report',payload:{period:{frequency:'monthly',label:'Old month'},generatedAt:'2026-01-01'},updatedAt:'2026-01-01'}];}});assert.equal(index[0].id,'legacy');assert.equal(index[0].posts,0);assert(kinds.includes('generated_report'));
+const shell=fs.readFileSync('app/workspace-shell.tsx','utf8');for(const route of ['/workspace/analyst','/workspace/dashboard-builder'])assert(shell.includes(route));
+const {default:ExcelJS}=await import('exceljs');const workbook=new ExcelJS.Workbook(),sheet=workbook.addWorksheet('Facebook');sheet.addRow(['Date','Page','Post_Title','Content_Type','Likes']);sheet.addRow(['2026-10-01','GLOW','Workbook round-trip','Reel',12]);const decoded=new ExcelJS.Workbook();await decoded.xlsx.load(await workbook.xlsx.writeBuffer());const {extractSheetData,prepareStandardWorkbook}=await load('app/standard-workbook.ts');const imported=await prepareStandardWorkbook(extractSheetData(decoded),{posts:[],followers:[],interactions:[],config:structuredClone(defaultConfig)});const importedPost=imported.batches.find(batch=>batch.kind==='posts').items[0];assert.equal(importedPost.title,'Workbook round-trip');assert.equal(importedPost.likes,12);assert.equal(importedPost.platform,'Facebook');assert.equal(importedPost.account,'Facebook GLOW');
+console.log('PASS: preserved navigation routes/active states, local layout validation, published external metrics, accessible recovery, readable upstream errors and legacy report metadata.');
