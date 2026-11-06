@@ -15,7 +15,7 @@ import MediaLibrary from './media-library';
 import CmsContentEditor,{type CmsEditorValue} from './cms-content-editor';
 import ThemedSelect from './themed-select';
 import {useConfirmAction} from './confirm-action';
-const sections=[['home','Hero Banner',Home],['values','Our Values',HeartHandshake],['programme',"What We're Doing",Layers],['showcases','Content Showcases',Layers],['social','Follow Our Social Media',Globe],['partner','Our Partners',Users],['media','Media Library',Images]] as const;
+const sections=[['home','Hero Banner',Home],['values','Our Values',HeartHandshake],['showcases','Content Showcases',Layers],['programme',"What We're Doing",Layers],['social','Follow Our Social Media',Globe],['partner','Our Partners',Users],['media','Media Library',Images]] as const;
 type State={config?:Config;sourcePosts?:Post[];records:any;drafts:{kind:CmsKind;record:any;baseUpdatedAt:string;savedAt:string}[];entries:{id:string;kind:string;updatedAt:string}[]};
 const recordKey:Record<string,string>={home:'home',publication:'publications',programme:'programmes',event:'events',impact:'impacts',partner:'partners'};
 const kinds:Record<string,string>={home:'public_home',publication:'public_content',programme:'programme_profile',event:'public_event',impact:'community_impact',partner:'public_partner'};
