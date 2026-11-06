@@ -10,7 +10,7 @@ const {default:Fields}=await load('app/public-publishing-fields.tsx');
 const {blankPost}=await load('app/model.ts');
 let post={...blankPost(),public_summary:'Approved summary',public_article:'Saved article'};
 const toggle=key=>{post={...post,...toggleDestination(post,key)}};
-assert.deepEqual(selectedDestinations(post),['private']);
+assert.deepEqual(selectedDestinations(post),['automatic']);
 toggle('homepage');assert.equal(post.show_on_public_site,true);assert.equal(post.show_in_community_highlights,true);assert.equal(post.show_on_home_page,true);
 toggle('stories');toggle('programme');assert.equal(selectedDestinations(post).length,4);
 const render=()=>renderToStaticMarkup(React.createElement(Fields,{post,onChange(){}}));
@@ -18,7 +18,8 @@ assert(render().includes('Story Category'));assert(render().includes('Public Art
 toggle('highlights');assert.equal(post.show_on_home_page,false);assert.equal(post.show_in_stories,true);
 toggle('stories');assert(!render().includes('Story Category'));assert(!render().includes('Public Article'));
 toggle('private');assert.deepEqual(selectedDestinations(post),['private']);assert.equal(post.show_on_public_site,false);assert.equal(post.public_article,'Saved article');assert.equal(post.public_summary,'Approved summary');
-assert.equal((render().match(/aria-pressed=/g)||[]).length,5);
+toggle('automatic');assert.deepEqual(selectedDestinations(post),['automatic']);assert.equal(post.show_on_public_site,true);assert.equal(post.show_in_stories,false);
+assert.equal((render().match(/aria-pressed=/g)||[]).length,6);
 assert(render().includes('Internal notes and analytics remain private.'));
 assert.deepEqual(selectedDestinations({show_on_public_site:true,show_on_home_page:true}),['highlights','homepage']);
 console.log('PASS: destination dependencies, multiple selections, private reset, content preservation and conditional story fields.');
