@@ -1,3 +1,4 @@
+import {interactionReading,rateReading,summariseValues} from './post-measurements';
 import type {Dataset,Post} from '../app/model';
 import {metricReading} from './social-post-workflow';
 import {originalPostUrl} from './original-post-url';
@@ -8,18 +9,8 @@ export const validDate=(value:string)=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number
 const dayMs=86400000;
 const day=(time:number)=>new Date(time).toISOString().slice(0,10);
 const components=['likes','comments','shares','saves'] as const;
-const mean=(values:number[])=>values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
-export function interactionReading(post:Post){
- const total=metricReading(post,'engagementTotal');
- const known=components.filter(key=>metricReading(post,key)!==null);
- return {value:total??(known.length?known.reduce((sum,key)=>sum+metricReading(post,key)!,0):null),basis:total!==null?'Reported total':known.join(' + ')||'Not recorded',complete:known.length===4};
-}
-export function rateReading(post:Post){
- const denominator=post.platform==='Facebook'?'views':'reach',exposure=metricReading(post,denominator),complete=components.every(key=>metricReading(post,key)!==null);
- // Reported totals can have a different definition: rates always use the four explicit components.
- const numerator=complete?components.reduce((sum,key)=>sum+metricReading(post,key)!,0):null;
- return {denominator,numerator,exposure,value:numerator!==null&&exposure!==null&&exposure>0?numerator/exposure*100:null,formula:'(Likes / Reactions + Comments + Shares + Saves) ÷ '+(denominator==='views'?'Facebook Views':'Instagram Reach')+' × 100'};
-}
+const mean=(values:number[])=>summariseValues(values).average;
+export {interactionReading,rateReading} from './post-measurements';
 export function defaultAnalyticalFilters(data:Dataset):AnalyticalFilters{
  const dates=[...data.posts.filter(p=>['Facebook','Instagram'].includes(p.platform)&&p.status!=='draft'),...data.followers].map(p=>p.date).filter(validDate).sort();
  return {platform:'',account:'',brand:'',start:dates[0]||'',end:dates.at(-1)||''};

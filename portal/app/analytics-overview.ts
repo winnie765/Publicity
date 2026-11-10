@@ -1,3 +1,4 @@
+import {metricReading} from '../lib/post-measurements';
 import {average,engagement,groups,insights,sum,type Post} from './model';
 import {observed,typeName} from './top-hits';
 export const externalPosts=(posts:Post[])=>posts.filter(p=>p.status!=='draft'&&['Facebook','Instagram'].includes(p.platform));
@@ -9,7 +10,7 @@ export function accountPerformance(posts:Post[],accounts:{name:string;platform:s
   return {...account,...overview(rows)};
  });
 }
-export function recordedMetric(posts:Post[],key:'views'|'reach'|'likes'|'comments'|'shares'){const rows=posts.filter(p=>(!p.reportedMetrics||p.reportedMetrics.includes(key))&&typeof p[key]==='number');return {count:rows.length,total:rows.length?rows.reduce((n,p)=>n+(p[key]||0),0):null};}
+export function recordedMetric(posts:Post[],key:'views'|'reach'|'likes'|'comments'|'shares'){const values=posts.map(p=>metricReading(p,key)).filter((v):v is number=>v!==null);return {count:values.length,total:values.length?values.reduce((a,b)=>a+b,0):null};}
 export function formatGroups(posts:Post[]){return groups(measuredPosts(posts).map(p=>({...p,type:typeName(p.type)})),'type');}
 export function monthlyEngagement(posts:Post[],platform='Combined'){
  const published=externalPosts(posts),dates=published.map(p=>p.date.slice(0,7)).sort(),months:string[]=[];

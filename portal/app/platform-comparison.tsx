@@ -2,7 +2,7 @@ import OriginalPostLink from './original-post-link';
 import {BookOpen,Camera,Trophy,Film,Star} from 'lucide-react';
 import type {Post} from './model';
 import type {dashboardView} from './dashboard-intelligence';
-type Platform=ReturnType<typeof dashboardView>['platforms'][number];
+type Platform=Pick<ReturnType<typeof dashboardView>['platforms'][number],'platform'|'stats'|'reported'> & Partial<Pick<ReturnType<typeof dashboardView>['platforms'][number],'brand'|'format'|'top'>>;
 const number=(value:number|null|undefined)=>value==null?'Unavailable':new Intl.NumberFormat('en-SG',{maximumFractionDigits:1}).format(value);
 // Presentation badges compare existing metrics; no totals or averages are recomputed.
 export function comparisonLeader(platforms:Platform[],metric:'posts'|'engagement'|'average'){

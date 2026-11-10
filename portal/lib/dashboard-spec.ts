@@ -1,3 +1,4 @@
+import {summariseValues} from './post-measurements';
 import {z} from 'zod';
 import type {Dataset,Post} from '../app/model';
 import {withMasterRegistry} from './master-relationships';
@@ -88,9 +89,9 @@ export function executeChart(input:ChartSpec,data:Dataset,catalog=dashboardCatal
   if(spec.dimension==='month'&&spec.type!=='kpi')for(const key of monthKeys(f.start,f.end))for(const name of series){const id=JSON.stringify([key,name]);if(!groups.has(id))groups.set(id,{key,series:name,rows:[]});}
   if(spec.type==='kpi'&&!groups.size)groups.set('empty',{key:'Selected records',series:'Recorded result',rows:[]});
   for(const g of groups.values()){
-   const known=g.rows.map(p=>({post:p,value:postValue(p,spec.metric)})).filter((r):r is {post:Post;value:number}=>r.value!==null);let value:number|null=known.length?known.reduce((n,r)=>n+r.value,0):null;
+   const known=g.rows.map(p=>({post:p,value:postValue(p,spec.metric)})).filter((r):r is {post:Post;value:number}=>r.value!==null);const aggregate=summariseValues(known.map(r=>r.value));let value:number|null=aggregate.total;
    if(spec.aggregation==='count')value=g.rows.length;
-   if(spec.aggregation==='average'&&value!==null)value/=known.length;
+   if(spec.aggregation==='average')value=aggregate.average;
    if(spec.aggregation==='ratio'){const pairs=known.map(r=>rateReading(r.post));value=pairs.length?pairs.reduce((sum,r)=>sum+r.numerator!,0)/pairs.reduce((sum,r)=>sum+r.exposure!,0)*100:null;}
    points.push({key:g.key,label:spec.dimension==='post'?g.rows[0]?.title||g.key:g.key,series:g.series,value,n:known.length,total:g.rows.length,postIds:g.rows.slice(0,50).map(p=>p.id),dates:[...new Set(g.rows.map(p=>p.date))].sort()});
   }

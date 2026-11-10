@@ -19,10 +19,10 @@ assert(!posts.includes('records-mode-tabs'));assert(!posts.includes('Every recor
 assert(render(Records,{data}).includes('records-mode-tabs'));
 assert(render(Records,{data,initialTrash:true}).includes('Recovery retention'));
 const shell=fs.readFileSync('app/workspace-shell.tsx','utf8');
-assert(shell.includes('"/workspace/posts":{"initialPage":16,"initialPostsOnly":true}'));
+const {workspaceRoutes,workspacePageName}=await load('lib/workspace-features.ts');assert(workspaceRoutes['/workspace/posts'].initialPostsOnly);assert(shell.includes('workspaceRoutes as routes'));
 assert(fs.existsSync('app/workspace/posts/page.tsx'));
 const portal=fs.readFileSync('app/portal.tsx','utf8');
-assert(portal.includes("initialPostsOnly?'Social Media Posts'"));
+assert.equal(workspacePageName(16,true),'Social Media Posts');assert(portal.includes('workspacePageName(page,initialPostsOnly,initialRecordsTrash)'));
 assert(portal.includes('postsOnly={initialPostsOnly}'));
 assert(portal.includes("key={initialPostsOnly?'posts':initialRecordsTrash?'trash':'records'}"));
 console.log('PASS: dedicated posts route, active navigation, post-library presentation/actions, separate trash and preserved recovery tools.');

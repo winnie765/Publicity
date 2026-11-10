@@ -1,17 +1,12 @@
 import type {Post} from '../app/model';
 import {originalPostUrl} from './original-post-url';
-export const postMetricKeys=['views','reach','likes','comments','shares','saves','engagementTotal','followersGenerated','incentiveCost'] as const;
-export type PostMetricKey=typeof postMetricKeys[number];
+import {postMetricKeys,metricReading,type PostMetricKey} from './post-measurements';
+export {postMetricKeys,metricReading,type PostMetricKey} from './post-measurements';
 export const socialMetricFields=(platform:string):{key:PostMetricKey;label:string}[]=>[
  ...(platform==='Facebook'?[{key:'views' as const,label:'Views'}]:[{key:'reach' as const,label:'Reach'},{key:'views' as const,label:'Views (if recorded)'}]),
  {key:'likes',label:platform==='Facebook'?'Likes / Reactions':'Likes'},{key:'comments',label:'Comments'},{key:'shares',label:'Shares'},{key:'saves',label:'Saves (if recorded)'},
  {key:'engagementTotal',label:'Reported Engagement Total (if provided)'},{key:'followersGenerated',label:'Verified Followers Generated'},{key:'incentiveCost',label:'Incentive Cost'}
 ];
-export function metricReading(post:Record<string,any>,key:PostMetricKey):number|null{
- if(key==='reach'&&!Array.isArray(post.reportedMetrics)&&post.reach===0)return null;
- if(key!=='engagementTotal'&&Array.isArray(post.reportedMetrics)&&!post.reportedMetrics.includes(key))return null;
- return typeof post[key]==='number'&&Number.isFinite(post[key])?post[key]:null;
-}
 export function metricProjection(post:Record<string,any>){return Object.fromEntries(postMetricKeys.map(key=>[key,metricReading(post,key)]));}
 export function metricPatch(post:Post,patch:Record<string,unknown>):Post{
  const next={...post,reportedMetrics:post.reportedMetrics?[...post.reportedMetrics]:postMetricKeys.filter(key=>key!=='engagementTotal'&&metricReading(post,key)!==null)};

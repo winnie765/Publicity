@@ -1,3 +1,4 @@
+import {metricReading} from './post-measurements';
 import {decisionAnalysis,type DecisionAnalysis} from './analytics-decision';
 import {workvivoInteractionSummary,type WorkvivoInteractionSummary} from './workvivo-interaction-analytics';
 import {workvivoPosts} from './workvivo-posts';
@@ -20,7 +21,7 @@ export function reportPeriod(year:number,month:number,frequency:'monthly'='month
  return {start:date(year,m,1),end:date(year,m+1,0),previousStart:date(year,m-1,1),previousEnd:date(year,m,0),frequency,label:new Date(Date.UTC(year,m,1)).toLocaleDateString('en-SG',{month:'long',year:'numeric',timeZone:'UTC'})};
 }
 export const changeRate=(current:number|null,previous:number|null)=>current===null||previous===null||previous===0?null:(current-previous)/previous*100;
-const known=(p:Post,key:'reach'|'views')=>(!p.reportedMetrics||p.reportedMetrics.includes(key))&&typeof p[key]==='number';
+const known=(p:Post,key:'reach'|'views')=>metricReading(p,key)!==null;
 export function reportStats(rows:Post[]):ReportStats{const measured=rows.filter(observed),metric=(key:'reach'|'views'):Measure=>{const recorded=rows.filter(p=>known(p,key));return {value:recorded.length?recorded.reduce((n,p)=>n+(p[key]||0),0):null,reported:recorded.length,total:rows.length}};return {posts:rows.length,engagement:{value:measured.length?measured.reduce((n,p)=>n+engagement(p),0):null,reported:measured.length,total:rows.length},reach:metric('reach'),views:metric('views'),average:measured.length?measured.reduce((n,p)=>n+engagement(p),0)/measured.length:null};}
 const post=(p:Post):ReportPost=>({is_workvivo_associated:p.is_workvivo_associated,original_post_url:originalPostUrl(p),title:p.title,brand:p.brand==='Unclassified'?'Not specified':p.brand,platform:p.platform,type:p.type==='Unclassified'?'Not specified':p.type,engagement:engagement(p),reach:known(p,'reach')?p.reach:null,views:known(p,'views')?p.views!:null});
 export function calculateMonthlyReport(data:Dataset,year:number,month:number,frequency:'monthly'='monthly'):MonthlyReport{

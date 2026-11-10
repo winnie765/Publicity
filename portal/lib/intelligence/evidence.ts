@@ -1,3 +1,4 @@
+import {metricReading,type PostMetricKey} from '../post-measurements';
 import {decisionAnalysis} from '../analytics-decision';
 import {workvivoInteractionSummary} from '../workvivo-interaction-analytics';
 import {locationMatches} from '../post-locations';
@@ -10,7 +11,7 @@ import {accountFollowerAnalytics} from '../../app/facebook-follower-analytics';
 import type {EvidencePack,Filters,Scope} from './types';
 const fmt=(value:number)=>new Intl.NumberFormat('en-SG',{maximumFractionDigits:1}).format(value);
 const label=(value:string)=>String(!value||value==='Unclassified'?'Not specified':value).replace(/[\u0000-\u001f]/g,' ').slice(0,120);
-const known=(p:Post,key:string)=>!p.reportedMetrics||p.reportedMetrics.includes(key);
+const known=(p:Post,key:string)=>metricReading(p,key as PostMetricKey)!==null;
 const percent=(change:number,base:number)=>base>0?fmt(change/base*100)+'%':'unavailable (zero baseline)';
 export function calculateEvidence(data:Dataset,scope:Scope,filters:Filters):EvidencePack{
  const facts:EvidencePack['facts']=[],limitations=['These are observational results, not causal proof. Audience size, timing, paid promotion and sample composition can affect performance.','Unreported metrics and unannotated features are unavailable, rather than observed zero.'];

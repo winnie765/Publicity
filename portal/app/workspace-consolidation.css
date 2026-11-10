@@ -1,0 +1,7 @@
+.executive-filter-panel{margin:0 0 22px;min-width:0;border:1px solid var(--line);border-radius:20px;background:var(--white)}
+.executive-filter-panel>summary{padding:18px 22px;cursor:pointer;color:var(--dark);font-size:14px}
+.executive-filter-panel>summary strong{font-weight:650}
+.executive-filter-panel>summary span{display:block;margin:7px 0 0 17px;font-size:12px;line-height:1.7;color:var(--muted);overflow-wrap:anywhere}
+.executive-filter-panel .filters{margin:0;border:0;border-radius:0 0 20px 20px;box-shadow:none}
+.executive-filter-panel>summary:focus-visible{outline:3px solid var(--green);outline-offset:3px;border-radius:20px}
+@media(max-width:700px){.executive-filter-panel>summary{padding:16px}.executive-filter-panel>summary span{font-size:11px}}

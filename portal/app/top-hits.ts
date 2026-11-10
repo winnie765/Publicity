@@ -1,7 +1,8 @@
+import {interactionReading,metricReading,type PostMetricKey} from '../lib/post-measurements';
 import {engagement,average,features,type Post} from './model';
-export const observed=(p:Post)=>p.engagementTotal!==undefined||!p.reportedMetrics||p.reportedMetrics.some(k=>['likes','comments','shares','saves'].includes(k));
+export const observed=(p:Post)=>interactionReading(p).value!==null;
 export const typeName=(s:string)=>['photo album','album'].includes(s.toLowerCase())?'Album':s;
-export const metricAverage=(rows:Post[],key:string)=>{const known=rows.filter(p=>(!p.reportedMetrics||p.reportedMetrics.includes(key))&&typeof (p as any)[key]==='number');return {value:known.length?known.reduce((n,p)=>n+(p as any)[key],0)/known.length:null,count:known.length};};
+export const metricAverage=(rows:Post[],key:string)=>{const values=rows.map(p=>metricReading(p,key as PostMetricKey)).filter((v):v is number=>v!==null);return {value:values.length?values.reduce((a,b)=>a+b,0)/values.length:null,count:values.length};};
 export function topHits(posts:Post[]){
  const sections=['Facebook','Instagram'].map(platform=>{const measured=posts.filter(p=>p.platform===platform&&p.status!=='draft'&&observed(p)).sort((a,b)=>engagement(b)-engagement(a)||a.id.localeCompare(b.id));const hits=measured.slice(0,10),baseline=average(measured);const score=(p:Post)=>baseline>0?engagement(p)/baseline*100:null;const patterns=features.map(name=>{const annotated=hits.filter(p=>p.featuresKnown===true||(!p.importSheet&&p.featuresKnown!==false));return {name,count:annotated.filter(p=>p.features.includes(name)).length,total:annotated.length};});return {platform,hits,baseline,measured:measured.length,score,patterns,averageScore:baseline>0&&hits.length?average(hits)/baseline*100:null};});
  const hits=sections.flatMap(s=>s.hits),eligible=posts.filter(p=>['Facebook','Instagram'].includes(p.platform)&&p.status!=='draft'&&observed(p));
