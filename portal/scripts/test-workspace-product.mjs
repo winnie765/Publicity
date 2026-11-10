@@ -10,7 +10,7 @@ for(const [page,platform,href] of [[0,'Overview','/workspace'],[19,'Overview','/
  const html=render(Navigation,{page,platform});
  assert(html.includes('Staff Workspace'));assert(html.includes('Analytics Dashboard'));assert(html.includes('Administration'));assert(html.includes('Social Media Posts'));assert(html.includes('Content Workspace'));
  assert(html.includes('href="'+href+'"'));assert(html.includes('aria-current="page"'));
- for(const route of ['/workspace/reports','/workspace/import','/workspace/settings','/workspace/records?kind=posts','/workspace/trash','/workspace/compare','/workspace/outreach','/workspace/insights','/workspace/assistant','/workspace/planner','/workspace/site-manager'])assert(html.includes('href="'+route+'"'),route);
+ for(const route of ['/workspace/reports','/workspace/import','/workspace/settings','/workspace/posts','/workspace/trash','/workspace/compare','/workspace/outreach','/workspace/insights','/workspace/assistant','/workspace/planner','/workspace/site-manager'])assert(html.includes('href="'+route+'"'),route);
  assert(html.indexOf('Content Intelligence')<html.indexOf('Content Workspace'));assert(!html.includes('Reports Archive'));
 }
 const {defaultDashboardLayout,parseDashboardLayout}=await load('lib/dashboard-layout.ts');

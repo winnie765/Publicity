@@ -2,12 +2,12 @@
 import Link from 'next/link';
 import {LayoutDashboard,ChartNoAxesCombined,Flame,Network,Users,FileText,CalendarDays,Sparkles,Globe,Database,Settings,Trash2,BookOpen,PanelsTopLeft,MessagesSquare,Library,Building2,Target} from 'lucide-react';
 import SidebarGroup from './sidebar-group';
-export default function WorkspaceNavigation({page,platform,trash=false,onNavigate}:{page:number;platform:string;trash?:boolean;onNavigate?:()=>void}){
+export default function WorkspaceNavigation({page,platform,trash=false,postsOnly=false,onNavigate}:{page:number;platform:string;trash?:boolean;postsOnly?:boolean;onNavigate?:()=>void}){
  const item=(label:string,href:string,Icon:typeof Users,active:boolean)=> <Link key={href} href={href} onClick={onNavigate} className={active?'active':''} aria-current={active?'page':undefined}><Icon size={18} aria-hidden="true"/><span>{label}</span></Link>;
  return <nav className="workspace-navigation" aria-label="Primary navigation">
   <div className="workspace-nav-section">Staff Workspace</div>
   {item('Executive Dashboard','/workspace',LayoutDashboard,page===0)}
-  {item('Social Media Posts','/workspace/records?kind=posts',Library,page===16&&!trash)}
+  {item('Social Media Posts','/workspace/posts',Library,page===16&&postsOnly)}
   <div className="workspace-nav-section">Analytics Dashboard</div>
   <SidebarGroup id="social-media-analytics" label="Social Media Analytics" icon={ChartNoAxesCombined} href="/workspace/analytics" active={page===11} current={page===11&&platform==='Overview'}>{(['Facebook','Instagram'] as const).map(name=>item(name,'/workspace/analytics/'+name.toLowerCase(),ChartNoAxesCombined,page===11&&platform===name))}</SidebarGroup>
   {item('Top Hits Intelligence','/workspace/top-hits',Flame,page===2)}
