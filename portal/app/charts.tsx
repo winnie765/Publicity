@@ -5,16 +5,17 @@ const number=(v:number,decimals=0)=>new Intl.NumberFormat('en-SG',{maximumFracti
 const tones=['var(--chart-green, #236a51)','var(--chart-blue, #426b9a)','var(--chart-orange, #a76528)','var(--chart-purple, #78549c)'];
 const metricNames:Record<string,string>={average:'Average engagements per post',engagement:'Total reported engagements',reach:'Total reported reach',views:'Total reported views',posts:'Number of posts'};
 
-export function Bars({data,metric='average',unit}:{data:any[];metric?:string;unit?:string}){
+export function Bars({data,metric='average',unit,signed=false,precision}:{data:any[];metric?:string;unit?:string;signed?:boolean;precision?:number}){
  const available=(d:any)=>typeof d[metric]==='number'&&Number.isFinite(d[metric])&&!(metric==='average'&&d.posts===0)&&!(metric==='reach'&&d.reachCount===0)&&!(metric==='views'&&d.viewsCount===0);
  const maximum=Math.max(...data.filter(available).map(d=>d[metric]),1);
  const description=unit||metricNames[metric]||metric;
- return <div className="labelled-bars"><p className="chart-measure">{description}</p>{data.map((d,i)=>{const known=available(d),value=known?number(d[metric],metric==='average'?1:0):'Not recorded';return <div className="labelled-bar-row" key={d.name}><div className="bar-category"><span>{d.name}</span>{typeof d.posts==='number'&&<small>{number(d.posts)} {d.posts===1?'post':'posts'}</small>}</div><div className="labelled-bar-track" role="img" aria-label={`${d.name}: ${value} ${description}`}><div style={{width:known?`${Math.max(0,d[metric])/maximum*100}%`:'0%',background:tones[i%tones.length]}}/></div><strong className={known?'bar-value':'bar-value unavailable'}>{value}</strong></div>})}{!data.length&&<p className="empty">No records in this selection.</p>}</div>;
+ const minimum=signed?Math.min(...data.filter(available).map(d=>d[metric]),0):0,span=maximum-minimum,zero=-minimum/span*100;
+ return <div className="labelled-bars"><p className="chart-measure">{description}</p>{data.map((d,i)=>{const known=available(d),value=known?number(d[metric],precision??(metric==='average'?1:0)):'Not recorded';return <div className="labelled-bar-row" key={d.id??d.name}><div className="bar-category"><span>{d.name}</span>{typeof d.posts==='number'&&<small>{number(d.posts)} {d.posts===1?'post':'posts'}</small>}</div><div className="labelled-bar-track" style={signed?{position:'relative'}:undefined} role="img" aria-label={`${d.name}: ${value} ${description}`}><>{signed&&<span aria-hidden="true" style={{position:'absolute',left:zero+'%',width:1,height:'100%',background:'var(--muted)'}}/>}<div style={signed?{position:'absolute',left:(known?Math.min(zero,(d[metric]-minimum)/span*100):zero)+'%',width:known?Math.abs(d[metric])/span*100+'%':'0%',background:tones[i%tones.length]}:{width:known?`${Math.max(0,d[metric])/maximum*100}%`:'0%',background:tones[i%tones.length]}}/></></div><strong className={known?'bar-value':'bar-value unavailable'}>{value}</strong></div>})}{!data.length&&<p className="empty">No records in this selection.</p>}</div>;
 }
 
-export function Trend({data,lines=['engagement'],labels=['Engagement'],unit,colorKeys,labelsAbove=false,emptyState}:{emptyState?:React.ReactNode;data:any[];lines?:string[];labels?:string[];unit?:string;colorKeys?:string[];labelsAbove?:boolean}){
+export function Trend({data,lines=['engagement'],labels=['Engagement'],unit,colorKeys,labelsAbove=false,emptyState,precision}:{precision?:number;emptyState?:React.ReactNode;data:any[];lines?:string[];labels?:string[];unit?:string;colorKeys?:string[];labelsAbove?:boolean}){
  const palette=lines.map(line=>tones[Math.max(0,(colorKeys||lines).indexOf(line))%tones.length]);
- const decimals=labels.some(l=>l.includes('%'))?1:0,showValue=(v:number)=>number(v,decimals);
+ const decimals=precision??(labels.some(l=>l.includes('%'))?1:0),showValue=(v:number)=>number(v,decimals);
  const id=useId().replaceAll(':',''),axisLabel=unit||(labels.length===1?labels[0]:'Reported engagements');
  if(!data.length||!lines.length)return <div className="labelled-trend">{emptyState??<p className="empty">No monthly data in this selection.</p>}</div>;
  const valid=(d:any,k:string)=>typeof d[k]==='number'&&Number.isFinite(d[k]);

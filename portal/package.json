@@ -22,7 +22,10 @@
     "test:user-guide": "node scripts/test-user-guide.mjs",
     "test:analytics": "node scripts/test-analytics-decisions.mjs",
     "test:content-intelligence": "node scripts/test-content-intelligence.mjs",
-    "test:workspace-product": "node scripts/test-workspace-product.mjs"
+    "test:workspace-product": "node scripts/test-workspace-product.mjs",
+    "test:dashboards": "node scripts/test-analytical-dashboards.mjs",
+    "test:social-analyst": "node scripts/test-social-analyst.mjs",
+    "test:dashboard-creator": "node scripts/test-dashboard-creator.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

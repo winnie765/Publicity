@@ -1,6 +1,6 @@
 import type {ChartBrief,GrowthMode} from '../analytics-decision';
 export const scopes=['executive','social','content','top-hits','stakeholders','brands','workvivo','followers','outreach','insights'] as const;
-export type Scope=typeof scopes[number]|'monthly-report'|'post-performance'|'content-strategy'|'industry-trends';
+export type Scope=typeof scopes[number]|'monthly-report'|'post-performance'|'content-strategy'|'industry-trends'|'social-analyst';
 export type Filters={comparison?:GrowthMode;start?:string;end?:string;brand?:string;platform?:string;account?:string;location?:string;followerView?:'account'|'brand';followerSelection?:string};
 export type Fact={id:string;label:string;text:string};
 export type EvidenceText={text:string;evidenceIds:string[]};
