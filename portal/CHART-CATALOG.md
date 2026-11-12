@@ -63,3 +63,7 @@ Executive comparison dates follow the existing calendar-month/month-to-date rule
 Add a new prebuilt chart only if its question, population, source, formula and primary owner differ meaningfully from an existing chart. Prefer a filter, drill-down or contextual link. Keep tests for null/zero, coverage, rate denominators and source reconciliation. Update the User Guide and this catalogue when changing ownership.
 
 Brand comparison integration reviewed 12 November 2026: Executive Dashboard owns the two-brand summary and single trend. Social Media Analytics / Brand Details owns platform-format-measurement-basis, location, account and topic tables for all brands. Followers owns account histories; Top Hits owns full rankings. Old comparison URLs redirect to the Executive brand section.
+
+## Executive insight ownership (reviewed 12 November 2026)
+
+Executive Performance Intelligence owns the cross-module management findings and prioritised next actions. It adds no charts. Detailed analytics retain their charts, growth modes, internal historical averages and source drill-downs; their generic Key Takeaways and automatic broad AI summaries are replaced with a contextual Executive link. Monthly report snapshots retain their existing saved presentation. See EXECUTIVE-PERFORMANCE-INTELLIGENCE.md for the source inventory, exact period rules, thresholds and verification.

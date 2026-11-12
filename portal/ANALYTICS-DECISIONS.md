@@ -1,6 +1,6 @@
 # Analytics decision support
 
-The Executive Dashboard, Top Hits and Followers pages expose the shared Growth Analysis and Key Takeaways UI. It has been removed from the Facebook, Instagram and Workvivo pages; their existing metrics and other analysis remain available. Calendar comparison calculations, benchmark evidence and chart-level explanations are still used by the existing reporting services. New monthly report snapshots include this evidence and preserve the ten-section export structure. Older snapshots remain readable without these optional additions.
+Current management findings have one primary display: Executive Performance Intelligence in the Executive Dashboard. Top Hits and Followers retain an expandable Growth Analysis and Detailed Benchmarks view without repeated Key Takeaways or broad AI summaries. Platform and Workvivo pages link to the central summary. Existing report snapshots retain their full original period-specific presentation. See EXECUTIVE-PERFORMANCE-INTELLIGENCE.md for the source inventory and aggregation rules.
 
 ## Comparison rules
 
@@ -26,3 +26,9 @@ An AI configuration failure, rate limit or rejected response leaves the calculat
 ## Validation
 
 Run `npm run test:analytics`, `node scripts/test-monthly-reports.mjs`, `node scripts/test-workvivo-interactions.mjs` and `npm run test:user-guide` from `portal`. Tests cover calendar boundaries, metric isolation, missing and zero baselines, conflicting snapshots, AI citation checks, report exports and current guide terminology.
+
+## Executive range alignment
+
+The existing calendar comparison functions and report defaults are preserved. The Executive aggregator supplies an optional explicit period override so all its sources use the exact selected window. Custom Range uses the existing comparable-interval calculation; MoM/QoQ/YoY shift the selected dates by 1/3/12 months with short-month clipping. Overlapping windows are withheld. Internal historical averages, matched cohorts, within-period brand cohorts and selected-platform baselines are labelled separately.
+
+A documented correction distinguishes explicitly logged zero Workvivo actions from no logging: a period with related logged posts reports zero, while a period with no logs remains unavailable. No missing period is zero-filled.

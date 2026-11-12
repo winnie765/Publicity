@@ -1,3 +1,4 @@
+import {resolveExecutiveFocus} from '../../../lib/executive-insight-context';
 import {workspaceGuard} from '../../../lib/workspace-security';
 import {getStorage} from '../../../lib/storage';
 import {loadData} from '../../../lib/data-service';
@@ -13,12 +14,12 @@ export const maxDuration=60;
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(request:Request){
  const denied=await workspaceGuard(request);if(denied)return denied;
- try{const store=getStorage();await Promise.all([store.readRecords(['config','posts','analyst_experiment','content_plan']),store.readAudit()]);const data=await loadData(store,'social'),url=new URL(request.url),filters=Object.fromEntries(['platform','account','brand','start','end'].filter(k=>url.searchParams.has(k)).map(k=>[k,url.searchParams.get(k)])) as Partial<AnalyticalFilters>;
+ try{const store=getStorage();await Promise.all([store.readRecords(['config','posts','analyst_experiment','content_plan']),store.readAudit()]);const url=new URL(request.url),focusId=url.searchParams.get('executiveInsight'),data=await loadData(store,focusId?'core':'social'),focusFilters=Object.fromEntries(['platform','account','brand','start','end','location'].filter(k=>url.searchParams.has(k)).map(k=>[k,url.searchParams.get(k)])),executiveFocus=focusId?await resolveExecutiveFocus(data,focusId,focusFilters,url.searchParams.get('executiveComparison')||'custom'):null,focusMessage=focusId&&!executiveFocus?'This finding no longer qualifies under these filters. Review the current Executive Dashboard evidence.':undefined,filters=Object.fromEntries(['platform','account','brand','start','end'].filter(k=>url.searchParams.has(k)).map(k=>[k,url.searchParams.get(k)])) as Partial<AnalyticalFilters>;
  const config={accounts:data.config.accounts.filter(a=>['Facebook','Instagram'].includes(a.platform)),brands:data.config.brands,types:data.config.types};
- if(!data.posts.some(p=>p.status!=='draft'&&['Facebook','Instagram'].includes(p.platform)))return json({analysis:null,config,experiments:[],message:'No published Facebook or Instagram records are available. Record posts before analysing performance.'});
+ if(filters.platform==='Workvivo'||!data.posts.some(p=>p.status!=='draft'&&['Facebook','Instagram'].includes(p.platform)))return json({analysis:null,config,experiments:[],executiveFocus,focusMessage,message:'No published Facebook or Instagram records are available. Record posts before analysing performance.'});
  const analysis=await analystAnalysis(data,filters),rows=await store.readRecords(['analyst_experiment','content_plan']);
  const experiments=rows.filter(r=>r.kind==='analyst_experiment').map(row=>{const experiment=experimentScope(row.payload,data);return {experiment,updatedAt:row.updatedAt,planExists:rows.some(p=>p.kind==='content_plan'&&p.id===experiment.planId),result:evaluateExperiment(experiment,data.posts),choices:data.posts.filter(p=>p.status!=='draft'&&p.platform===experiment.platform&&p.account===experiment.account&&p.brand===experiment.brand&&p.type===experiment.format&&p.date>=experiment.start&&p.date<=experiment.end).map(p=>({id:p.id,title:p.title,date:p.date}))};}).filter(r=>(!analysis.filters.platform||r.experiment.platform===analysis.filters.platform)&&(!analysis.filters.account||r.experiment.account===analysis.filters.account)&&(!analysis.filters.brand||r.experiment.brand===analysis.filters.brand));
- return json({analysis,config,experiments});
+ return json({analysis,config,experiments,executiveFocus,focusMessage});
  }catch(e){return json({error:e instanceof Error?e.message:'The analyst data could not be loaded. Try Refresh Analysis.'},400);}
 }
 export async function POST(request:Request){
@@ -26,6 +27,11 @@ export async function POST(request:Request){
  try{const raw=await request.text();if(raw.length>10000)return json({error:'Shorten the analyst request.'},413);const body=JSON.parse(raw),store=getStorage();
  if(body.action==='create-plan')return json(await createAnalystPlan(store,body));
  if(body.action==='follow-up')return json(await linkExperimentPosts(store,body));
+ if(body.action==='interpret-executive'){
+  const focus=await resolveExecutiveFocus(await loadData(store),body.id,body.filters,body.mode);if(!focus||focus.revision!==body.revision)return json({error:'Executive evidence changed. Refresh Analysis to review the current finding.'},409);
+  const runtime=getAIRuntime(),response=await intelligenceResponse(focus.evidence,createProvider(runtime.config),runtime.cache,runtime.dailyLimit);
+  return json({mode:response.mode,reason:response.reason,cached:response.cached,insights:response.mode==='gemini'?response.report.insights.filter(item=>item.evidenceIds.length===1&&item.evidenceIds[0]==='EXECUTIVE_SELECTED'):[],message:response.mode==='gemini'?undefined:'Gemini is unavailable for this request. The calculated executive evidence remains available.'});
+ }
  if(body.action==='interpret'){
   const analysis=await analystAnalysis(await loadData(store,'social'),body.filters);if(body.revision!==analysis.revision)return json({error:'Source data changed. Refresh Analysis before requesting Gemini interpretation.'},409);
   const runtime=getAIRuntime(),response=await intelligenceResponse(analystEvidence(analysis),createProvider(runtime.config),runtime.cache,runtime.dailyLimit),insights=safeAnalystInsights(response,analysis);

@@ -25,14 +25,14 @@ function metric(id:string,label:string,platform:string,current:number|null,bench
  const difference=current!==null&&benchmark!==null?current-benchmark:null,percentage=difference!==null&&benchmark!==null&&benchmark>0?difference/benchmark*100:null,ratio=current!==null&&benchmark!==null&&benchmark>0?current/benchmark:null;
  return {id,label,platform,current,benchmark,difference,percentage,ratio,coverage,insight:difference===null?'Comparison unavailable: record both periods.':percentage===null?'An absolute difference is available; a zero baseline cannot support a percentage change.':`${Math.abs(percentage)<0.05?'Stable':percentage>0?'Higher':'Lower'} than the benchmark by ${fmt(Math.abs(percentage))}%. This is a recorded comparison, not evidence of causation.`};
 }
-export function decisionAnalysis(data:Dataset,scope:Scope,filters:Filters={},mode:GrowthMode=filters.comparison||'mom',anchor?:string):DecisionAnalysis{
+export function decisionAnalysis(data:Dataset,scope:Scope,filters:Filters={},mode:GrowthMode=filters.comparison||'mom',anchor?:string,periodOverride?:DecisionAnalysis['period']):DecisionAnalysis{
  const internal=scope==='workvivo',follower=scope==='followers';
  const selectedAccounts=followerAccounts(data).filter(a=>(!filters.account||a.name===filters.account)&&(!filters.platform||a.platform===filters.platform)&&(!filters.brand||a.brand===filters.brand)&&(!filters.followerSelection||(filters.followerView==='brand'?a.brand===filters.followerSelection:a.name===filters.followerSelection)));
  const source=internal?workvivoPosts(data.posts):data.posts;
  const all=source.filter(p=>valid(p.date)&&p.status!=='draft'&&(internal?p.platform==='Workvivo':['Facebook','Instagram'].includes(p.platform))&&(!filters.platform||p.platform===filters.platform)&&(!filters.brand||p.brand===filters.brand)&&(!filters.account||(filters.account==='Workvivo associated content'?data.posts.some(source=>source.id===p.id&&source.is_workvivo_associated):p.account===filters.account))&&locationMatches(p.location,filters.location)&&(!follower||selectedAccounts.some(a=>a.name===p.account&&a.platform===p.platform)));
  const histories=data.followers.filter(f=>selectedAccounts.some(a=>a.name===f.account));
  const latest=[...all,...(internal?[]:histories)].map(row=>row.date).filter(valid).sort().at(-1);
- const period=growthPeriod(anchor||filters.end||latest||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'}),mode);
+ const period=periodOverride||growthPeriod(anchor||filters.end||latest||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'}),mode);
  const between=(date:string,start:string,end:string)=>date>=start&&date<=end;
  const selected=all.filter(p=>(!filters.start||p.date>=filters.start)&&(!filters.end||p.date<=filters.end));
  const current=all.filter(p=>between(p.date,period.start,period.end)),previous=all.filter(p=>between(p.date,period.previousStart,period.previousEnd));
@@ -81,7 +81,7 @@ export function decisionAnalysis(data:Dataset,scope:Scope,filters:Filters={},mod
  }
  if(internal){
   const scoped:Dataset={...data,posts:all};const now=workvivoInteractionSummary(scoped,period.start,period.end),old=workvivoInteractionSummary(scoped,period.previousStart,period.previousEnd),allLogs=workvivoInteractionSummary(scoped);
-  metrics.push(metric('workvivo-actions','Recorded stakeholder actions','Workvivo',now.interactions||null,old.interactions||null,'Logged Workvivo actions only. An empty period may represent missing logging; counts are not unique people.'));
+  metrics.push(metric('workvivo-actions','Recorded stakeholder actions','Workvivo',now.posts?now.interactions:null,old.posts?old.interactions:null,'Logged Workvivo actions only. An empty period may represent missing logging; counts are not unique people.'));
   brief('workvivo-stakeholders','Workvivo stakeholder and partner interaction trends',now.interactions?`${now.interactions} logged actions on ${now.posts} posts. ${now.stakeholders[0]?now.stakeholders[0].name+' has the most logged actions in this period.':''}`:'No verified stakeholder actions are logged in the current comparison period.','Interaction logs identify recorded relationship activity, not a complete view of stakeholder interest. Logging coverage can change between periods.',allLogs.interactions?'Review the leading stakeholder and theme, plan one relevant follow-up, and record the resulting action.':'Open a Workvivo post and use Add Interaction to record verified stakeholder activity.',['Changes in logging coverage or partner activity may contribute; missing logs do not establish disengagement.']);
  }
  // Recurrence requires at least two substantially observed years, not a single seasonal spike.
