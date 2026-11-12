@@ -16,6 +16,8 @@ assert.deepEqual(workspaceRoutes['/workspace/publishing'],workspaceRoutes['/work
 const {default:Navigation}=await load('app/workspace-navigation.tsx');
 const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props));
 const nav=render(Navigation,{page:19,platform:'Overview'});
+assert(!nav.includes('Outreach Evaluation'));assert(!nav.includes('/workspace/outreach'));assert(!workspaceRoutes['/workspace/outreach']);assert(!fs.readFileSync('app/portal.tsx','utf8').includes('Outreach source comparison'));assert(fs.readFileSync('app/workspace/outreach/page.tsx','utf8').includes("redirect('/workspace/analytics')"));
+assert(!nav.includes('Insight Engine'));assert(!nav.includes('/workspace/insights'));assert(!workspaceRoutes['/workspace/insights']);assert(!fs.readFileSync('app/portal.tsx','utf8').includes('How the insight engine works'));assert(fs.readFileSync('app/workspace/insights/page.tsx','utf8').includes("redirect('/workspace/analytics')"));
 assert(!nav.includes('User Guide'));assert.equal((nav.match(/href="\/workspace\/analyst"/g)||[]).length,1);
 assert.equal((nav.match(/href="\/workspace\/reports"/g)||[]).length,1);
 const m=await load('lib/post-measurements.ts'),entry=await load('lib/social-post-workflow.ts'),analytics=await load('lib/analytical-dashboards.ts'),model=await load('app/model.ts'),{overview,recordedMetric}=await load('app/analytics-overview.ts'),{reportStats}=await load('lib/monthly-report.ts'),{observed}=await load('app/top-hits.ts');
