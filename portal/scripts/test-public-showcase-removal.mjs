@@ -10,9 +10,9 @@ const story={id:'retained-story',title:'Retained historical post',summary:'Appro
 const data={home:{showcasesEnabled:true,showcaseTitle:'Community Content Showcase'},showcases:publicContentShowcases([story],[],{},'2026-11-12'),stories:[story],brands:[],programmes:[],partners:[],events:[],impact:null};
 const before=JSON.stringify(data);
 const html=renderToStaticMarkup(React.createElement(Landing,{data}));
-for(const label of ['Community Content Showcase','Featured Posts','Top Performing Posts','Most Recent Posts','id="content-showcases"'])assert(!html.includes(label),label);
-assert(html.includes('id="programmes"'));
+assert(!html.includes('Community Content Showcase'));for(const label of ['Featured Posts','Top Performing Posts','Most Recent Posts','id="content-showcases"'])assert(html.includes(label),label);
+assert(html.includes('id="programmes"'));assert(html.indexOf('id="content-showcases"')<html.indexOf('id="programmes"'));const disabled=renderToStaticMarkup(React.createElement(Landing,{data:{...data,home:{...data.home,showcasesEnabled:false}}}));assert(!disabled.includes('id="content-showcases"'));
 assert.equal(JSON.stringify(data),before,'Rendering must preserve source content and saved settings');
-assert.equal(publicSectionLink('/community'),'/#public-main');
-assert.equal(publicSectionLink('/stories'),'/#public-main');
-console.log('PASS: showcase absent even when enabled, remaining brands section retained, no broken showcase anchors, source records/settings unchanged.');
+assert.equal(publicSectionLink('/community'),'/#content-showcases');
+assert.equal(publicSectionLink('/stories'),'/#content-showcases');
+console.log('PASS: only showcase heading hidden; all three collections, brands and anchors retained; source records/settings unchanged.');
