@@ -89,6 +89,6 @@ export async function proposeDashboard(question:unknown,data:Dataset,runtime:{co
   definition.title=definition.charts.length===1?definition.charts[0].title:'Requested Management Dashboard';
   definition.description='Staff-requested dashboard. Figures and explanations are calculated by the application, not Gemini.';
   await runtime.cache.save(key,token,JSON.stringify(definition),Date.now()+6*3600000);
-  return {mode:'gemini',definition,assumptions:['Gemini proposed these settings. Review the metric, fixed dates, accounts, grouping and aggregation before saving.','Opening a saved dashboard recalculates its fixed date range using current records; it is not an immutable report snapshot.']};
+  return {mode:'gemini',definition,assumptions:['Gemini proposed these settings. Review the metric, fixed dates, accounts, grouping and aggregation before saving.','Opening a saved dashboard recalculates its fixed date range using current records; it is not an immutable report saved record.']};
  }catch(error){if(token)try{await runtime.cache.release(key,token,Date.now()+15000);}catch{}try{return {...recognisedDashboard(q,catalog,today),message:'Gemini could not provide a validated design. A supported application-rule interpretation is shown instead; review its assumptions.'};}catch{throw Error(error instanceof Error?error.message:'The request could not be interpreted safely.');}}
 }

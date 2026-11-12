@@ -20,8 +20,8 @@ export const dashboardMetrics={
  post_count:{label:'Recorded Published Posts',source:'posts',aggregations:['count'],formula:'Count of non-draft Facebook / Instagram post records matching the filters. No records means zero recorded posts, not proof of no activity.'},
  facebook_interaction_rate:{label:'Facebook Interaction Rate (%)',source:'posts',aggregations:['ratio'],platform:'Facebook',formula:'Sum of (Likes / Reactions + Comments + Shares + Saves) ÷ sum of Facebook Views × 100, using only posts with all four components and positive Views. Not comparable with an Instagram Reach-based rate.'},
  instagram_interaction_rate:{label:'Instagram Interaction Rate (%)',source:'posts',aggregations:['ratio'],platform:'Instagram',formula:'Sum of (Likes + Comments + Shares + Saves) ÷ sum of Instagram Reach × 100, using only posts with all four components and positive Reach. Not comparable with a Facebook Views-based rate.'},
- followers:{label:'Recorded Followers',source:'followers',aggregations:['latest'],formula:'Latest unambiguous, non-inferred recorded snapshot per account in the selected period/month. Accounts are never summed.'},
- follower_change:{label:'Monthly Follower Change',source:'followers',aggregations:['sum'],formula:'Latest recorded count in a month − latest count in the preceding calendar month, within the same account. Missing/conflicting/inferred snapshots are gaps. Multi-month totals require every selected monthly comparison.'}
+ followers:{label:'Recorded Followers',source:'followers',aggregations:['latest'],formula:'Latest unambiguous, non-inferred recorded saved record per account in the selected period/month. Accounts are never summed.'},
+ follower_change:{label:'Monthly Follower Change',source:'followers',aggregations:['sum'],formula:'Latest recorded count in a month − latest count in the preceding calendar month, within the same account. Missing/conflicting/inferred saved records are gaps. Multi-month totals require every selected monthly comparison.'}
 } as const;
 export type DashboardMetric=keyof typeof dashboardMetrics;
 const text=(max:number)=>z.string().trim().min(1).max(max).refine(v=>!/<\/?(?:script|iframe)|javascript:|\beval\s*\(|\bDROP\s+TABLE\b/i.test(v),'Use plain dashboard text, not executable content.');
@@ -55,7 +55,7 @@ export function validateDashboard(value:unknown,catalog:DashboardCatalog):Dashbo
   if(c.type==='kpi'&&c.series!=='none')throw Error('A KPI is one result. Use a chart or table for multiple series.');
   if(c.dimension==='post'&&c.series!=='none')throw Error('Post rankings use one row per post, without stacked series.');
   if(c.source==='followers'){
-   if(c.filters.formats.length||c.filters.categories.length)throw Error('Follower snapshots do not have content formats or categories.');
+   if(c.filters.formats.length||c.filters.categories.length)throw Error('Follower saved records do not have content formats or categories.');
    if(!['month','account'].includes(c.dimension)||!['none','account'].includes(c.series))throw Error('Follower history must stay separate by account. Use Month with Account series, or Account rows.');
    const selected=catalog.accounts.filter(a=>(!c.filters.accounts.length||c.filters.accounts.includes(a.id))&&(!c.filters.platforms.length||c.filters.platforms.includes(a.platform as 'Facebook'|'Instagram'))&&(!c.filters.brands.length||c.filters.brands.some(id=>catalog.brands.find(b=>b.id===id)?.name===a.brand)));
    if((c.type==='kpi'||c.dimension==='month'&&c.series==='none')&&selected.length!==1)throw Error('Select one account for a follower KPI or single-series history. Otherwise choose Account series.');
@@ -111,7 +111,7 @@ export function executeChart(input:ChartSpec,data:Dataset,catalog=dashboardCatal
     points.push({key:label,label,series:'Recorded result',value,n:spec.metric==='followers'?(latest?1:0):valid.length,total:spec.metric==='followers'?1:monthly.length,postIds:[],dates:spec.metric==='followers'?(latest?[latest.date]:[]):monthly.flatMap(r=>r.dates)});
    }else points.push(...monthly);
   }
-  warnings.push('Accounts remain separate; audience counts can overlap. Only non-inferred, unambiguous snapshots are used. Gaps are not interpolated.');if(spec.metric==='follower_change')warnings.push('Preceding-calendar-month snapshots may be used as baselines outside the selected period. Multi-month totals are unavailable when any monthly comparison is missing.');
+  warnings.push('Accounts remain separate; audience counts can overlap. Only non-inferred, unambiguous saved records are used. Gaps are not interpolated.');if(spec.metric==='follower_change')warnings.push('Preceding-calendar-month saved records may be used as baselines outside the selected period. Multi-month totals are unavailable when any monthly comparison is missing.');
  }
  points.sort((a,b)=>spec.dimension==='month'?a.key.localeCompare(b.key)||a.series.localeCompare(b.series):a.value===null?(b.value===null?a.label.localeCompare(b.label):1):b.value===null?-1:(spec.order==='descending'?b.value-a.value:a.value-b.value)||a.label.localeCompare(b.label));
  const output=spec.dimension==='month'?points:points.slice(0,spec.limit),measured=output.filter(p=>p.value!==null),leading=[...measured].sort((a,b)=>b.value!-a.value!)[0];

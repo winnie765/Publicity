@@ -15,7 +15,7 @@ export const workspaceFeatures={
  planner:{label:'Content Planner',href:'/workspace/planner',page:13,purpose:'Plans, events, campaigns and scheduling'},
  studio:{label:'AI Content Studio',href:'/workspace/assistant',page:14,purpose:'Writing and editing reviewed communications drafts'},
  reports:{label:'Reports',href:'/workspace/reports',page:12,purpose:'Generate monthly reporting outputs'},
- reportArchive:{label:'Reports Archive',href:'/workspace/reports/archive',page:12,purpose:'Saved report snapshots; accessed within Reports'},
+ reportArchive:{label:'Reports Archive',href:'/workspace/reports/archive',page:12,purpose:'Saved report saved records; accessed within Reports'},
  publicSite:{label:'Public Site Manager',href:'/workspace/site-manager',page:15,purpose:'Manage public content and media'},
  imports:{label:'Data Management & Imports',href:'/workspace/import',page:8,purpose:'Workbook review, imports, exports and dataset operations'},
  configuration:{label:'Configuration',href:'/workspace/settings',page:9,purpose:'Shared master data'},

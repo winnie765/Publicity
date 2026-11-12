@@ -13,7 +13,7 @@ export function accountFollowerAnalytics(snapshots:AccountSnapshot[],posts:Post[
  const findings:string[]=[];
  if(latest?.followers!==undefined&&six){const change=latest.followers-six.followers,pct=percent(change,six.followers);findings.push(''+label+' followers changed by '+change+' ('+(pct===null?'percentage unavailable':pct.toFixed(1)+'%')+') over six calendar months.');}
  if(measured.length){const avg=measured.reduce((n,r)=>n+r.growth!,0)/measured.length,best=[...measured].sort((a,b)=>b.growth!-a.growth!)[0];findings.push('Average monthly '+label+' follower change is '+avg.toFixed(1)+' across '+measured.length+' consecutive-month comparisons.');findings.push('The largest measured monthly change was '+best.growth+' in '+best.month+'.');}
- if(!measured.length)findings.push('Consecutive monthly snapshots are needed to calculate monthly growth. Missing and conflicting months are not treated as zero.');
+ if(!measured.length)findings.push('Consecutive monthly saved records are needed to calculate monthly growth. Missing and conflicting months are not treated as zero.');
  const paired=measured.filter(r=>published.some(p=>p.date.startsWith(r.key)&&observed(p))),correlation:{n:number;r:number|null}={n:paired.length,r:null};
  if(paired.length>=4){const mx=paired.reduce((n,r)=>n+r.topHits,0)/paired.length,my=paired.reduce((n,r)=>n+r.growth!,0)/paired.length;let xy=0,xx=0,yy=0;for(const row of paired){const x=row.topHits-mx,y=row.growth!-my;xy+=x*y;xx+=x*x;yy+=y*y;}if(xx&&yy)correlation.r=xy/Math.sqrt(xx*yy);}
  const associations:string[]=[];

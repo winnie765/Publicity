@@ -9,12 +9,12 @@ export function presentFollowerFinding(finding:string){
  if(momentum)return {title:'Growth Momentum',metric:signed(momentum[1]),caption:'Followers per month · '+momentum[2]+' comparisons',kind:'content' as const};
  const peak=finding.match(/^The largest measured monthly change was (-?\d+) in (.+)\.$/);
  if(peak)return {title:'Largest Monthly Change',metric:signed(peak[1]),caption:peak[2]+' · followers',kind:'opportunity' as const};
- return {title:'Snapshot Coverage',metric:null,caption:'Recorded snapshot evidence',kind:'content' as const};
+ return {title:'Saved Record Coverage',metric:null,caption:'Recorded saved record evidence',kind:'content' as const};
 }
 
 export default function FollowerGrowthInsights({findings}:{findings:string[]}){
  return <section className="card follower-growth-insights" aria-labelledby="follower-growth-insights-title">
-  <div className="card-head"><div><h3 id="follower-growth-insights-title">Follower Growth Insights</h3><p>Calculated from recorded snapshots; gaps and zero baselines remain explicit.</p></div></div>
+  <div className="card-head"><div><h3 id="follower-growth-insights-title">Follower Growth Insights</h3><p>Calculated from recorded saved records; gaps and zero baselines remain explicit.</p></div></div>
   <div className="follower-evidence-grid">{findings.map((finding,index)=>{
    const item=presentFollowerFinding(finding),Icon=item.metric===null?Database:item.title==='Growth Summary'?TrendingUp:item.title==='Growth Momentum'?Activity:Rocket;
    return <article className={'strategic-insight-card follower-evidence-card insight-'+item.kind} key={index}>
@@ -25,6 +25,6 @@ export default function FollowerGrowthInsights({findings}:{findings:string[]}){
     <footer><span className="follower-confidence-badge">Calculated evidence</span><small>Confidence: not assessed</small></footer>
    </article>;
   })}</div>
-  <details className="follower-evidence-method"><summary>How growth is measured</summary><p>Monthly growth compares consecutive calendar months. Growth since the previous recorded snapshot is shown separately when months are missing. Year-over-year compares the same month one year earlier.</p><p>These cards present calculated snapshot evidence. Confidence ratings and explanations are provided separately by AI insights when available.</p></details>
+  <details className="follower-evidence-method"><summary>How growth is measured</summary><p>Monthly growth compares consecutive calendar months. Growth since the previous recorded saved record is shown separately when months are missing. Year-over-year compares the same month one year earlier.</p><p>These cards present calculated saved record evidence. Confidence ratings and explanations are provided separately by AI insights when available.</p></details>
  </section>;
 }
