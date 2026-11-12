@@ -36,9 +36,9 @@ Executive comparison dates follow the existing calendar-month/month-to-date rule
 | Followers / Monthly Follower Growth | What was the absolute adjacent-month change? | Consecutive verified snapshot difference by account | Absolute movement, not follower-count or percentage duplicate |
 | Followers / Growth Percentage Trend | How large was that movement relative to its baseline? | Same verified differences / positive preceding count -> 100 | Relative scale is a different question; missing/zero baselines unavailable |
 | Followers / Platform account comparison | Which independent accounts grew or declined? | Verified per-account series on the selected platform | Account comparison within the same page, not pooled audience totals |
-| Brand Comparison / Brand topic bars | Which topics contributed response within each brand? | Published external brand cohorts; mean recorded I(p), known coverage | Existing specialist brand question retained under More Analysis |
-| Brand Comparison / Brand engagement trends | How did brands' recorded activity differ over time? | Monthly sum I(p) per brand | Brand rather than platform series; preserves unique brand comparison |
-| Brand Comparison / Account performance | Which accounts recorded stronger response? | Existing account cohorts; average I(p), sample coverage | Account-level contrast for the brand workflow |
+| Social Media Analytics / Brand Details / Topic table | Which topics contributed recorded response within each brand? | Published external cohorts; shared measured-post mean and coverage | Detailed table only; no duplicate graph |
+| Executive Dashboard / GLOW vs SEEN / Performance Trends | How did monthly response per measured post differ? | Shared brandComparison -> summarisePosts; Facebook or Instagram separately | One authoritative brand trend, gaps retained |
+| Social Media Analytics / Brand Details / Account table | Which accounts recorded stronger response? | Existing account cohorts; mean recorded I(p), coverage | Retained account breakdown without a second chart |
 | Workvivo / Workvivo engagement trend | How did internal response change? | Workvivo-only projected records; monthly recorded internal I(p) | Internal audience and metrics remain isolated from external platforms |
 | Workvivo / Brand Visibility | How many internal posts involved each brand? | Count internal post records by brand | Publication visibility/count, including association records; not external engagement |
 | Workvivo / Active locations | How did internal response differ by location? | Internal records with measurements; mean I(p) by location | Location-specific operational view |
@@ -61,3 +61,5 @@ Executive comparison dates follow the existing calendar-month/month-to-date rule
 ## Maintenance rule
 
 Add a new prebuilt chart only if its question, population, source, formula and primary owner differ meaningfully from an existing chart. Prefer a filter, drill-down or contextual link. Keep tests for null/zero, coverage, rate denominators and source reconciliation. Update the User Guide and this catalogue when changing ownership.
+
+Brand comparison integration reviewed 12 November 2026: Executive Dashboard owns the two-brand summary and single trend. Social Media Analytics / Brand Details owns platform-format-measurement-basis, location, account and topic tables for all brands. Followers owns account histories; Top Hits owns full rankings. Old comparison URLs redirect to the Executive brand section.

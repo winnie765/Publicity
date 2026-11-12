@@ -1,2 +1,2 @@
 import {redirect} from 'next/navigation';
-export default function Page(){redirect('/workspace/compare');}
+export default function Page(){redirect('/workspace#brand-comparison');}

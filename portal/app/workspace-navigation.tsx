@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import {LayoutDashboard,ChartNoAxesCombined,Flame,Network,Users,FileText,CalendarDays,Sparkles,Globe,Database,Settings,Trash2,PanelsTopLeft,MessagesSquare,Library,Building2} from 'lucide-react';
+import {LayoutDashboard,ChartNoAxesCombined,Flame,Network,Users,FileText,CalendarDays,Sparkles,Globe,Database,Settings,Trash2,PanelsTopLeft,MessagesSquare,Library} from 'lucide-react';
 import SidebarGroup from './sidebar-group';
 import {workspaceFeatures as features,type FeatureId} from '../lib/workspace-features';
 export default function WorkspaceNavigation({page,platform,trash=false,postsOnly=false,onNavigate}:{page:number;platform:string;trash?:boolean;postsOnly?:boolean;onNavigate?:()=>void}){
@@ -15,9 +15,6 @@ export default function WorkspaceNavigation({page,platform,trash=false,postsOnly
   {item('workvivo',Network,page===5)}
   {item('followers',Users,page===10)}
   {item('trends',Globe,page===18)}
-  <SidebarGroup id="additional-analysis" label="More Analysis" icon={ChartNoAxesCombined} defaultOpen={false} active={page===4}>
-   {item('brands',Building2,page===4)}
-  </SidebarGroup>
   <div className="workspace-nav-section">AI & Content</div>
   {item('analyst',MessagesSquare,page===19)}
   {item('builder',PanelsTopLeft,page===20)}

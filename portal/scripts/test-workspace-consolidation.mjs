@@ -32,7 +32,7 @@ const marked=Array.from({length:3},(_,i)=>({...post,id:'marked-'+i,featuresKnown
 const data={config:structuredClone(model.defaultConfig),posts:rows,followers:[],interactions:[]};
 const {default:Executive}=await load('app/executive-dashboard.tsx');
 const executive=render(Executive,{data,posts:rows,start:'2026-10-01',end:'2026-10-31',onOpen(){},onNavigate(){},enabled:false});
-assert(executive.includes('Platform Performance Snapshot'));assert(!executive.includes('<svg class="labelled-chart"'));assert(!executive.includes('Top 5'));
+assert(executive.includes('Platform Performance Snapshot'));assert(executive.includes('GLOW vs SEEN Brand Comparison'));assert(!nav.includes('/workspace/compare'));assert(!nav.includes('More Analysis'));assert.equal((executive.match(/class="labelled-chart"/g)||[]).length,1);assert(!executive.includes('Top 5'));
 assert(!executive.includes('Add Stakeholder Interaction'));assert(executive.includes('href="/workspace/posts?new=1"'));
 const {default:PlatformComparison}=await load('app/social-media-overview.tsx');const comparison=render(PlatformComparison,{posts:rows,onOpen(){}});
 assert(comparison.includes('Facebook vs Instagram Comparison'));assert(!comparison.includes('AI Executive Summary'));assert(!comparison.includes('Top Facebook Posts'));

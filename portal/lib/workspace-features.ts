@@ -9,7 +9,6 @@ export const workspaceFeatures={
  workvivo:{label:'Workvivo Insights',href:'/workspace/workvivo',page:5,purpose:'Internal performance and linked interactions'},
  followers:{label:'Followers',href:'/workspace/followers',page:10,purpose:'Account histories and follower record management'},
  trends:{label:'Industry Trends',href:'/workspace/industry-trends',page:18,purpose:'Dated external sector sources'},
- brands:{label:'Brand Comparison',href:'/workspace/compare',page:4,purpose:'Brand, location and account comparisons'},
  analyst:{label:'AI Social Media Analyst',href:'/workspace/analyst',page:19,purpose:'Evidence-linked recommendations and follow-up experiments'},
  builder:{label:'AI Dashboard Builder',href:'/workspace/dashboard-builder',page:20,purpose:'Staff-requested custom analytical views'},
  content:{label:'Content Intelligence',href:'/workspace/content',page:1,purpose:'Themes, relative performance and content strategy'},
@@ -30,7 +29,7 @@ export const workspaceRoutes:Record<string,WorkspaceRoute>=Object.fromEntries(Ob
 // Old URLs remain valid. They are aliases, not additional sidebar tools.
 for(const [alias,id] of Object.entries({'/workspace/admin':'imports','/workspace/advisor':'studio','/workspace/publishing':'publicSite'} as const))workspaceRoutes[alias]=workspaceRoutes[workspaceFeatures[id].href];
 export const settingsFeatureIds:FeatureId[]=['guide'];
-export const sidebarFeatureIds:FeatureId[]=['executive','posts','analytics','facebook','instagram','hits','workvivo','followers','trends','brands','analyst','builder','content','planner','studio','reports','publicSite','imports','configuration','trash'];
+export const sidebarFeatureIds:FeatureId[]=['executive','posts','analytics','facebook','instagram','hits','workvivo','followers','trends','analyst','builder','content','planner','studio','reports','publicSite','imports','configuration','trash'];
 export const primaryPageRoutes:Record<number,string>=Object.fromEntries(sidebarFeatureIds.filter(id=>!['facebook','instagram','trash'].includes(id)).map(id=>[workspaceFeatures[id].page,workspaceFeatures[id].href]));
 primaryPageRoutes[16]=workspaceFeatures.posts.href;primaryPageRoutes[17]=workspaceFeatures.guide.href;
 

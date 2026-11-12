@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/brand-comparison-tests');
+const {brandComparison}=await load('lib/brand-comparison.ts');
+const {blankPost,defaultConfig}=await load('app/model.ts');
+const {dashboardView,dashboardPosts}=await load('app/dashboard-intelligence.ts');
+const {summarisePosts}=await load('lib/analytical-dashboards.ts');
+const {reportStats}=await load('lib/monthly-report.ts');
+const row=(id,brand,likes,date='2026-10-15',platform='Facebook')=>({...blankPost(),id,brand,account:platform+' '+brand,platform,date,status:'published',type:'Reel',topic:'Wellness',location:'',likes,reportedMetrics:['likes']});
+const posts=[...Array.from({length:3},(_,i)=>row('g'+i,'GLOW',20)),...Array.from({length:3},(_,i)=>row('s'+i,'SEEN',10)),row('zero','GLOW',0),{...row('missing','GLOW',99999),reportedMetrics:[]},row('ig','SEEN',100,'2026-10-20','Instagram'),{...row('draft','GLOW',99999),status:'draft'},row('internal','GLOW',99999,'2026-10-15','Workvivo'),row('oldg','GLOW',10,'2026-09-15'),row('olds','SEEN',0,'2026-09-15'),row('other','New Brand',5)];
+const data={posts,followers:[],interactions:[],config:structuredClone(defaultConfig)},filters={start:'2026-10-01',end:'2026-10-31'};
+const selected=dashboardPosts(data,filters),view=dashboardView(data,selected,filters),result=brandComparison(view.selected,view.prior,view.start,view.end);
+assert.equal(view.previous.start,'2026-09-01');assert.equal(view.previous.end,'2026-09-30');
+for(const b of result.brands){const source=selected.filter(p=>p.brand===b.name);assert.deepEqual(b.current,summarisePosts(source));assert.equal(b.current.total,source.length?reportStats(source).engagement.value:null);}
+const glow=result.brands.find(b=>b.name==='GLOW');assert.equal(glow.current.posts,5);assert.equal(glow.current.measured,4);assert.equal(glow.current.total,60);assert.equal(glow.current.average,15);assert.equal(glow.changes.total.delta,50);
+assert.equal(result.platforms[0].comparisons.length,1);assert.equal(result.facts.length,1);assert(result.facts[0].text.includes('15'));assert.equal(result.platforms[0].trend[0].GLOW,15);assert.equal(result.platforms[1].trend[0].GLOW,null);assert.equal(result.platforms[1].trend[0].SEEN,100);
+for(const filter of [{platform:'Instagram'},{account:'Facebook GLOW'},{brand:'SEEN'},{location:'Nanyang'},{start:'2026-09-01',end:'2026-09-30'},{start:'2025-01-01',end:'2025-01-31'}]){const f={...filters,...filter},rows=dashboardPosts(data,f),v=dashboardView(data,rows,f),r=brandComparison(v.selected,v.prior,v.start,v.end);assert.equal(r.brands.reduce((n,b)=>n+b.current.posts,0),rows.length);assert.equal(r.brands.reduce((n,b)=>n+(b.current.total??0),0),rows.reduce((n,p)=>n+(summarisePosts([p]).total??0),0));}
+const missing=brandComparison([{...row('m','GLOW',77),reportedMetrics:[]}],[],filters.start,filters.end);assert.equal(missing.brands[0].current.average,null);assert.equal(missing.brands[0].current.total,null);assert.equal(missing.facts.length,0);
+const mismatch=brandComparison(selected.map(p=>p.brand==='SEEN'?{...p,engagementTotal:10}:p),[],filters.start,filters.end);assert.equal(mismatch.facts.length,0,'Different measurement bases must not imply comparable performance');
+const {default:Summary}=await load('app/executive-brand-comparison.tsx'),{default:Detail}=await load('app/brand-detail-analysis.tsx');
+const props={posts:view.selected,prior:view.prior,start:view.start,end:view.end,previousLabel:view.previous.label};
+const html=renderToStaticMarkup(React.createElement(Summary,props));assert(html.includes('GLOW vs SEEN Brand Comparison'));assert.equal((html.match(/class="labelled-chart"/g)||[]).length,1);assert(html.includes('Explore Brand Details'));assert(!html.includes('99,999'));
+const detail=renderToStaticMarkup(React.createElement(Detail,props));for(const text of ['Like-for-like','Brand and location','Account performance','Topics within each brand','New Brand'])assert(detail.includes(text));assert(!detail.includes('labelled-chart'));
+const scoped=renderToStaticMarkup(React.createElement(Summary,{...props,filters:{platform:'Instagram',account:'Instagram SEEN',brand:'SEEN'}}));assert(scoped.includes('platform=Instagram'));assert(scoped.includes('account=Instagram+SEEN'));assert(scoped.includes('brand=SEEN'));assert(scoped.includes('start=2026-10-01'));assert(scoped.includes('end=2026-10-31'));
+const empty=renderToStaticMarkup(React.createElement(Summary,{...props,posts:[],prior:[]}));assert(empty.includes('No measured GLOW or SEEN posts'));assert(!empty.includes('class="labelled-chart"'));
+const {default:Navigation}=await load('app/workspace-navigation.tsx');const nav=renderToStaticMarkup(React.createElement(Navigation,{page:0,platform:'Overview'}));assert(!nav.includes('/workspace/compare'));assert(!nav.includes('More Analysis'));
+assert(fs.readFileSync('app/workspace/compare/page.tsx','utf8').includes("redirect('/workspace#brand-comparison')"));assert(!fs.readFileSync('app/portal.tsx','utf8').includes('Brand engagement trends'));
+const css=(await import('postcss')).default;css.parse(fs.readFileSync('app/brand-comparison.css','utf8'));
+console.log('PASS: brand totals match records and report calculations; previous month, platform/account/brand/location/date filters, zero/missing, draft/Workvivo exclusion, compatible cohorts, one chart, retained detail tables, redirects, navigation and responsive CSS syntax.');
