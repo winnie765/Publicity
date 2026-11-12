@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/public-showcase-removal-tests');
+const {default:Landing}=await load('app/public-landing.tsx');
+const {publicContentShowcases}=await load('lib/public-content-showcases.ts');
+const {publicSectionLink}=await load('app/public-components.tsx');
+const story={id:'retained-story',title:'Retained historical post',summary:'Approved text',body:'',date:'2026-11-01',platform:'Facebook',brand:'GLOW',section:'Programme',imageUrl:''};
+const data={home:{showcasesEnabled:true,showcaseTitle:'Community Content Showcase'},showcases:publicContentShowcases([story],[],{},'2026-11-12'),stories:[story],brands:[],programmes:[],partners:[],events:[],impact:null};
+const before=JSON.stringify(data);
+const html=renderToStaticMarkup(React.createElement(Landing,{data}));
+for(const label of ['Community Content Showcase','Featured Posts','Top Performing Posts','Most Recent Posts','id="content-showcases"'])assert(!html.includes(label),label);
+assert(html.includes('id="programmes"'));
+assert.equal(JSON.stringify(data),before,'Rendering must preserve source content and saved settings');
+assert.equal(publicSectionLink('/community'),'/#public-main');
+assert.equal(publicSectionLink('/stories'),'/#public-main');
+console.log('PASS: showcase absent even when enabled, remaining brands section retained, no broken showcase anchors, source records/settings unchanged.');
