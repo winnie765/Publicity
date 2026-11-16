@@ -12,13 +12,19 @@
  --sidebar-nav-text: var(--muted);
  --sidebar-nav-active-text: var(--green);
  --sidebar-nav-active-bg: color-mix(in srgb,var(--green) 10%,var(--white));
+ /* The outer scroll is a fallback when branding and footer exceed a short viewport. */
+ height:100dvh;min-height:0;overflow-x:hidden;overflow-y:auto;
 }
+.app-shell .sidebar>:is(.brand,.workspace-label,.sidebar-bottom){flex-shrink:0}
 .app-shell .workspace-navigation {
- display:flex;flex-direction:column;gap:6px;flex-shrink:0;min-height:0;overflow:auto;
+ display:flex;flex-direction:column;gap:6px;flex:1 1 0;min-height:min(120px,25dvh);
+ overflow-x:hidden;overflow-y:auto;scroll-padding-block:6px;scrollbar-gutter:stable;
  font-family:var(--sidebar-nav-font);font-size:var(--sidebar-nav-size);
  font-weight:var(--sidebar-nav-weight);line-height:var(--sidebar-nav-line-height);
  letter-spacing:var(--sidebar-nav-letter-spacing);text-align:left;
 }
+.app-shell .workspace-navigation>*{flex-shrink:0}
+.app-shell .workspace-navigation:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
 
 .app-shell .workspace-navigation :is(a,button) {
  display:flex;align-items:center;gap:var(--sidebar-nav-gap);

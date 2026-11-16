@@ -6,7 +6,7 @@ import './workspace-navigation.css';
 import {workspaceFeatures as features,type FeatureId} from '../lib/workspace-features';
 export default function WorkspaceNavigation({page,platform,trash=false,postsOnly=false,onNavigate}:{page:number;platform:string;trash?:boolean;postsOnly?:boolean;onNavigate?:()=>void}){
  const item=(id:FeatureId,Icon:typeof Users,active:boolean)=> {const {label,href}=features[id];return <Link key={href} href={href} onClick={onNavigate} className={active?'active':''} aria-current={active?'page':undefined}><Icon size={18} aria-hidden="true"/><span>{label}</span></Link>;};
- return <nav className="workspace-navigation" aria-label="Primary navigation">
+ return <nav className="workspace-navigation" aria-label="Primary navigation" tabIndex={0}>
   <div className="workspace-nav-section">Staff Workspace</div>
   {item('executive',LayoutDashboard,page===0)}
   {item('posts',Library,page===16&&postsOnly)}
