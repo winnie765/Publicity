@@ -1,0 +1,92 @@
+/* Workspace analytics only. Public content and operational forms keep their own layouts. */
+.app-shell {
+ --analytics-card-bg:var(--paper);
+ --analytics-card-border:var(--line);
+ --analytics-card-radius:16px;
+ --analytics-section-radius:20px;
+ --analytics-card-padding:20px;
+ --analytics-gap:20px;
+ --analytics-text:var(--dark);
+ --analytics-secondary:color-mix(in srgb,var(--dark) 82%,var(--paper));
+}
+
+/* Existing Section/Kpi components and the intelligence layout share these surfaces. */
+.app-shell .analytics-dashboard :is(.card,.analytics-section,.intelligence-parent,.follower-platform-section),
+.app-shell .analytics-dashboard .epi-workspace {
+ min-width:0;border:1px solid var(--analytics-card-border);border-radius:var(--analytics-section-radius);
+ background:var(--white);box-shadow:none;color:var(--analytics-text);
+}
+.app-shell .analytics-dashboard .analytics-section {padding:24px;margin-bottom:24px}
+.app-shell .analytics-dashboard .analytics-section>.card-head {padding:0;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.app-shell .analytics-dashboard .analytics-section>.card-head h3 {font-size:22px;line-height:1.4;font-weight:650}
+.app-shell .analytics-dashboard .analytics-section>.card-head p {font-size:15px;line-height:1.7;color:var(--analytics-secondary);margin-top:8px}
+.app-shell .analytics-dashboard :is(.metric,.brand-summary-card,.platform-comparison-panel,.top-hit-tile,.follower-account-card,.follower-evidence-card,.follower-impact-card,.post-performance,.ad-interpretation,.executive-platform-card,.epi-category) {
+ min-width:0;min-height:0;height:auto;padding:var(--analytics-card-padding);
+ border:1px solid var(--analytics-card-border);border-radius:var(--analytics-card-radius);
+ background:var(--analytics-card-bg);box-shadow:none;color:var(--analytics-text);
+}
+.app-shell .analytics-dashboard :is(.brand-summary-card.brand-glow,.brand-summary-card.brand-seen) {border-left-width:3px}
+.app-shell .analytics-dashboard .brand-summary-card.brand-glow {border-left-color:var(--green)}
+.app-shell .analytics-dashboard .brand-summary-card.brand-seen {border-left-color:var(--chart-blue,#426b9a)}
+.app-shell .analytics-dashboard :is(.two-col,.three-col,.brand-summary-grid,.platform-comparison-grid,.follower-platform-cards,.executive-kpis,.epi-categories) {gap:var(--analytics-gap)}
+.app-shell .analytics-dashboard :is(.metric>div,.metric>span,.account-comparison-metrics dt,.brand-summary-card dt,.social-summary-metrics dt) {font-size:15px;line-height:1.6;color:var(--analytics-secondary)}
+.app-shell .analytics-dashboard .metric>strong {font-size:32px;line-height:1.3;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.app-shell .analytics-dashboard .executive-kpis .metric>span {min-height:3.2em}
+.app-shell .analytics-dashboard :is(.metric>small,.dashboard-coverage,.dashboard-delta,.dashboard-metric-notes,.brand-summary-card p,.brand-context) {font-size:14px;line-height:1.7;color:var(--analytics-secondary)}
+.app-shell .analytics-dashboard :is(.account-comparison-metrics dd,.brand-summary-card dd) {font-size:30px;line-height:1.3;font-variant-numeric:tabular-nums}
+.app-shell .analytics-dashboard .follower-overview-card {height:100%;padding:var(--analytics-card-padding);border-radius:var(--analytics-card-radius)}
+.app-shell .analytics-dashboard .follower-overview-card dt {font-size:14px;line-height:1.7;color:var(--analytics-secondary)}
+.app-shell .analytics-dashboard .follower-overview-card dd {font-size:15px;line-height:1.7}
+.app-shell .analytics-dashboard :is(.platform-comparison-metrics dt,.platform-comparison-metrics small,.top-hit-tile dt,.follower-evidence-card p,.follower-impact-card p) {font-size:14px;line-height:1.7;color:var(--analytics-secondary)}
+.app-shell .analytics-dashboard :is(.intelligence-parent-heading h2,.follower-platform-heading h2) {font-size:22px;line-height:1.4}
+.app-shell .analytics-dashboard .intelligence-parent-heading p {font-size:15px;line-height:1.7;color:var(--analytics-secondary)}
+.app-shell .analytics-dashboard :is(.platform-comparison-panel h3,.top-hit-tile h3,.brand-summary-card h3,.follower-account-card h3) {font-size:22px;line-height:1.4}
+.app-shell .analytics-dashboard :is(.button,.decision-controls .button,.epi-controls .button) {font-size:14px;line-height:1.5;min-height:44px;white-space:normal;overflow-wrap:anywhere}
+.app-shell .analytics-dashboard :is(a,button,summary):focus-visible {outline:3px solid var(--green);outline-offset:4px}
+
+/* One existing pair of platform cards; no additional statistics or calculations. */
+.app-shell .analytics-dashboard .platform-performance-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--analytics-gap);align-items:stretch}
+.app-shell .analytics-dashboard .executive-platform-card {display:flex;flex-direction:column}
+.app-shell .analytics-dashboard .executive-platform-card h3 {font-size:23px;line-height:1.4;margin:0 0 22px;font-weight:650}
+.app-shell .analytics-dashboard .platform-performance-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:0 0 20px}
+.app-shell .analytics-dashboard .platform-performance-metrics>div {display:flex;flex-direction:column;min-width:0}
+.app-shell .analytics-dashboard .platform-performance-metrics dt {font-size:15px;line-height:1.6;color:var(--analytics-secondary);overflow-wrap:anywhere}
+.app-shell .analytics-dashboard .platform-performance-metrics dd {margin:auto 0 0;padding-top:12px;font-size:32px;line-height:1.3;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.app-shell .analytics-dashboard .platform-performance-metrics .is-missing {font-size:20px;font-weight:500}
+.app-shell .analytics-dashboard .platform-performance-coverage {padding-top:16px;border-top:1px solid var(--analytics-card-border);margin-bottom:20px}
+.app-shell .analytics-dashboard .platform-performance-coverage h4 {font-size:15px;line-height:1.5;margin:0 0 8px;font-weight:600}
+.app-shell .analytics-dashboard .platform-performance-coverage p {font-size:14px;line-height:1.7;color:var(--analytics-secondary);margin:6px 0}
+.app-shell .analytics-dashboard .platform-performance-link {align-self:flex-start;margin-top:auto;display:inline-flex;align-items:center;gap:10px;max-width:100%}
+
+/* Executive Intelligence defines the shared visual language, with more readable copy. */
+.app-shell .analytics-dashboard .epi-heading h2 {font-size:24px;line-height:1.4}
+.app-shell .analytics-dashboard :is(.epi-heading p,.epi-period,.epi-finding p,.epi-compact-empty) {font-size:15px;line-height:1.75;color:var(--analytics-secondary)}
+.app-shell .analytics-dashboard .epi-category>h3 {font-size:20px;line-height:1.4}
+.app-shell .analytics-dashboard .epi-finding h4 {font-size:16px;line-height:1.5}
+.app-shell .analytics-dashboard :is(.epi-finding small,.epi-finding a,.epi-links a,.epi-evidence,.epi-more,.epi-method,.epi-context-link) {font-size:14px;line-height:1.7}
+.app-shell .analytics-dashboard .epi-finding strong {color:var(--analytics-text)}
+.app-shell .analytics-dashboard :is(.epi-evidence summary,.epi-more summary,.epi-method summary,.record-detail-disclosure>summary) {padding-block:8px}
+
+/* Detailed growth/benchmark evidence keeps its existing disclosures and calculations. */
+.app-shell .analytics-dashboard :is(.decision-takeaways>article,.decision-metrics>article,.decision-chart) {padding:var(--analytics-card-padding);background:var(--analytics-card-bg);border:1px solid var(--analytics-card-border);border-radius:var(--analytics-card-radius);box-shadow:none}
+.app-shell .analytics-dashboard .decision-workspace :is(p,li,dt,small) {font-size:14px;line-height:1.7;color:var(--analytics-secondary)}
+.app-shell .analytics-dashboard .decision-workspace h3 {font-size:18px;line-height:1.5}
+.app-shell .analytics-dashboard .decision-metrics dd {font-size:20px}
+.app-shell .analytics-dashboard :is(.decision-takeaways,.decision-metrics) {gap:var(--analytics-gap)}
+
+@media(max-width:1200px) {
+ .app-shell .analytics-dashboard .platform-performance-grid {grid-template-columns:1fr}
+}
+@media(max-width:760px) {
+ .app-shell {--analytics-card-padding:18px;--analytics-gap:16px;--analytics-section-radius:18px}
+ .app-shell .analytics-dashboard .analytics-section {padding:18px}
+ .app-shell .analytics-dashboard :is(.brand-summary-grid,.platform-comparison-grid,.epi-categories) {grid-template-columns:minmax(0,1fr)}
+ .app-shell .analytics-dashboard .epi-workspace {padding:18px}
+ .app-shell .analytics-dashboard .platform-performance-metrics {grid-template-columns:1fr;gap:14px}
+ .app-shell .analytics-dashboard .platform-performance-metrics>div {flex-direction:row;justify-content:space-between;align-items:baseline;gap:16px}
+ .app-shell .analytics-dashboard .platform-performance-metrics dt {flex:1;min-width:0}
+ .app-shell .analytics-dashboard .platform-performance-metrics dd {margin:0;padding:0;text-align:right;font-size:28px}
+ .app-shell .analytics-dashboard .platform-performance-metrics dd {max-width:60%}
+ .app-shell .analytics-dashboard .platform-performance-metrics .is-missing {font-size:20px}
+ .app-shell .analytics-dashboard .platform-performance-link {width:100%;justify-content:center}
+}

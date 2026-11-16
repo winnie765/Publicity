@@ -1,4 +1,4 @@
-/* The platform comparison panels are the workspace's card design standard.
+/* Base workspace surfaces; analytics-card-system.css applies the Executive Intelligence card standard.
    Scope these tokens and rules to the workspace; public storytelling retains its branding. */
 .app-shell{--ui-radius-parent:21px;--ui-radius-child:14px;--ui-space:24px;--ui-gap:16px;--ui-shadow:0 8px 26px rgb(0 0 0 / .04);--ui-accent:var(--green)}
 .app-shell .intelligence-parent,.app-shell .card,.app-shell .ai-intelligence,.app-shell .follower-platform-section,.app-shell .cms-surface,.app-shell .cms-preview-manager,.app-shell .cp-pipeline,.app-shell .report-archive-workspace>section{min-width:0;border:1px solid var(--line);border-top:4px solid var(--ui-accent,var(--green));border-radius:var(--ui-radius-parent);background:var(--white);box-shadow:var(--ui-shadow);overflow:hidden}
