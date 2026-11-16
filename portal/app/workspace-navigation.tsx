@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
-import {LayoutDashboard,ChartNoAxesCombined,Flame,Network,Users,FileText,CalendarDays,Sparkles,Globe,Database,Settings,Trash2,PanelsTopLeft,MessagesSquare,Library} from 'lucide-react';
+import {LayoutDashboard,ChartNoAxesCombined,Flame,Network,Users,FileText,CalendarDays,Sparkles,Globe,Database,Settings,Trash2,MessagesSquare,Library} from 'lucide-react';
 import SidebarGroup from './sidebar-group';
+import './workspace-navigation.css';
 import {workspaceFeatures as features,type FeatureId} from '../lib/workspace-features';
 export default function WorkspaceNavigation({page,platform,trash=false,postsOnly=false,onNavigate}:{page:number;platform:string;trash?:boolean;postsOnly?:boolean;onNavigate?:()=>void}){
  const item=(id:FeatureId,Icon:typeof Users,active:boolean)=> {const {label,href}=features[id];return <Link key={href} href={href} onClick={onNavigate} className={active?'active':''} aria-current={active?'page':undefined}><Icon size={18} aria-hidden="true"/><span>{label}</span></Link>;};
@@ -17,7 +18,6 @@ export default function WorkspaceNavigation({page,platform,trash=false,postsOnly
   {item('trends',Globe,page===18)}
   <div className="workspace-nav-section">AI & Content</div>
   {item('analyst',MessagesSquare,page===19)}
-  {item('builder',PanelsTopLeft,page===20)}
   {item('content',ChartNoAxesCombined,page===1)}
   <SidebarGroup id="content-workspace" label="Content Workspace" icon={CalendarDays} active={page===13||page===14}>{item('planner',CalendarDays,page===13)}{item('studio',Sparkles,page===14)}</SidebarGroup>
   {item('reports',FileText,page===12)}

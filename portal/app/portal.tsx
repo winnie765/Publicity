@@ -71,7 +71,6 @@ const ContentPlanner=dynamic(()=>import('./content-planner'),{loading:()=> <Work
 const ContentIntelligence=dynamic(()=>import('./content-intelligence'),{loading:()=> <WorkspacePending/>});
 const IndustryTrends=dynamic(()=>import('./industry-trends'),{loading:()=> <WorkspacePending/>});
 const PostContentIntelligence=dynamic(()=>import('./post-content-intelligence'),{loading:()=> <p role="status">Opening post analysis...</p>});
-const DashboardBuilder=dynamic(()=>import('./dashboard-builder'),{loading:()=> <WorkspacePending/>});
 const Analyst=dynamic(()=>import('./social-analyst'),{loading:()=> <WorkspacePending/>});
 const navRoutes=primaryPageRoutes;
 const fmt=(n:number)=>new Intl.NumberFormat('en-SG',{maximumFractionDigits:0}).format(n);
@@ -135,7 +134,7 @@ export default function Portal({initialPage=0,initialAnalyticsPlatform='Overview
  {!loading&&page===2&&<AnalyticsDecisionSupport data={data} scope="top-hits" filters={aiFilters} revision={aiRevision} enabled={!loading}/>}
 
  {page===0&&!loading&&<ExecutiveDashboard data={data} posts={ps} start={start} end={end} onOpen={setDetail} filters={aiFilters} revision={aiRevision} enabled={!loading} onQuickAction={(kind,platform)=>{if(kind==='followers'){setDashboardFollowerForm(true);setKind('followers');setEditor({id:crypto.randomUUID(),date:new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'}),account:followerAccounts(data)[0]?.name||'Facebook SEEN',followers:0});}else{setDashboardFollowerForm(false);newRecord(kind,platform||'Facebook')}}} onNavigate={page=>router.push(navRoutes[page])}/>}
- {page===19&&<Analyst/>}{page===20&&<DashboardBuilder data={data} onOpen={setDetail}/>}
+ {page===19&&<Analyst/>}
  {page===17&&<UserGuide/>}{page===18&&<IndustryTrends/>}
  {page===12&&<MonthlyReportGenerator initialArchive={initialReportsArchive}/>}
  {page===16&&<RecordManager key={initialPostsOnly?'posts':initialRecordsTrash?'trash':'records'} postsOnly={initialPostsOnly} initialTrash={initialRecordsTrash} data={data} onChange={()=>refresh(false,true)}/>}

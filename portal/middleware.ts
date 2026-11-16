@@ -1,3 +1,4 @@
+import {industryCronAuthorized} from './lib/industry-cron-security';
 import {NextResponse,type NextRequest} from 'next/server';
 import {authenticated,automationAuthorized} from './lib/workspace-security';
 const publicPages=new Set(['/','/community','/showcase','/programmes','/stories','/impact','/activities','/partners','/what-were-doing','/workspace/login']);
@@ -7,7 +8,7 @@ export async function middleware(request:NextRequest){
  if(publicPages.has(path)||/^\/(stories|programmes|activities)\/[^/]+$/.test(path)||path==='/api/media'||path==='/api/public'||path==='/api/session'){
   const response=NextResponse.next();response.headers.set('Cache-Control','no-store');response.headers.set('Content-Security-Policy',path==='/workspace/login'?"frame-ancestors 'none'":"frame-ancestors *");return response;
  }
- if(!await authenticated(request)&&!await automationAuthorized(request)){
+ if(!await authenticated(request)&&!await automationAuthorized(request)&&!await industryCronAuthorized(request)){
   if(path.startsWith('/api/'))return NextResponse.json({error:'Workspace sign-in required.'},{status:401,headers:{'Cache-Control':'no-store'}});
   const url=new URL('/workspace/login',request.url);url.searchParams.set('next',path.startsWith('/workspace')?path:'/workspace'+path);return NextResponse.redirect(url);
  }

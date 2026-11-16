@@ -16,5 +16,11 @@
     "app/api/report-automation/route.ts": {
       "maxDuration": 120
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/industry-trends/refresh",
+      "schedule": "17 0 * * *"
+    }
+  ]
 }

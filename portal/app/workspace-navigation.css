@@ -1,0 +1,53 @@
+/* Executive Dashboard is the typography reference for every navigation row. */
+.app-shell .sidebar {
+ --sidebar-nav-font: 'Segoe UI', Arial, sans-serif;
+ --sidebar-nav-size: 14px;
+ --sidebar-nav-weight: 650;
+ --sidebar-nav-line-height: 1.5;
+ --sidebar-nav-letter-spacing: normal;
+ --sidebar-nav-icon: 18px;
+ --sidebar-nav-gap: 12px;
+ --sidebar-nav-padding: 14px;
+ --sidebar-nav-row: 48px;
+ --sidebar-nav-text: var(--muted);
+ --sidebar-nav-active-text: var(--green);
+ --sidebar-nav-active-bg: color-mix(in srgb,var(--green) 10%,var(--white));
+}
+.app-shell .workspace-navigation {
+ display:flex;flex-direction:column;gap:6px;flex-shrink:0;min-height:0;overflow:auto;
+ font-family:var(--sidebar-nav-font);font-size:var(--sidebar-nav-size);
+ font-weight:var(--sidebar-nav-weight);line-height:var(--sidebar-nav-line-height);
+ letter-spacing:var(--sidebar-nav-letter-spacing);text-align:left;
+}
+
+.app-shell .workspace-navigation :is(a,button) {
+ display:flex;align-items:center;gap:var(--sidebar-nav-gap);
+ min-width:0;width:100%;min-height:var(--sidebar-nav-row);padding:12px var(--sidebar-nav-padding);
+ font-family:inherit;font-size:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;text-align:inherit;
+ border:0;border-radius:12px;text-decoration:none;color:var(--sidebar-nav-text);
+}
+.app-shell .workspace-navigation :is(a,button)>span {min-width:0;white-space:normal;overflow-wrap:break-word}
+.app-shell .workspace-navigation :is(a,button)>svg {
+ width:var(--sidebar-nav-icon);height:var(--sidebar-nav-icon);flex:0 0 var(--sidebar-nav-icon);
+}
+.app-shell .workspace-navigation :is(a,button):hover {background:var(--paper);color:var(--sidebar-nav-active-text)}
+.app-shell .workspace-navigation a.active,
+.app-shell .workspace-navigation .sidebar-group-head.active {
+ background:var(--sidebar-nav-active-bg);color:var(--sidebar-nav-active-text);
+}
+.app-shell .workspace-navigation a.active {box-shadow:inset 3px 0 var(--green)}
+.app-shell .workspace-navigation .sidebar-group-head.active>:is(a,button) {color:var(--sidebar-nav-active-text)}
+.app-shell .workspace-navigation :is(a,button):focus-visible {outline:2px solid var(--green);outline-offset:3px}
+
+.app-shell .workspace-navigation .sidebar-group-head {display:grid;grid-template-columns:minmax(0,1fr) 44px;min-width:0;border-radius:12px}
+.app-shell .workspace-navigation .sidebar-group-label {padding-right:4px;border-radius:12px 0 0 12px}
+.app-shell .workspace-navigation .sidebar-group-toggle {width:44px;min-width:44px;align-self:stretch;justify-content:center;padding:0;border-radius:0 12px 12px 0}
+.app-shell .workspace-navigation .sidebar-group-toggle>svg {width:14px;height:14px;flex-basis:14px}
+.app-shell .workspace-navigation .analytics-subnav {display:grid;gap:4px;margin:4px 0 8px 23px;padding-left:12px;border-left:1px solid var(--line)}
+
+/* Section labels have their own shared hierarchy; they are not navigation rows. */
+.app-shell .workspace-navigation .workspace-nav-section {font-family:var(--sidebar-nav-font);font-size:10px;font-weight:650;line-height:1.5;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);padding:22px var(--sidebar-nav-padding) 8px;text-align:left}
+.app-shell .workspace-navigation .workspace-nav-section:first-child {padding-top:4px}
+.app-shell .sidebar .workspace-settings-trigger {font-family:var(--sidebar-nav-font);font-size:var(--sidebar-nav-size);font-weight:var(--sidebar-nav-weight);line-height:var(--sidebar-nav-line-height);letter-spacing:var(--sidebar-nav-letter-spacing);text-align:left;min-height:var(--sidebar-nav-row);padding:12px var(--sidebar-nav-padding);gap:var(--sidebar-nav-gap)}
+.app-shell .sidebar .workspace-settings-trigger>svg:first-child {width:var(--sidebar-nav-icon);height:var(--sidebar-nav-icon);flex-shrink:0}
+html[data-theme="dark"] .app-shell .sidebar {--sidebar-nav-active-text:#e5f6ec;--sidebar-nav-active-bg:#2c5742}

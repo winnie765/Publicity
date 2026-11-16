@@ -1,0 +1,41 @@
+name: Refresh industry sources
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: industry-source-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      REFRESH_URL: ${{ secrets.INDUSTRY_TRENDS_URL }}
+      REFRESH_SECRET: ${{ secrets.INDUSTRY_TRENDS_CRON_SECRET }}
+    steps:
+      - name: Check the deployed portal
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, sys, urllib.request, urllib.parse
+          url, token = os.environ.get('REFRESH_URL', ''), os.environ.get('REFRESH_SECRET', '')
+          if not url or len(token) < 32:
+              print('::error::Configure INDUSTRY_TRENDS_URL and INDUSTRY_TRENDS_CRON_SECRET repository secrets.')
+              sys.exit(1)
+          parsed = urllib.parse.urlsplit(url)
+          if parsed.scheme != 'https' or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path != '/api/industry-trends/refresh':
+              print('::error::Use the HTTPS production endpoint ending /api/industry-trends/refresh.')
+              sys.exit(1)
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs):
+                  return None
+          try:
+              request = urllib.request.Request(url, headers={'Authorization': 'Bearer ' + token})
+              with urllib.request.build_opener(NoRedirect).open(request, timeout=60) as response:
+                  print('Scheduled source check completed:', response.status)
+          except Exception:
+              print('::error::Scheduled source check failed. Check the deployed portal function logs; cached content remains available.')
+              sys.exit(1)
+          PY

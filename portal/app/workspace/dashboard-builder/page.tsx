@@ -1,2 +1,3 @@
+import {redirect} from 'next/navigation';
 export const dynamic='force-dynamic';
-export default function DashboardBuilderPage(){return null;}
+export default function DashboardBuilderPage(){redirect('/workspace');}

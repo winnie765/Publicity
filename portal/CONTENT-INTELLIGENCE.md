@@ -12,7 +12,7 @@ Themes come from recorded topic/category metadata. No theme, participant story, 
 
 ## Industry Trends
 
-`/workspace/industry-trends` reads dated RSS updates from an allowlisted set of publishers: World Health Organization, HelpAge International and the Social Care Institute for Excellence. Sources include their original links, dates, region and publisher categories. Available feeds refresh when checked after six hours; an entirely unavailable snapshot can be retried after five minutes. The workspace checks on opening, focus and periodic use. This is an on-demand cache, not a scheduled background crawler.
+`/workspace/industry-trends` reads dated RSS updates from an allowlisted set of publishers: World Health Organization, HelpAge International and the Social Care Institute for Excellence. Sources include their original links, dates, region and publisher categories. Available feeds refresh when checked after six hours; an entirely unavailable snapshot can be retried after five minutes. The workspace retains opening, focus and manual checks as secondary paths. Industry Trends now also supports a protected six-hour GitHub Actions scheduler and daily Vercel fallback; deployment and scheduler secrets are required. Singapore MOH, HPB and CSA feeds extend the existing international sources. See INDUSTRY-TRENDS.md for source verification, filtering, resilience and setup.
 
 Fetches have timeouts, response-size bounds and redirect rejection. Feed links are restricted to their publisher's HTTPS host. DTD/entity declarations are rejected. Failed sources are reported and previous dated updates may be retained. No article image, stock illustration or sample trend is inserted.
 

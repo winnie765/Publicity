@@ -6,12 +6,12 @@ import {testCompiler} from './test-support/compiler.mjs';
 const load=testCompiler('.sites-runtime/workspace-product-tests');
 const {default:Navigation}=await load('app/workspace-navigation.tsx');
 const render=(Component,props)=>renderToStaticMarkup(React.createElement(Component,props));
-for(const [page,platform,href] of [[0,'Overview','/workspace'],[19,'Overview','/workspace/analyst'],[20,'Overview','/workspace/dashboard-builder'],[11,'Instagram','/workspace/analytics/instagram']]){
+for(const [page,platform,href] of [[0,'Overview','/workspace'],[19,'Overview','/workspace/analyst'],[11,'Instagram','/workspace/analytics/instagram']]){
  const html=render(Navigation,{page,platform});
  assert(html.includes('Staff Workspace'));assert(html.includes('Analytics Dashboard'));assert(html.includes('Administration'));assert(html.includes('Social Media Posts'));assert(html.includes('Content Workspace'));
  assert(html.includes('href="'+href+'"'));assert(html.includes('aria-current="page"'));
  for(const route of ['/workspace/reports','/workspace/import','/workspace/settings','/workspace/posts','/workspace/trash','/workspace/assistant','/workspace/planner','/workspace/site-manager'])assert(html.includes('href="'+route+'"'),route);
- assert(html.indexOf('Content Intelligence')<html.indexOf('Content Workspace'));assert(!html.includes('Reports Archive'));assert(!html.includes('Brand Comparison'));assert(!html.includes('More Analysis'));
+ assert(html.indexOf('Content Intelligence')<html.indexOf('Content Workspace'));assert(!html.includes('Reports Archive'));assert(!html.includes('AI Dashboard Builder'));assert(!html.includes('/workspace/dashboard-builder'));assert(!html.includes('Brand Comparison'));assert(!html.includes('More Analysis'));
 }
 const {defaultDashboardLayout,parseDashboardLayout}=await load('lib/dashboard-layout.ts');
 assert.deepEqual(parseDashboardLayout(defaultDashboardLayout),defaultDashboardLayout);
@@ -25,6 +25,6 @@ const postcss=await import('postcss');postcss.default.parse(fs.readFileSync('app
 const {default:Recovery}=await load('app/workspace/error.tsx');const recovery=render(Recovery,{error:Error('PRIVATE DATABASE ERROR'),reset(){}});for(const text of ['Try Again','Open Dashboard','User Guide'])assert(recovery.includes(text));assert(!recovery.includes('PRIVATE DATABASE ERROR'));
 const {readApiResponse}=await load('lib/api-response.ts');await assert.rejects(()=>readApiResponse(new Response('<html>upstream</html>',{status:503})),error=>!error.message.includes('Vercel')&&!error.message.includes('import')&&error.message.includes('HTTP 503'));
 const {reportIndex}=await load('lib/report-service.ts');let kinds;const index=await reportIndex({readRecords:async requested=>{kinds=requested;return [{id:'legacy',kind:'generated_report',payload:{period:{frequency:'monthly',label:'Old month'},generatedAt:'2026-01-01'},updatedAt:'2026-01-01'}];}});assert.equal(index[0].id,'legacy');assert.equal(index[0].posts,0);assert(kinds.includes('generated_report'));
-const {workspaceRoutes}=await load('lib/workspace-features.ts');for(const route of ['/workspace/analyst','/workspace/dashboard-builder'])assert(workspaceRoutes[route]);
+const {workspaceRoutes}=await load('lib/workspace-features.ts');assert(workspaceRoutes['/workspace/analyst']);assert(!workspaceRoutes['/workspace/dashboard-builder']);assert(fs.readFileSync('app/workspace/dashboard-builder/page.tsx','utf8').includes("redirect('/workspace')"));
 const {default:ExcelJS}=await import('exceljs');const workbook=new ExcelJS.Workbook(),sheet=workbook.addWorksheet('Facebook');sheet.addRow(['Date','Page','Post_Title','Content_Type','Likes']);sheet.addRow(['2026-10-01','GLOW','Workbook round-trip','Reel',12]);const decoded=new ExcelJS.Workbook();await decoded.xlsx.load(await workbook.xlsx.writeBuffer());const {extractSheetData,prepareStandardWorkbook}=await load('app/standard-workbook.ts');const imported=await prepareStandardWorkbook(extractSheetData(decoded),{posts:[],followers:[],interactions:[],config:structuredClone(defaultConfig)});const importedPost=imported.batches.find(batch=>batch.kind==='posts').items[0];assert.equal(importedPost.title,'Workbook round-trip');assert.equal(importedPost.likes,12);assert.equal(importedPost.platform,'Facebook');assert.equal(importedPost.account,'Facebook GLOW');
 console.log('PASS: preserved navigation routes/active states, local layout validation, published external metrics, accessible recovery, readable upstream errors and legacy report metadata.');
