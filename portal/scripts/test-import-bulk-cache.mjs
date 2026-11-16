@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/import-bulk-cache-tests',{transform:(s,file)=>file==='lib/prisma-client.ts'?'export const getPrismaClient=()=>globalThis.importPrisma;':s});
+process.env.DATABASE_PROVIDER='prisma';
+const transactions=[],queries=[];
+globalThis.importPrisma={record:{findMany:async()=>[],upsert:()=>{throw Error('Import regressed to a per-record database write.')}},audit:{createMany:input=>({kind:'audit',input})},aICache:{deleteMany:input=>({kind:'cache',input})},$executeRawUnsafe:(sql,value)=>{queries.push({sql,value});return {kind:'records',value}},$transaction:async operations=>{transactions.push(operations);return []}};
+const {getStorage}=await load('lib/storage.ts'),{bulkRecordChanges}=await load('lib/bulk-records.ts');
+const now='2026-11-16T00:00:00Z',writes=Array.from({length:500},(_,i)=>({type:'upsert',record:{id:'post-'+i,kind:'posts',payload:{date:'2026-11-01',title:'Imported post '+i},updatedAt:now}})),audits=writes.map(c=>({type:'audit',entry:{id:'audit-'+c.record.id,actor:'Test',action:'Workbook import posts',record_id:c.record.id,date:now}})),changes=[...writes,...audits,{type:'clearAICache'}];
+const batch=bulkRecordChanges(changes);assert(batch);assert.equal(batch.records.length,500);assert.equal(batch.audits.length,500);assert.equal(batch.clearCache,true);
+await getStorage().apply(changes);assert.equal(transactions.length,1);assert.deepEqual(transactions[0].map(c=>c.kind),['records','audit','cache']);assert.equal(queries.length,1);assert.equal(JSON.parse(queries[0].value).length,500);assert.deepEqual(transactions[0][2].input,{where:{id:{startsWith:'report:'}}});
+await getStorage().apply(writes);assert.deepEqual(transactions[1].map(c=>c.kind),['records']);assert.equal(bulkRecordChanges([{type:'delete',id:'post-1',kind:'posts'},{type:'clearAICache'}]),null);assert.equal(bulkRecordChanges([{type:'insert',record:writes[0].record},{type:'clearAICache'}]),null);
+console.log('PASS: 500 imported records + 500 audit entries + AI cache invalidation use three operations in one Prisma transaction; no per-record upserts; ordinary bulk writes and destructive/insert routing preserved. No production database used.');

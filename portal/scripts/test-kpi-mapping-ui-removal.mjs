@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/no-kpi-mapping-tests');
+const {default:Management,datasetCounts}=await load('app/data-management.tsx'),{defaultConfig,blankPost,engagement}=await load('app/model.ts');
+const mapping={id:'mapping-retained',objectiveId:'OPS',description:'Retained internal data',account:'Facebook GLOW',platforms:['Facebook'],month:'11',year:2026,target:'10'};
+const data={posts:[{...blankPost(),id:'post',title:'Measured post',likes:5,comments:2,shares:1,saves:1,reportedMetrics:['likes','comments','shares','saves']}],followers:[],interactions:[],kpis:[mapping],config:structuredClone(defaultConfig)};
+assert.equal(engagement(data.posts[0]),9);assert.equal(datasetCounts(data).total,2,'underlying dataset count is preserved');
+for(const category of ['posts','followers','interactions']){const html=renderToStaticMarkup(React.createElement(Management,{data,category,onCategory(){},busy:false,loading:false,canManageDataset:true,onDelete(){},onFile:async()=>true,onExport:async()=>{},onTemplate:async()=>{}}));assert(!/kpi.?mapping|Strategic KPI/i.test(html));assert(html.includes('Shared dataset'));assert(html.includes('Dataset Controls'));}
+const {recordTypes,recordFields}=await load('app/record-definitions.ts');assert(!recordTypes.some(([kind])=>kind==='kpis'));assert(!recordFields.kpis);
+const {inferKind,normalizeRecord}=await load('app/import.ts');assert.equal(inferKind('KPI_Mapping',{},'posts'),'kpis');assert.equal(normalizeRecord('kpis',mapping).objectiveId,'OPS');
+const {prepareStandardWorkbook}=await load('app/standard-workbook.ts');
+const result=await prepareStandardWorkbook([{name:'KPI_Mapping',headers:['Objective_ID','Objective_Description','Account','Platforms','Month','Year','Target'],rows:[{row:2,values:{Objective_ID:'OPS',Objective_Description:'Retained internal data',Account:'Facebook GLOW',Platforms:'Facebook',Month:'11',Year:2026,Target:'10'}}]}],data);
+assert.equal(result.batches.find(b=>b.kind==='kpis').items[0].objectiveId,'OPS');
+const portal=fs.readFileSync('app/portal.tsx','utf8');assert(!/Strategic KPI mapping|Add KPI mapping|Edit KPI mapping|Delete KPI mapping|>KPI mappings</i.test(portal));assert(!portal.includes('className="kpi-description"'));assert(portal.includes("batch.kind!=='kpis'"));assert(portal.includes("KPI_Mapping:['Objective_ID'"),'download schema stays compatible');
+const {guidePages,guideActions}=await load('lib/user-guide.ts');assert(!/kpi.?mapping|Strategic KPI/i.test(JSON.stringify([...guidePages,...guideActions])));
+assert(!/kpi.?mapping/i.test(fs.readFileSync('app/delete-all-data.tsx','utf8')));assert(!/\.kpi-description|\.kpi-plan/.test(fs.readFileSync('app/globals.css','utf8')));
+console.log('PASS: no mapping UI in nonempty management/guide/forms/types/dialogs; obsolete styles removed; engagement, dataset counts, legacy normalization and KPI_Mapping workbook import/template compatibility preserved.');
