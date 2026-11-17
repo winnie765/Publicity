@@ -1,3 +1,4 @@
+import {verifyAnalystOutput,qualitativeRejection,analystVerificationPolicy} from '../../../lib/analyst-verification';
 import {resolveExecutiveFocus} from '../../../lib/executive-insight-context';
 import {workspaceGuard} from '../../../lib/workspace-security';
 import {getStorage} from '../../../lib/storage';
@@ -5,7 +6,7 @@ import {loadData} from '../../../lib/data-service';
 import {getAIRuntime} from '../../../lib/ai-runtime';
 import {createProvider} from '../../../lib/intelligence/provider';
 import {intelligenceResponse} from '../../../lib/intelligence/service';
-import {analystAnalysis,analystEvidence,safeAnalystInsights,opportunityKinds,approvedCaption} from '../../../lib/social-analyst';
+import {analystAnalysis,analystEvidence,opportunityKinds,approvedCaption} from '../../../lib/social-analyst';
 import {createAnalystPlan,linkExperimentPosts,evaluateExperiment,experimentScope} from '../../../lib/analyst-experiments';
 import {generateWriting} from '../../../lib/content-writing';
 import type {AnalyticalFilters} from '../../../lib/analytical-dashboards';
@@ -30,12 +31,13 @@ export async function POST(request:Request){
  if(body.action==='interpret-executive'){
   const focus=await resolveExecutiveFocus(await loadData(store),body.id,body.filters,body.mode);if(!focus||focus.revision!==body.revision)return json({error:'Executive evidence changed. Refresh Analysis to review the current finding.'},409);
   const runtime=getAIRuntime(),response=await intelligenceResponse(focus.evidence,createProvider(runtime.config),runtime.cache,runtime.dailyLimit);
-  return json({mode:response.mode,reason:response.reason,cached:response.cached,insights:response.mode==='gemini'?response.report.insights.filter(item=>item.evidenceIds.length===1&&item.evidenceIds[0]==='EXECUTIVE_SELECTED'):[],message:response.mode==='gemini'?undefined:'Gemini is unavailable for this request. The calculated executive evidence remains available.'});
+  const insights=response.mode==='gemini'&&Array.isArray(response.report?.insights)?response.report.insights.filter(item=>Array.isArray(item?.evidenceIds)&&item.evidenceIds.length===1&&item.evidenceIds[0]==='EXECUTIVE_SELECTED'&&!qualitativeRejection(item,focus.finding.platform)):[];
+  return json({verificationPolicy:analystVerificationPolicy,mode:response.mode,reason:response.reason,cached:response.cached,insights,message:response.mode!=='gemini'?'Gemini is unavailable for this request. The calculated executive evidence remains available.':!insights.length?'Generated wording was withheld after evidence checks. The calculated executive finding remains available.':undefined});
  }
  if(body.action==='interpret'){
   const analysis=await analystAnalysis(await loadData(store,'social'),body.filters);if(body.revision!==analysis.revision)return json({error:'Source data changed. Refresh Analysis before requesting Gemini interpretation.'},409);
-  const runtime=getAIRuntime(),response=await intelligenceResponse(analystEvidence(analysis),createProvider(runtime.config),runtime.cache,runtime.dailyLimit),insights=safeAnalystInsights(response,analysis);
-  return json({mode:response.mode,reason:response.reason,cached:response.cached,generatedAt:response.generatedAt,insights,message:response.mode!=='gemini'?({not_configured:'Gemini is not configured for this deployment.',busy:'Gemini is busy or its daily allowance has been reached. Try again later.',no_data:'No suitable measured data is available.',unavailable:'Gemini is temporarily unavailable.'}[response.reason||'unavailable']+' Calculated findings remain available.'):!insights.length?'Gemini returned no safely supported recommendations. Use the calculated findings or try again.':undefined});
+  const runtime=getAIRuntime(),response=await intelligenceResponse(analystEvidence(analysis),createProvider(runtime.config),runtime.cache,runtime.dailyLimit),verification=verifyAnalystOutput(response,analysis),insights=verification.accepted;
+  return json({mode:response.mode,reason:response.reason,cached:response.cached,generatedAt:response.generatedAt,insights,verification:{policy:verification.policy,accepted:insights.length,withheld:verification.rejected.length,checkedAgainstRevision:analysis.revision},message:response.mode!=='gemini'?({not_configured:'Gemini is not configured for this deployment.',busy:'Gemini is busy or its daily allowance has been reached. Try again later.',no_data:'No suitable measured data is available.',unavailable:'Gemini is temporarily unavailable.'}[response.reason||'unavailable']+' Calculated findings remain available.'):!insights.length?'Gemini returned no safely supported recommendations. Use the calculated findings or try again.':verification.rejected.length?'Some generated recommendations were withheld after evidence checks. Calculated findings remain available.':undefined});
  }
  if(body.action==='writing'){
   if(!opportunityKinds.includes(body.kind)||!['Health promotion','Active ageing','Community activities','Volunteer appreciation','Community impact','Partnership stories'].includes(body.topic)||!['Ask a respectful open question','Invite enquiries','Invite participation using placeholders'].includes(body.cta)||!['Facebook','Instagram'].includes(body.platform))throw Error('Choose a content request, topic, call to action and platform.');

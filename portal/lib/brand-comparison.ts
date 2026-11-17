@@ -1,3 +1,4 @@
+import {benchmarkPeriod} from './benchmark-period';
 import {compatibleInteractions,interactionDefinition,recordedMeasurementAge} from './comparison-policy';
 import type {Post} from '../app/model';
 import {externalPosts} from '../app/analytics-overview';
@@ -7,11 +8,11 @@ import {interactionReading} from './post-measurements';
 
 /** One source for brand summaries, detailed cohorts and monthly management trends. */
 export function brandComparison(selected:Post[],previous:Post[],start:string,end:string){
- const posts=externalPosts(selected),prior=externalPosts(previous);
+ const posts=externalPosts(selected),prior=externalPosts(previous),periodEligible=benchmarkPeriod(start,end).eligible;
  const names=[...new Set([...posts,...prior].map(p=>p.brand))].filter(Boolean).sort();
  const brands=[...new Set(['GLOW','SEEN',...names])].map(name=>{
   const rows=posts.filter(p=>p.brand===name),old=prior.filter(p=>p.brand===name),current=summarisePosts(rows),baseline=summarisePosts(old);
-  return {name,current,previous:baseline,changes:{posts:change(current.posts,baseline.posts),total:change(current.total,compatibleInteractions(rows,old).eligible?baseline.total:null),average:change(current.average,compatibleInteractions(rows,old).eligible?baseline.average:null)}};
+  return {name,current,previous:baseline,changes:{posts:change(current.posts,periodEligible?baseline.posts:null),total:change(current.total,periodEligible&&compatibleInteractions(rows,old).eligible?baseline.total:null),average:change(current.average,compatibleInteractions(rows,old).eligible?baseline.average:null)}};
  });
  const cohorts=(keys:(p:Post)=>string[])=>{
   const groups=new Map<string,{dimensions:string[];rows:Post[]}>();
