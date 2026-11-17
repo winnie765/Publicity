@@ -1,6 +1,8 @@
+import {benchmarkPeriod} from './benchmark-period';
+import {compatibleInteractions} from './comparison-policy';
 import type {Dataset,Post} from '../app/model';
 import {decisionAnalysis,type GrowthMode,type DecisionAnalysis} from './analytics-decision';
-import {comparisonPeriod,change} from '../app/dashboard-intelligence';
+import {change} from '../app/dashboard-intelligence';
 import {dashboardPosts} from '../app/dashboard-intelligence';
 import {contentPatterns,summarisePosts,validDate} from './analytical-dashboards';
 import {interactionReading,metricReading} from './post-measurements';
@@ -18,23 +20,18 @@ const hash=(value:string)=>{let a=2166136261,b=5381;for(const c of value){a=Math
 const source=(label:string,href:string)=>({label,href});
 const limits=['Recorded associations do not establish causes or statistical significance.','Audience, promotion, recording age and incomplete coverage may affect a comparison.'];
 function shift(date:string,months:number){const d=new Date(date+'T12:00:00Z'),day=d.getUTCDate();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+months);const last=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate();d.setUTCDate(Math.min(day,last));return d.toISOString().slice(0,10);}
-export function executivePeriod(start:string,end:string,mode:ExecutiveMode):DecisionAnalysis['period']{
- if(!validDate(start)||!validDate(end)||start>end)throw Error('Choose a valid reporting start and end date.');
- if(mode==='custom'){const p=comparisonPeriod(start,end);return {start,end,previousStart:p.start,previousEnd:p.end,label:p.label};}
- if(!['mom','qoq','yoy'].includes(mode))throw Error('Choose a supported comparison.');const months=mode==='mom'?1:mode==='qoq'?3:12;
- return {start,end,previousStart:shift(start,-months),previousEnd:shift(end,-months),label:mode==='mom'?'Month-on-Month':mode==='qoq'?'Quarter-on-Quarter':'Year-on-Year'};
-}
+export function executivePeriod(start:string,end:string,mode:ExecutiveMode):DecisionAnalysis['period']{return benchmarkPeriod(start,end,mode);}
 export function executiveFilters(input:Filters={}):Filters{if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Choose valid filters.');const out:Filters={};for(const key of ['start','end','platform','account','brand','location'] as const){const value=input[key];if(value!==undefined&&value!==''){if(typeof value!=='string'||value.length>200)throw Error('Choose valid '+key+' filters.');out[key]=value;}}if(out.platform&&!['Facebook','Instagram','Workvivo'].includes(out.platform))throw Error('Choose Facebook, Instagram or Workvivo.');return out;}
 export function normalizeFindings(rows:Finding[]){const map=new Map<string,Finding>();for(const row of rows){const existing=map.get(row.key);if(!existing){map.set(row.key,{...row,sources:[...row.sources]});continue;}const same=JSON.stringify([existing.current,existing.benchmark,existing.n,existing.peers])===JSON.stringify([row.current,row.benchmark,row.n,row.peers]);existing.conflict=existing.conflict||!same;existing.sources=[...new Map([...existing.sources,...row.sources].map(s=>[s.href,s])).values()];existing.priority=Math.max(existing.priority,row.priority);}return [...map.values()].sort((a,b)=>b.priority-a.priority||a.key.localeCompare(b.key));}
 export function executiveIntelligence(data:Dataset,input:Filters={},mode:ExecutiveMode='custom'){
  const filters=executiveFilters(input),dates=[...data.posts,...data.followers].map(p=>p.date).filter(validDate).sort(),start=filters.start||dates[0]||new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'}),end=filters.end||dates.at(-1)||start,period=executivePeriod(start,end,mode),scoped={...filters,start,end},priorFilters={...filters,start:period.previousStart,end:period.previousEnd};
- const selected=dashboardPosts(data,scoped).filter(p=>validDate(p.date)),prior=dashboardPosts(data,priorFilters).filter(p=>validDate(p.date)),stats=summarisePosts(selected),rows:Finding[]=[],overlap=period.previousEnd>=start;
+ const selected=dashboardPosts(data,scoped).filter(p=>validDate(p.date)),prior=dashboardPosts(data,priorFilters).filter(p=>validDate(p.date)),stats=summarisePosts(selected),rows:Finding[]=[],overlap=period.previousEnd>=start||!benchmarkPeriod(start,end,mode).eligible;
  const make=(row:Omit<Finding,'id'|'key'|'period'|'account'|'brand'|'limitations'> & {account?:string;brand?:string;limitations?:string[]})=>{const key=JSON.stringify([row.kind,row.metric,row.platform,row.account||filters.account||'',row.brand||filters.brand||'',filters.location||'',period,row.baselineType,row.cohort]);rows.push({...row,filters:scoped,account:row.account||filters.account||'',brand:row.brand||filters.brand||'',period,limitations:row.limitations||limits,id:'epi-'+hash(key),key});};
  const narrowed={...data,followers:data.followers.filter(f=>!f.dateInferred&&validDate(f.date)&&Number.isFinite(f.followers)&&f.followers>=0)};
  const analyses=(['executive','followers','top-hits',...(!filters.platform||filters.platform==='Workvivo'?['workvivo'] as const:[])] as const).map(scope=>({scope,analysis:decisionAnalysis(narrowed,scope,scoped,'mom',undefined,period)}));
  const internalRows=workvivoPosts(data.posts).filter(p=>p.status!=='draft'&&validDate(p.date)&&(!filters.brand||p.brand===filters.brand)&&(!filters.account||p.account===filters.account)&&locationMatches(p.location,filters.location));
  const internalIds=new Set(internalRows.map(p=>p.id)),logCount=(a:string,b:string)=>workvivoInteractionRows(data).filter(r=>internalIds.has(r.postId)&&r.date>=a&&r.date<=b).length;
- const coverage=(platform:string,account='')=>{const match=(p:Post)=>p.platform===platform&&(!account||p.account===account);const now=(platform==='Workvivo'?internalRows.filter(p=>p.date>=start&&p.date<=end):selected).filter(match),before=(platform==='Workvivo'?internalRows.filter(p=>p.date>=period.previousStart&&p.date<=period.previousEnd):prior).filter(match),a=summarisePosts(now),b=summarisePosts(before),bases=(r:Post[])=>[...new Set(r.filter(p=>interactionReading(p).value!==null).map(p=>interactionReading(p).basis))].sort().join('|');return {now,before,a,b,compatible:a.measured===a.posts&&b.measured===b.posts&&bases(now)===bases(before)&&!bases(now).includes('|')};};
+ const coverage=(platform:string,account='')=>{const match=(p:Post)=>p.platform===platform&&(!account||p.account===account);const now=(platform==='Workvivo'?internalRows.filter(p=>p.date>=start&&p.date<=end):selected).filter(match),before=(platform==='Workvivo'?internalRows.filter(p=>p.date>=period.previousStart&&p.date<=period.previousEnd):prior).filter(match),a=summarisePosts(now),b=summarisePosts(before);return {now,before,a,b,compatible:compatibleInteractions(now,before).eligible};};
  let comparisons=0,stable=0,missingBenchmarks=0;
  for(const {scope,analysis} of analyses){for(const m of analysis.metrics){const follower=m.id.startsWith('followers-');if(follower&&(filters.location||scope==='top-hits'))continue;
  const account=follower?m.platform:undefined,platform=follower?(data.config.accounts.find(a=>a.name===account)?.platform||data.config.followerAccounts?.find(a=>a.name===account)?.platform||'Account'):m.platform;

@@ -1,3 +1,4 @@
+import {compatibleInteractions} from '../lib/comparison-policy';
 import {metricReading} from '../lib/post-measurements';
 import {average,engagement,groups,insights,sum,type Post} from './model';
 import {observed,typeName} from './top-hits';
@@ -20,9 +21,9 @@ export function monthlyEngagement(posts:Post[],platform='Combined'){
 export function performanceFindings(posts:Post[]){
  const measured=measuredPosts(posts),result:{title:string;detail:string;action:string}[]=[];
  for(const insight of insights(measured).filter(i=>i.lift>0).slice(0,2))result.push({title:insight.title,detail:insight.detail,action:insight.action});
- const formats=formatGroups(measured).filter(g=>g.name!=='Unclassified'&&g.posts>=3);if(formats[0])result.push({title:formats[0].name+' leads average engagement',detail:formats[0].posts+' recorded posts average '+formats[0].average.toFixed(1)+' engagements. This is a descriptive ranking; timing, audience and promotion can affect results.',action:'Test another '+formats[0].name+' series with similar timing and promotion, then compare engagement per post.'});
+ const formats=formatGroups(measured).filter(g=>g.name!=='Unclassified'&&g.posts>=3);if(formats[0]&&compatibleInteractions(measured,measured).eligible)result.push({title:formats[0].name+' leads average engagement',detail:formats[0].posts+' recorded posts average '+formats[0].average.toFixed(1)+' engagements. This is a descriptive ranking; timing, audience and promotion can affect results.',action:'Test another '+formats[0].name+' series with similar timing and promotion, then compare engagement per post.'});
  const latestMonth=measured.map(p=>p.date.slice(0,7)).sort().at(-1),recent=measured.filter(p=>p.date.startsWith(latestMonth||'')),brands=groups(recent,'brand').filter(g=>g.name!=='Unclassified');
- if(brands.length>=2)result.push({title:brands[0].name+' leads in '+new Date(latestMonth+'-02T12:00:00Z').toLocaleDateString('en-SG',{month:'long',year:'numeric'}),detail:brands[0].average.toFixed(1)+' average engagements across '+brands[0].posts+' posts, versus '+brands[1].average.toFixed(1)+' across '+brands[1].posts+' '+brands[1].name+' posts. Platform and content mix may differ.',action:'Review the leading posts in platform analytics and test their recurring characteristics.'});
+ if(brands.length>=2&&compatibleInteractions(recent.filter(p=>p.brand===brands[0].name),recent.filter(p=>p.brand===brands[1].name)).eligible)result.push({title:brands[0].name+' leads in '+new Date(latestMonth+'-02T12:00:00Z').toLocaleDateString('en-SG',{month:'long',year:'numeric'}),detail:brands[0].average.toFixed(1)+' average engagements across '+brands[0].posts+' posts, versus '+brands[1].average.toFixed(1)+' across '+brands[1].posts+' '+brands[1].name+' posts. Platform and content mix may differ.',action:'Review the leading posts in platform analytics and test their recurring characteristics.'});
  if(!result.length)result.push({title:'Build evidence for your next content decision',detail:measured.length+' posts have reported engagement. Repeated formats and feature annotations are needed for supported comparisons.',action:'Annotate content features and publish comparable content before drawing a strategy conclusion.'});
  return result;
 }

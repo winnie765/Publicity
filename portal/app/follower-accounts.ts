@@ -1,6 +1,6 @@
 import type {Dataset,Follower} from './model';
 import {dimensions} from './account-structure';
-import {latestFollower} from './follower-snapshots';
+import {latestFollower,verifiedFollowerDate} from './follower-snapshots';
 export type FollowerAccount={name:string;platform:string;brand?:string};
 export const defaultFollowerAccounts:FollowerAccount[]=['Facebook','Instagram'].flatMap(platform=>['SEEN','GLOW','Longevity Courtyard'].map(brand=>({name:platform+' '+brand,platform,brand})));
 export function followerAccount(platform:string,label:string){const brand=dimensions(label).brand;return brand==='Unclassified'?{name:label,platform}:{name:platform+' '+brand,platform,brand};}
@@ -12,6 +12,6 @@ export function followerSeries(data:Dataset,view:'account'|'brand',selection:str
  const accounts=followerAccounts(data).filter(a=>view==='account'?a.name===selection:a.brand===selection);
  const raw=data.followers.filter(f=>accounts.some(a=>a.name===f.account)&&f.date<=cutoff);
  const coverage=accounts.map(a=>({...a,snapshot:latestFollower(raw.filter(f=>f.account===a.name),cutoff)}));
- const snapshots=view==='account'?accountSnapshots(raw):[...new Set(raw.map(f=>f.date))].sort().flatMap(date=>{const parts=accounts.map(a=>latestFollower(raw.filter(f=>f.account===a.name),date));return accounts.length&&parts.every(Boolean)?[{id:selection+'-'+date,date,followers:parts.reduce((n,f)=>n+f!.followers,0),createdAt:'',updatedAt:'',account:selection}]:[];});
+ const snapshots=view==='account'?accountSnapshots(raw):[...new Set(raw.filter(verifiedFollowerDate).map(f=>f.date))].sort().flatMap(date=>{const parts=accounts.map(a=>latestFollower(raw.filter(f=>f.account===a.name),date));return accounts.length&&parts.every(Boolean)?[{id:selection+'-'+date,date,followers:parts.reduce((n,f)=>n+f!.followers,0),createdAt:'',updatedAt:'',account:selection}]:[];});
  return {accounts,raw,snapshots,coverage,latest:snapshots.at(-1),complete:!!accounts.length&&coverage.every(c=>!!c.snapshot)};
 }

@@ -6,6 +6,7 @@ type Platform=Pick<ReturnType<typeof dashboardView>['platforms'][number],'platfo
 const number=(value:number|null|undefined)=>value==null?'Unavailable':new Intl.NumberFormat('en-SG',{maximumFractionDigits:1}).format(value);
 // Presentation badges compare existing metrics; no totals or averages are recomputed.
 export function comparisonLeader(platforms:Platform[],metric:'posts'|'engagement'|'average'){
+ if(metric!=='posts')return 'Different platforms ? review separately';
  const values=platforms.map(p=>({name:p.platform,value:metric==='posts'?p.stats.posts:metric==='engagement'?(p.stats.measured?p.stats.engagement:null):p.stats.average}));
  if(values.length<2||values.some(p=>p.value==null))return 'Comparison unavailable';
  const highest=Math.max(...values.map(p=>p.value!));

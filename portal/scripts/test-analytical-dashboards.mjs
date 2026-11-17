@@ -12,7 +12,7 @@ const config={...structuredClone(defaultConfig),accounts:[{name:'Facebook GLOW',
 const data={config,posts:[post('one'),post('zero',{likes:0,comments:0,shares:0,views:0}),post('missing',{reportedMetrics:[],likes:9000}),post('ig',{platform:'Instagram',account:'Instagram SEEN',brand:'SEEN',reach:200,views:9999,reportedMetrics:['likes','comments','shares','saves','reach']}),post('draft',{status:'draft',likes:10000}),post('workvivo',{platform:'Workvivo',likes:10000}),post('prior',{date:'2026-09-15',likes:5}),post('bad-date',{date:'2026-02-31'})],followers:[],interactions:[]};
 const filters={platform:'',account:'',brand:'',start:'2026-10-01',end:'2026-10-31'};
 const scope=a.analyticalScope(data,filters),summary=a.summarisePosts(scope.selected);
-assert.equal(scope.selected.length,4);assert.equal(scope.prior.length,1);assert.equal(scope.previous.start,'2026-08-31');assert.equal(scope.previous.end,'2026-09-30');assert.equal(scope.excludedDrafts,1);assert.equal(scope.invalidDates,1);
+assert.equal(scope.selected.length,4);assert.equal(scope.prior.length,1);assert.equal(scope.previous.start,'2026-09-01');assert.equal(scope.previous.end,'2026-09-30');assert.equal(scope.excludedDrafts,1);assert.equal(scope.invalidDates,1);
 assert.equal(summary.total,30);assert.equal(summary.measured,3);assert.equal(summary.average,10);assert.equal(summary.coverage,75);assert.deepEqual(summary.views,{value:100,n:2});assert.deepEqual(summary.reach,{value:200,n:1});
 assert.equal(a.interactionReading(data.posts[2]).value,null);assert.equal(a.interactionReading(data.posts[1]).value,0);assert.equal(a.interactionReading(post('partial',{reportedMetrics:['likes'],comments:9000})).value,10);
 assert.equal(a.interactionReading(post('explicit',{engagementTotal:0,likes:99})).value,0);
@@ -22,7 +22,7 @@ assert.equal(a.summarisePosts([]).total,null);assert.equal(a.summarisePosts([]).
 assert.equal(a.analyticalScope(data,{...filters,platform:'Instagram',brand:'SEEN'}).selected.length,1);
 assert.equal(a.analyticalScope(data,{...filters,account:'Facebook GLOW'}).selected.length,3);
 assert(a.analyticalScope(data,{...filters,start:'2026-11-01'}).errors.length);assert(a.analyticalScope(data,{...filters,end:'2026-02-31'}).errors.length);
-assert.equal(a.analyticalScope(data,{...filters,start:'2024-03-01',end:'2024-03-01'}).previous.end,'2024-02-29');
+assert.equal(a.analyticalScope(data,{...filters,start:'2024-03-01',end:'2024-03-01'}).previous.end,'2024-02-01');
 const trend=a.analyticalTrend(scope.selected,'2026-09-01','2026-11-30');assert.equal(trend[0].facebook,null);assert.equal(trend[1].facebook,15);assert.equal(trend[1].instagram,15);assert.equal(trend[2].views,null);assert.equal(trend[1].facebookMeasured,2);assert.equal(trend[1].facebookPosts,3);assert.equal(trend[1].viewsCount,2);assert.equal(trend[1].reachCount,1);
 const peers=[post('target',{likes:1,comments:0,shares:0}),...Array.from({length:3},(_,i)=>post('peer'+i,{likes:10,comments:0,shares:0})),post('wrong-month',{date:'2026-09-10',likes:900}),post('wrong-account',{account:'Facebook SEEN',likes:900}),post('wrong-format',{type:'Picture',likes:900}),post('wrong-basis',{reportedMetrics:['likes'],likes:900}),post('wrong-platform',{platform:'Instagram',likes:900})];
 const target=a.peerPerformance(peers).find(r=>r.post.id==='target');assert.equal(target.peers,3);assert.equal(target.baseline,10);assert.equal(target.ratio,0.1);assert(target.review.startsWith('Below'));
@@ -32,7 +32,7 @@ const reel=a.contentPatterns(patterns,'type').find(r=>r.name==='Reel');assert.eq
 assert.equal(a.contentPatterns(patterns,'topic').find(r=>r.name==='Wellness').ratio,null,'Topics cannot compare across unmatched formats');
 const aligned=patterns.map(p=>({...p,type:'Reel'}));assert.equal(a.contentPatterns(aligned,'topic').find(r=>r.name==='Wellness').ratio,2);
 const changedAccount=patterns.map(p=>p.type==='Picture'?{...p,account:'Facebook SEEN'}:p);assert.equal(a.contentPatterns(changedAccount,'type').find(r=>r.name==='Reel').ratio,null);
-const complete=[post('now')],previous=[post('before',{date:'2026-09-15',likes:5})];assert.equal(a.accountComparisons(data,filters,complete,previous)[0].difference,5);
+const complete=[post('now')],previous=[post('before',{date:'2026-09-15',likes:5})];assert.equal(a.accountComparisons(data,filters,complete,previous)[0].difference,null);
 assert.equal(a.accountComparisons(data,filters,[...complete,data.posts[2]],previous)[0].difference,null);
 assert.equal(a.accountComparisons(data,filters,[post('partial',{reportedMetrics:['likes']})],previous)[0].difference,null);
 const freq=Array.from({length:4},(_,month)=>Array.from({length:month+1},(_,i)=>post('f'+month+i,{date:'2026-0'+(month+1)+'-15',likes:month+1,comments:0,shares:0}))).flat();assert(Math.abs(a.frequencyAssociations(freq,'2026-01-01','2026-04-30')[0].correlation-1)<1e-10);assert.equal(a.frequencyAssociations(freq,'2026-01-02','2026-04-30')[0].correlation,null);

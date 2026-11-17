@@ -1,9 +1,11 @@
+import {verifiedFollowerDate} from './follower-snapshots';
 import {topHits,observed} from './top-hits';
 import type {Post,Follower} from './model';
 import type {AccountSnapshot} from '../lib/storage-contract';
 const previous=(key:string,offset:number)=>{const d=new Date(key+'-01T12:00:00Z');d.setUTCMonth(d.getUTCMonth()-offset);return d.toISOString().slice(0,7)};
 const percent=(change:number,base:number)=>base>0?change/base*100:null;
 export function accountFollowerAnalytics(snapshots:AccountSnapshot[],posts:Post[],raw:Follower[]=[],label="Selected account"){
+ raw=raw.filter(verifiedFollowerDate);
  const published=posts.filter(p=>['Facebook','Instagram'].includes(p.platform)&&p.status!=='draft'),hits=topHits(published).hits;
  const dates=[...snapshots.map(r=>r.date),...raw.map(r=>r.date)].sort(),months:string[]=[];
  if(dates.length){let key=dates[0].slice(0,7),last=dates.at(-1)!.slice(0,7);for(let i=0;key<=last&&i<2400;i++){months.push(key);const d=new Date(key+'-01T12:00:00Z');d.setUTCMonth(d.getUTCMonth()+1);key=d.toISOString().slice(0,7);}}

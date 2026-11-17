@@ -1,3 +1,4 @@
+import {compatibleInteractions,interactionDefinition,recordedMeasurementAge} from './comparison-policy';
 import type {Post} from '../app/model';
 import {externalPosts} from '../app/analytics-overview';
 import {change} from '../app/dashboard-intelligence';
@@ -10,14 +11,14 @@ export function brandComparison(selected:Post[],previous:Post[],start:string,end
  const names=[...new Set([...posts,...prior].map(p=>p.brand))].filter(Boolean).sort();
  const brands=[...new Set(['GLOW','SEEN',...names])].map(name=>{
   const rows=posts.filter(p=>p.brand===name),old=prior.filter(p=>p.brand===name),current=summarisePosts(rows),baseline=summarisePosts(old);
-  return {name,current,previous:baseline,changes:{posts:change(current.posts,baseline.posts),total:change(current.total,baseline.total),average:change(current.average,baseline.average)}};
+  return {name,current,previous:baseline,changes:{posts:change(current.posts,baseline.posts),total:change(current.total,compatibleInteractions(rows,old).eligible?baseline.total:null),average:change(current.average,compatibleInteractions(rows,old).eligible?baseline.average:null)}};
  });
  const cohorts=(keys:(p:Post)=>string[])=>{
   const groups=new Map<string,{dimensions:string[];rows:Post[]}>();
-  for(const p of posts){const dimensions=keys(p),key=JSON.stringify(dimensions);const group=groups.get(key)||{dimensions,rows:[]};group.rows.push(p);groups.set(key,group);}
+  for(const p of posts){if(!interactionDefinition(p).comparable)continue;const dimensions=keys(p),key=JSON.stringify(dimensions);const group=groups.get(key)||{dimensions,rows:[]};group.rows.push(p);groups.set(key,group);}
   return [...groups.values()].map(g=>({...g,stats:summarisePosts(g.rows)})).sort((a,b)=>a.dimensions.join().localeCompare(b.dimensions.join()));
  };
- const matched=cohorts(p=>[p.platform,p.type||'Unclassified',interactionReading(p).basis]);
+ const matched=cohorts(p=>[p.platform,p.type||'Unclassified',interactionReading(p).basis,String(recordedMeasurementAge(p))]);
  const platforms=['Facebook','Instagram'].map(platform=>{
   const groups=brands.filter(b=>['GLOW','SEEN'].includes(b.name)).map(b=>({name:b.name,...summarisePosts(posts.filter(p=>p.platform===platform&&p.brand===b.name))}));
   const comparisons=matched.filter(g=>g.dimensions[0]===platform).flatMap(g=>{

@@ -25,11 +25,11 @@ assert.equal(analysis.metrics.find(row=>row.id==='followers-Facebook GLOW').perc
 assert(!analysis.charts.some(row=>/repeated in all/.test(row.observation)),'a single month is not called consistent');
 assert.equal(analysis.organisationBenchmarks.enabled,false);
 const empty=decisionAnalysis({...data,posts:[],followers:[]},'social',filters);assert(empty.metrics.every(row=>row.current===null&&row.percentage===null));
-const zero=decisionAnalysis({...data,posts:[post('zero','2026-02-01',0),post('positive','2026-03-01',5)]},'social',filters).metrics.find(row=>row.id==='facebook-engagement');assert.equal(zero.difference,5);assert.equal(zero.percentage,null);assert.equal(zero.ratio,null);
+const zero=decisionAnalysis({...data,posts:[post('zero','2026-02-01',0),post('positive','2026-03-01',5)]},'social',filters).metrics.find(row=>row.id==='facebook-engagement');assert.equal(zero.difference,null);assert.equal(zero.percentage,null);assert.equal(zero.ratio,null);
 const conflict=decisionAnalysis({...data,followers:[...data.followers,{id:'conflict',account:'Facebook GLOW',date:'2026-03-31',followers:999}]},'followers',filters).metrics.find(row=>row.id==='followers-Facebook GLOW');assert.equal(conflict.current,null,'conflicting snapshots are unavailable');
 const internal=decisionAnalysis(data,'workvivo',{start:'2026-03-01',end:'2026-03-31'});assert.equal(internal.metrics.find(row=>row.id==='workvivo-engagement').current,5000);assert(!internal.metrics.some(row=>row.platform==='Facebook'));
 const yearly=decisionAnalysis(data,'social',filters,'yoy');assert.equal(yearly.period.previousStart,'2025-03-01');assert.equal(yearly.metrics.find(row=>row.id==='facebook-engagement').benchmark,null);
-const quarterly=decisionAnalysis(data,'social',filters,'qoq');assert.equal(quarterly.period.start,'2026-01-01');assert.equal(quarterly.period.previousStart,'2025-10-01');
+const quarterly=decisionAnalysis(data,'social',filters,'qoq');assert.equal(quarterly.period.start,'2026-03-01');assert.equal(quarterly.period.previousStart,'2025-12-01');
 const pack=calculateEvidence(data,'social',filters);assert(pack.chartBriefs.length);assert(pack.facts.some(fact=>fact.id==='B001'));assert(pack.chartBriefs.every(chart=>pack.facts.some(fact=>fact.id===chart.factId)));
 const strategy={category:'recommendation',title:'Review Comparable Content',confidenceLevel:'Low',confidenceReason:'The explanation has limited coverage.',finding:'Recorded results support a focused content test.',explanation:'Coverage and composition affect how useful the comparison is.',recommendation:'Test comparable content on the same account and review average engagement.',possibleFactors:['Content mix may contribute; this is an untested hypothesis.'],evidenceIds:[pack.chartBriefs[0].factId]};
 const answer={summary:{text:'Review the calculated comparison before deciding the next test.',evidenceIds:strategy.evidenceIds},insights:[strategy],chartInsights:pack.chartBriefs.map(chart=>({...strategy,chartId:chart.id,evidenceIds:[chart.factId]})),limitations:['Observational results do not establish causation.']};
@@ -45,7 +45,7 @@ const report=calculateMonthlyReport(data,2026,3);assert.equal(report.period.freq
 console.log('PASS: calendar boundaries, independent platforms/accounts, missing/zero/conflicting baselines, historical averages, guarded chart AI, hypotheses, responsive analysis UI, disabled external benchmarks and monthly-only report exports.');
 
 
-const repeatedPosts=[];for(const month of ['01','02','03'])for(let i=0;i<4;i++)repeatedPosts.push(post(month+'-repeat-'+i,'2026-'+month+'-'+String(i+1).padStart(2,'0'),i<2?20:10,i<2?'Reel':'Picture'));
+const repeatedPosts=[];for(const month of ['01','02','03'])for(let i=0;i<6;i++)repeatedPosts.push(post(month+'-repeat-'+i,'2026-'+month+'-'+String(i+1).padStart(2,'0'),i<3?20:10,i<3?'Reel':'Picture'));
 const repeated=decisionAnalysis({...data,posts:repeatedPosts},'social',{...filters,start:'2026-01-01'});assert(repeated.charts.find(chart=>chart.id==='facebook-type').observation.includes('repeated in all 3 comparable'));
 assert(repeated.takeaways.drivers.includes('not a proven cause'));
 const seasonalPosts=[];for(const year of [2024,2025])for(let month=1;month<=9;month++)for(const platform of ['Facebook','Instagram'])seasonalPosts.push(post(year+'-'+month+'-'+platform,year+'-'+String(month).padStart(2,'0')+'-01',month===(platform==='Facebook'?3:4)?100:10,'Picture',platform));
