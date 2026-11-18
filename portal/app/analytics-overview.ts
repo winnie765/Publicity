@@ -1,8 +1,9 @@
+import {publicationAnalyticsPosts} from '../lib/post-identity';
 import {compatibleInteractions} from '../lib/comparison-policy';
 import {metricReading} from '../lib/post-measurements';
 import {average,engagement,groups,insights,sum,type Post} from './model';
 import {observed,typeName} from './top-hits';
-export const externalPosts=(posts:Post[])=>posts.filter(p=>p.status!=='draft'&&['Facebook','Instagram'].includes(p.platform));
+export const externalPosts=(posts:Post[])=>publicationAnalyticsPosts(posts).filter(p=>['Facebook','Instagram'].includes(p.platform));
 export const measuredPosts=(posts:Post[])=>externalPosts(posts).filter(observed);
 export function overview(posts:Post[]){const published=externalPosts(posts),measured=published.filter(observed);return {posts:published.length,measured:measured.length,engagement:sum(measured,engagement),average:measured.length?average(measured):null};}
 export function accountPerformance(posts:Post[],accounts:{name:string;platform:string;brand?:string}[]){

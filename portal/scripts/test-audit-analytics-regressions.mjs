@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/audit-analytics-regressions');
+const {blankPost}=await load('app/model.ts');
+const {assessPost,contentRevision}=await load('lib/post-content-intelligence.ts');
+const post=(id,views,at)=>({...blankPost(),id,title:id,platform:'Facebook',account:'Facebook GLOW',brand:'GLOW',type:'Reel',status:'published',date:'2026-10-01',likes:10,views,reportedMetrics:['likes','views'],metric_observed_at:{views:at}});
+const target=post('target',5,'2026-10-08T00:00:00Z'),peers=[1,2,3].map(i=>post('peer'+i,100,'2026-10-31T00:00:00Z'));
+assert.equal(assessPost([target,...peers],target).lowVisibility,false,'Day 7 Views must not be classified below a Day 30 visibility baseline');
+const matched=peers.map(p=>({...p,metric_observed_at:{views:'2026-10-08T00:00:00Z'}}));assert.equal(assessPost([target,...matched],target).lowVisibility,true,'actual matching visibility ages still support the review flag');
+const before=contentRevision([target,...peers]);assert.notEqual(contentRevision([target,...matched]),before,'measurement-date edits invalidate the Content Intelligence client cache');
+assert.equal(contentRevision([target,...matched]),contentRevision([...matched,target].reverse()),'row order alone does not request another interpretation');
+console.log('PASS: metric-specific peer ages, preserved compatible visibility flags, timing-edit cache invalidation and stable source ordering.');

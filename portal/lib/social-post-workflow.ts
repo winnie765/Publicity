@@ -1,6 +1,6 @@
+import {collaborationMatches} from './linked-collaboration';
 import {reconcileImportedPosts} from './import-metrics';
 import type {Post} from '../app/model';
-import {originalPostUrl} from './original-post-url';
 import {postMetricKeys,metricReading,type PostMetricKey} from './post-measurements';
 export {postMetricKeys,metricReading,type PostMetricKey} from './post-measurements';
 export const socialMetricFields=(platform:string):{key:PostMetricKey;label:string}[]=>[
@@ -20,10 +20,8 @@ export function metricPatch(post:Post,patch:Record<string,unknown>):Post{
  }
  return next;
 }
-const text=(value:string)=>value.normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
 export function possibleDuplicatePosts(post:Post,existing:Post[]):Post[]{
- const url=originalPostUrl(post);
- return existing.filter(row=>row.id!==post.id&&row.platform===post.platform&&((url&&originalPostUrl(row)===url)||(post.title.trim()&&row.date===post.date&&text(row.account)===text(post.account)&&text(row.title)===text(post.title))));
+ return collaborationMatches(post,existing).filter(match=>match.post.platform===post.platform).map(match=>match.post);
 }
 export function importPostReview(posts:Post[],existing:Post[]){
  const result=reconcileImportedPosts(posts,existing);return {...result,updates:result.summary.updated+result.summary.unchanged,metricChanges:result.rows.filter(r=>r.changed.length&&existing.some(p=>p.id===r.id)).length,possibleDuplicates:result.summary.duplicatesPrevented};

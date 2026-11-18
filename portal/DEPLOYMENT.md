@@ -15,7 +15,11 @@ The Public Portal is open at `/`, `/showcase`, `/programmes` and `/impact`. All 
 
 ## Daily workflow
 
-Update Excel → save → visit `/import` → select the workbook → review validation/preview → confirm → view the updated dashboard. All six standard sheets and explicit follower date ranges are supported. CSV is also accepted. Up to 500 records and 3 MB per upload. Repeat workbook uploads update stable IDs. Views and reach remain separate; Workvivo remains internal engagement.
+Import historical Excel/CSV once through Data Management, review the preview and approve any measurement changes. Thereafter use Social Media Posts to add new records, edit captions or update recorded metrics. Published records from both routes use the same shared dataset; Draft records remain excluded from published analytics. A metric update does not publish anything to an external Facebook or Instagram account. Repeat Excel uploads are optional bulk updates, not a daily prerequisite.
+
+Use Analytics for detailed comparisons, the Executive Dashboard for management summaries, AI Social Media Analyst for evidence-linked interpretations, Content Planner for reviewed ideas, and Reports for monthly report generation and archive access. Instagram Reach is optional. Never substitute Views or missing readings for Reach. Report archives retain their saved figures after later source edits.
+
+The repository-wide verification and outstanding test/deployment limitations are documented in [the product audit](docs/version5-product-audit.md). A successful build alone does not verify production database access, Storage policies, Gemini quota or deployed scheduling.
 
 ## Existing hosted URL
 
@@ -29,7 +33,7 @@ Official references: [Vercel build configuration](https://vercel.com/docs/builds
 
 ## Brand, account and date migration
 
-Facebook uses one shared account; Instagram GLOW and Instagram SEEN have dedicated brands; locations are independent post dimensions. Missing workbook location/topic/description fields are preserved and flagged for annotation in Data management. Original sheet headers remain unchanged. Never infer features or topics from titles. Workbook updates preserve record IDs and manual annotations. Legacy Facebook follower figures remain labelled audience segments and are excluded from account follower totals.
+Facebook and Instagram use the independent account records managed in Configuration, including GLOW and SEEN. Account IDs, brand relationships and locations remain separate dimensions. Missing workbook location/topic/description fields are preserved and flagged for annotation in Data management. Original sheet headers remain unchanged. Never infer features or topics from titles. Workbook updates preserve record IDs and manual annotations. Legacy Facebook follower figures remain labelled audience segments and are excluded from account follower totals.
 
 Prisma stores record dates as PostgreSQL DATE. D1 uses typed integer timestamps (SQLite has no native DATE storage type). Neither adapter writes the display date to JSON payloads. Schema migrations add the nullable date column without modifying existing data. For an existing database, POST JSON {"action":"upgradeStructure"} to /api/data once after deployment to validate and atomically migrate existing records and configuration. Up to 500 records are supported per operation. An empty database needs no upgrade.
 

@@ -1,3 +1,4 @@
+import {publicationAnalyticsPosts} from '../post-identity';
 import {metricReading,type PostMetricKey} from '../post-measurements';
 import {decisionAnalysis} from '../analytics-decision';
 import {workvivoInteractionSummary} from '../workvivo-interaction-analytics';
@@ -16,7 +17,7 @@ const percent=(change:number,base:number)=>base>0?fmt(change/base*100)+'%':'unav
 export function calculateEvidence(data:Dataset,scope:Scope,filters:Filters):EvidencePack{
  const facts:EvidencePack['facts']=[],limitations=['These are observational results, not causal proof. Audience size, timing, paid promotion and sample composition can affect performance.','Unreported metrics and unannotated features are unavailable, rather than observed zero.'];
  const add=(name:string,text:string)=>{if(facts.length<160)facts.push({id:'F'+String(facts.length+1).padStart(3,'0'),label:label(name),text});};
- const internal=scope==='workvivo', sourcePosts=internal?workvivoPosts(data.posts):data.posts;
+ const internal=scope==='workvivo', sourcePosts=internal?workvivoPosts(data.posts):publicationAnalyticsPosts(data.posts);
  if(scope==='followers'){
   const comparisons=followerComparison(data,filters.start,filters.end).filter(a=>(!filters.account||a.name===filters.account)&&(!filters.platform||a.platform===filters.platform)&&(!filters.brand||a.brand===filters.brand)&&(!filters.followerSelection||(filters.followerView==='brand'?a.brand===filters.followerSelection:a.name===filters.followerSelection)));
   for(const a of comparisons)add(a.name+' calculated growth assessment',JSON.stringify({current:a.snapshot?.followers??null,currentDate:a.snapshot?.date??null,previous:a.previous?.followers??null,previousDate:a.previous?.date??null,snapshotChange:a.growth??null,snapshotGrowthPercentage:a.growthPercentage??null,consecutiveMonthGrowthPercentage:a.monthlyRate??null,momentumPercentagePoints:a.momentum,monthlyTrend:a.rows.map(r=>({month:r.key,followers:r.followers??null,growthPercentage:r.growthPercentage})),interpretationLimit:'Momentum is the change between two consecutive monthly growth rates; missing baselines are not zero. Current saved record is latest as of end date; trend rows use selected months.'}));

@@ -6,6 +6,10 @@ The public community website and private staff Workspace have separate routes, s
 
 The November 2026 navigation, recovery, AI Analyst and personal Dashboard Builder improvements are documented in [PRODUCT-IMPROVEMENTS.md](PRODUCT-IMPROVEMENTS.md). Use the in-app User Guide for current workflows. Older sections below retain implementation history and may describe public sections or labels that have since been retired. No retired feature is restored by these improvements.
 
+## Audited staff workflow (18 November 2026)
+
+Historical imports, website-created posts and confirmed metric edits use one shared dataset. Everyday operations do not require another Excel upload. Published records feed analytics; drafts remain excluded. Reach is optional, reports preserve saved historical figures, and staff approve AI planning ideas before saving. The [current product audit](docs/version5-product-audit.md) records requirement status, test evidence, confirmed fixes and remaining deployment limitations. Older sections below are implementation history, not authority for restoring retired pages or weakening private access.
+
 ## Public Portal
 
 ## Executive presentation Dashboard

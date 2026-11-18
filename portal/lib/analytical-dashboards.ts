@@ -1,3 +1,4 @@
+import {publicationAnalyticsPosts} from './post-identity';
 import {matchedPeerStatistics,compatibleInteractions,interactionDefinition,recordedMeasurementAge} from './comparison-policy';
 import {benchmarkPeriod} from './benchmark-period';
 import {interactionReading,rateReading,summariseValues} from './post-measurements';
@@ -18,7 +19,7 @@ export function defaultAnalyticalFilters(data:Dataset):AnalyticalFilters{
 }
 export function analyticalScope(data:Dataset,filters:AnalyticalFilters){
  const errors:string[]=[];if(!validDate(filters.start)||!validDate(filters.end))errors.push('Choose a valid start and end date.');else if(filters.start>filters.end)errors.push('Start date must be on or before end date.');
- const eligible=data.posts.filter(p=>['Facebook','Instagram'].includes(p.platform)&&p.status!=='draft');
+ const eligible=publicationAnalyticsPosts(data.posts).filter(p=>['Facebook','Instagram'].includes(p.platform)&&p.status!=='draft');
  const match=(p:Post)=>(!filters.platform||p.platform===filters.platform)&&(!filters.account||p.account===filters.account)&&(!filters.brand||p.brand===filters.brand);
  const duration=errors.length?0:Math.round((Date.parse(filters.end)-Date.parse(filters.start))/dayMs)+1;
  const window=errors.length?null:benchmarkPeriod(filters.start,filters.end);const previous={start:window?.previousStart||'',end:window?.previousEnd||''};
