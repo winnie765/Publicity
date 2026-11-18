@@ -69,7 +69,6 @@ const different=reconcileImportedPosts([{...glow,record_origin:'excel_import'}],
 assert.throws(()=>validateCollaborationLinks({...seen,linked_post_ids:['missing']},[seen]),/no longer exists/);
 assert.doesNotThrow(()=>validateCollaborationLinks({...seen,linked_post_ids:['missing']},[],{...seen,linked_post_ids:['missing']}));
 assert.throws(()=>validateCollaborationLinks({...seen,linked_post_ids:[seen.id]},[seen]),/distinct/);
-const html=renderToStaticMarkup(React.createElement(Fields,{post:{...glow,linked_post_ids:[seen.id]},posts:[seen,glow,ig],onChange:()=>{}}));
-assert.match(html,/Linked Collaboration/);assert.match(html,/View Existing Post/);assert.match(html,/Senior Wellness Programme/);assert.match(html,/checked/);
-const sameHtml=renderToStaticMarkup(React.createElement(Fields,{post:{...seen,id:'duplicate'},posts:[seen],onChange:()=>{}}));assert.match(sameHtml,/Edit Existing Post/);assert.match(sameHtml,/disabled/);
+const html=renderToStaticMarkup(React.createElement(Fields,{post:{...glow},config,onChange:()=>{}}));
+assert.match(html,/Link to Existing Brand/);assert(!html.includes('Find a related post'));assert.match(html,/SEEN/);
 console.log('PASS: recognised platform identity, normalised permalinks, cross-account review, same-identity server rejection, separate/cross-platform links, symmetric group discovery, independent metric history, single stakeholder publication, historical deduplication before brand/platform filters, import reconciliation/conflicts, dangling links and rendered controls. Isolated storage only.');

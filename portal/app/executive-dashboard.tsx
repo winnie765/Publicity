@@ -1,4 +1,5 @@
 'use client';
+import LinkedBrandPosts from './linked-brand-posts';
 import PlatformPerformanceCard from './platform-performance-card';
 import ExecutiveBrandComparison from './executive-brand-comparison';
 import ExecutivePerformanceIntelligence from './executive-performance-intelligence';
@@ -16,7 +17,7 @@ function Metric({title,value,note,delta,label}:{title:string;value:React.ReactNo
 
 export default function ExecutiveDashboard({data,posts,start,end,filters={}}:Props){
  const selectedFilters=useMemo(()=>({...filters,...(start?{start}:{}),...(end?{end}:{})}),[filters,start,end]),view=useMemo(()=>dashboardView(data,posts,selectedFilters),[data,posts,selectedFilters]);
- return <div className="executive-page executive-presentation analytics-dashboard">
+ return <div className="executive-page executive-presentation analytics-dashboard"><LinkedBrandPosts data={data} filters={selectedFilters}/>
 
  <div className="section-heading" id="dashboard-overview"><div><span className="eyebrow">WHAT HAPPENED?</span><h2>Overall Performance</h2><p>{view.start} to {view.end}. {view.previous.label}: {view.previous.start} to {view.previous.end}</p></div><Link className="button" href={features.analytics.href}>Explore Social Media Analytics <ArrowRight size={14}/></Link></div>
  <div className="executive-kpis"><Metric title="Total Posts" value={number(view.stats.posts)} note="Published Facebook and Instagram posts" delta={view.changes.posts} label={view.previous.label}/><Metric title="Total Engagements" value={view.stats.measured?number(view.stats.engagement):'Unavailable'} note={'Reported for '+view.stats.measured+' of '+view.stats.posts+' posts'} delta={view.changes.engagement} label={view.previous.label}/><Metric title="Total Followers" value={number(view.followers.total)} note="Latest independent account counts; audiences may overlap" delta={view.changes.followers} label="Latest counts as of comparison end"/><Metric title="Average Engagement Per Post" value={number(view.stats.average)} note="Measured posts only" delta={view.changes.average} label={view.previous.label}/></div>

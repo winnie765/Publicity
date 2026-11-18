@@ -1,3 +1,4 @@
+import {linkedBrandScope} from './internal-brand-links';
 import {verifyAnalystOutput} from './analyst-verification';
 import {metricReading} from './post-measurements';
 import {originalPostUrl} from './original-post-url';
@@ -7,7 +8,7 @@ import type {EvidencePack} from './intelligence/types';
 import {analyticalScope,defaultAnalyticalFilters,interactionReading,peerPerformance,summarisePosts,analyticalTrend,type AnalyticalFilters} from './analytical-dashboards';
 export type AnalystCandidate={id:string;factId:string;kind:'format'|'topic'|'trend'|'review'|'strong'|'visibility'|'measurement';targetPostIds?:string[];proof?:AnalystProof;metric?:'facebook_views'|'instagram_views'|'instagram_reach';title:string;observation:string;statistics:string;examples:{id:string;title:string;date:string;platform?:string;account?:string;interactions?:number|null;views?:number|null;reach?:number|null;url?:string}[];period:{start:string;end:string};n:number;peers:number;limitations:string[];action:string;successMetric:string;platform:string;account:string;brand:string;format:string;basis:string;baseline:number|null;baselinePostIds:string[]};
 export type AnalystProof={checkedAtRevision?:string;eligible:boolean;issues:string[];classification:string;current:{id:string;date:string;platform:string;account:string;basis:string;value:number|null}[];comparison:{id:string;date:string;platform:string;account:string;basis:string;value:number|null}[];comparisonPeriod:{start:string;end:string};coverage:string};
-export type AnalystAnalysis={sourcePostIds:string[];filters:AnalyticalFilters;previous:{start:string;end:string};summary:ReturnType<typeof summarisePosts>;trend:ReturnType<typeof analyticalTrend>;candidates:AnalystCandidate[];revision:string;limitations:string[]};
+export type AnalystAnalysis={linkedCollaborationCount?:number;sourcePostIds:string[];filters:AnalyticalFilters;previous:{start:string;end:string};summary:ReturnType<typeof summarisePosts>;trend:ReturnType<typeof analyticalTrend>;candidates:AnalystCandidate[];revision:string;limitations:string[]};
 export function analystFilters(data:Dataset,input:Partial<AnalyticalFilters>={}){
  const defaults=defaultAnalyticalFilters(data),filters={...defaults,...input};for(const key of ['platform','account','brand','start','end'] as const)if(typeof filters[key]!=='string'||filters[key].length>300)throw Error('Choose valid analyst filters.');
  if(filters.platform&&!['Facebook','Instagram'].includes(filters.platform))throw Error('Choose Facebook or Instagram.');
@@ -58,7 +59,7 @@ export async function analystAnalysis(data:Dataset,input:Partial<AnalyticalFilte
  candidates.splice(0,candidates.length,...candidates.filter(c=>c.proof?.eligible));
  candidates.forEach((c,i)=>{c.id='candidate-'+(i+1);c.factId='ANALYST'+(i+1);});
  const revision=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({filters,previous:scope.previous,candidates,rows:[...scope.selected,...scope.prior].slice().sort((a,b)=>a.id.localeCompare(b.id)).map(p=>[p.id,p.title,p.reportedMetrics,p.date,p.platform,p.account,p.brand,p.type,p.topic,interactionReading(p),p.metrics_updated_at,p.metrics_measured_at,p.metric_observed_at,p.views,p.reach])})))),b=>b.toString(16).padStart(2,'0')).join('');
- return {sourcePostIds:[...new Set([...scope.selected,...scope.prior].map(p=>p.id))],filters,previous:scope.previous,summary,trend:analyticalTrend(rows,filters.start,filters.end),candidates,revision,limitations};
+ return {linkedCollaborationCount:linkedBrandScope(data,filters).length,sourcePostIds:[...new Set([...scope.selected,...scope.prior].map(p=>p.id))],filters,previous:scope.previous,summary,trend:analyticalTrend(rows,filters.start,filters.end),candidates,revision,limitations};
 }
 export function buildAnalystProof(c:AnalystCandidate,posts:Post[],previous:{start:string;end:string}):AnalystProof{
  const targetIds=c.targetPostIds||[],peerIds=c.baselinePostIds,find=(ids:string[])=>ids.flatMap(id=>{const p=posts.find(p=>p.id===id);return p?[p]:[];}),target=find(targetIds),peers=find(peerIds),visibility=c.kind==='visibility',key=c.metric==='instagram_reach'?'reach':'views',reading=(p:Post)=>visibility?metricReading(p,key):interactionReading(p).value;

@@ -1,74 +1,69 @@
-# Linked Collaboration — implementation review
+# Internal brand collaboration — 18 November 2026
 
-Reviewed 18 November 2026. This change extends the existing post workflow; it does not create a collaboration dashboard or stakeholder registry.
+This redesign supersedes the earlier post-search linking interface. Existing `linked_post_ids` remain stored as historical relationships; they are not converted into brand links or merged automatically.
 
 ## Staff workflow
 
-1. Configure stakeholders in Settings → Configuration → Stakeholders. Only active names are offered for new selection; historical selections remain visible.
-2. Add Social Media Post, select the configured platform/account, and record that publication's details and measurements.
-3. In Sharing & Collaboration, enable Collaboration Post. Select stakeholders and optionally search/select related saved publications in Linked Collaboration.
-4. Review Before Saving shows the collaboration choice, stakeholder names, linked records, platform/account, original URL and status.
-5. Related matches trigger a review dialog. View Existing Post opens the saved record in a new tab; Link to Existing Collaboration links a separate publication; Record Separate Post acknowledges a possible match; Cancel saves nothing. After resolving the dialog, use the form's Save button.
-6. A confirmed identical platform publication offers Edit Existing Post, without a separate-post override. The server repeats the identity check.
+1. Add Social Media Post and select a configured Facebook/Instagram account. Its configured publishing brand remains the owner.
+2. Enable Collaboration Post. **Link to Existing Brand** offers other brands from existing Configuration, excluding the owner. Multiple internal brands can be selected. No separate account or publication is created.
+3. **Collaborating Stakeholders** remains separate for active configured external organisations. Existing selections, including old internal stakeholder names, remain visible as historical selections.
+4. Review Before Saving shows Original Brand, platform/account, collaboration choice, linked internal brands, stakeholder selections, source URL and publication status.
+5. Possible Existing Collaboration Post offers View Existing Post, Edit Existing Post, Record Separate Publication, or Cancel. Confirmed source identities have no separate-publication override. Text/date matches are suggestions only.
+6. In Social Media Posts, use **Brand** and **Publication attribution** to find Directly published or Linked collaboration records. Both views open/edit the same source record. Removing a linked brand does not delete that source or its measurements.
 
-The existing full post editor also supports linking and related-post review. Changing metrics follows the existing history/confirmation process. A link never creates another post or copies measurements. A stakeholder name is not an account-ownership mapping.
+Disabling Collaboration Post retains saved selections but makes internal links inactive until the toggle is re-enabled. Renaming a brand preserves its stable ID and updates displayed linked names. Referenced brands cannot be deleted until their direct/link references are resolved, including recovery records.
 
-## Identity and storage
+## Ownership and analytics
 
-- Recognised Facebook publication IDs and Instagram shortcodes identify a physical platform publication independently of account. Host variants and tracking parameters do not create a different identity.
-- Facebook shared/watch links match the same link token only; no external link resolution is performed. Profile links do not establish publication identity.
-- Optional `platform_post_id` supports a supplied publication identifier, including an optional Platform Post ID import column. URLs remain the normal staff entry method.
-- Similar titles/captions, nearby dates and overlapping stakeholders are review signals, never grounds for automatic merging. Same activity across different platforms/accounts can be linked.
-- Optional `linked_post_ids` stores related existing record IDs in the existing JSON post payload. Relationships are traversed in both directions to discover a group, without rewriting older member records. No SQL migration is required.
-- Direct link removal removes the current record's edge; an edge stored on another record must be removed there. Missing historical links are retained and can be removed manually.
-- Existing `is_collaboration_post`, `collaborating_with`, master stakeholder references, publication IDs, audit/history and saved metrics remain intact.
+`linked_brand_ids` is an optional array of existing brand master IDs in the post JSON payload. Original `brand`, `account`, platform, URL, stakeholder fields and measured values are unchanged. Internal brands are never inferred from stakeholder selections. No automatic publication or external-account operation is added.
 
-## Analytics and imports
+Direct publishing/account KPIs retain their original calculations. Executive Dashboard, platform analytics and the Analytics Workspace show a compact, separate linked-record listing when a brand filter has matches. The AI Analyst reports the separately calculated linked-record count without adding another account's measurements to its evidence cohort. Brand Comparison is explicitly labelled as directly published activity. Organisation-wide scopes continue counting recognised publication identities once.
 
-Recognised duplicate published platform identities use one deterministic representative: the lowest stable record ID, selected before account/brand/date filters in the primary analytical scopes. Its recorded account owns attribution; stakeholder names do not allocate metrics to additional brands. This explicit conservative rule prevents inconsistent totals across filters without rewriting historical records. Staff should review conflicting historical ownership/measurements rather than assume the representative resolves those conflicts.
+Different platform IDs/URLs remain separate publications with separate measurements, even for the same programme. Cross-platform visibility measures are not combined. Historical reports and source records are not rewritten.
 
-Separate publication identities retain separate statistics, including linked GLOW/SEEN records. Facebook Views and Instagram Reach remain distinct. There is no multi-brand metric duplication or automatic multi-account attribution.
+## Database changes and deployment
 
-The shared publication selection is used in platform overview, portal analytics, Growth Analysis, analytical dashboard scopes, Top Hits, Content Intelligence, AI evidence and newly calculated monthly reports. Archived reports are not recalculated.
+No new brand/stakeholder table or page is created. Optional JSON fields require no column migration, but a **database trigger migration is required for concurrency protection**:
 
-Imports reuse identity matching and existing measurement review/history. Conflicting account/identity records are flagged, not silently merged. Different known publication identities remain separate even when title/account/date match. Existing legacy reconciliation for historical rows without reliable URLs/identities is retained.
+- Supabase/PostgreSQL: `supabase/migrations/20261118000000_post_identity_guard.sql`.
+- Prisma's equivalent: `prisma/migrations/20261118000000_post_identity_guard/migration.sql` (identical SQL).
+- D1/SQLite: `drizzle/0007_post_identity_guard.sql`, registered in the existing migration journal.
 
-## Files
+Use the migration path for the configured database. For a Supabase SQL deployment, apply the Supabase migration through the existing authorised database migration process/SQL Editor, then deploy the application. Prisma deployments can use the existing `prisma migrate deploy` release process against the same configured database. Do not treat an application deployment alone as installation of a separately managed Supabase migration.
 
-New application files:
+The PostgreSQL trigger derives recognised identity from source fields, acquires a transaction-scoped advisory lock and checks existing records. A non-unique lookup index supports that check without rejecting historical duplicates during installation. Unchanged historical identities remain editable, including UPSERT writes. SQLite/D1 uses application-computed `publication_identity` plus transaction-safe triggers; server-side checks still protect recognised historical records without that field. Errors prompt staff to refresh and edit the existing record.
 
-- `lib/post-identity.ts`
-- `lib/linked-collaboration.ts`
-- `app/linked-collaboration-fields.tsx`
-- `app/collaboration-review-dialog.tsx`
+No production migration or deployment has been performed. No new credentials or dependencies are required. Existing history is not deduplicated or backfilled automatically.
 
-Updated application files:
+## Files changed for this redesign
 
-- `app/social-post-form.tsx`, `app/post-relationships-fields.tsx`, `app/post-content-fields.tsx`, `app/record-manager.tsx`
-- `app/import.ts`, `lib/import-metrics.ts`, `lib/data-service.ts`, `lib/post-standard.ts`, `lib/social-post-workflow.ts`
-- `app/analytics-overview.ts`, `app/executive-dashboard.tsx`, `app/portal.tsx`, `app/top-hits.ts`
-- `lib/analytical-dashboards.ts`, `lib/analytics-decision.ts`, `lib/post-content-intelligence.ts`, `lib/intelligence/evidence.ts`, `lib/monthly-report.ts`
-- `lib/user-guide.ts`, `package.json`
+New:
 
-Checks/documentation:
+- `lib/internal-brand-links.ts`
+- `app/linked-brand-posts.tsx`
+- `scripts/test-internal-brand-links.mjs`
+- The three migration files listed above.
 
-- `scripts/test-linked-collaboration.mjs` — isolated storage, source identity, server save rejection, linking, metrics, scopes, reports, imports and rendered controls.
-- `scripts/test-collaboration-browser.mjs` — isolated SQLite/API interception and local headless Edge; no production writes.
-- `scripts/test-monthly-reports.mjs`, `scripts/test-analytics-overview.mjs` — use the existing recursive test compiler rather than incomplete dependency lists. The latter explicitly skips official-workbook assertions when no workbook path is supplied.
-- Existing `scripts/test-collaboration-stakeholders.mjs` is reused.
+Updated:
 
-## Verification and limitations
+- `app/linked-collaboration-fields.tsx`, `app/post-relationships-fields.tsx`, `app/post-content-fields.tsx`, `app/publishing-information.css`
+- `app/social-post-form.tsx`, `app/collaboration-review-dialog.tsx`, `app/record-manager.tsx`, `app/portal.tsx`
+- `app/executive-dashboard.tsx`, `app/executive-brand-comparison.tsx`, `app/social-media-analytics.tsx`, `app/analytical-dashboards.tsx`
+- `app/social-analyst.tsx`, `lib/social-analyst.ts`
+- `lib/post-standard.ts`, `lib/data-service.ts`, `lib/delete-brand.ts`, `lib/supabase-client.ts`
+- `lib/user-guide.ts`, `package.json`, `drizzle/meta/_journal.json`
+- `scripts/test-linked-collaboration.mjs`, `scripts/test-collaboration-browser.mjs`, this report.
 
-Executed regression checks passed for linked collaboration, stakeholder selectors/review, social post creation/editing, import measurements, Growth Analysis, analytical dashboards, monthly reports, AI Social Media Analyst, Content Intelligence, master relationships and User Guide. Analytics Overview's synthetic checks passed; official-workbook assertions were skipped because no workbook path was supplied. Its workbook-dependent historical UI assertions have not been verified against the current dashboard.
+## Verification and limits
 
-Headless Edge passed the full-editor link selection/review/save flow at desktop and mobile sizes (1440 and 390 pixels), with independent measurements and unchanged record counts. It also verified that changing the URL to an existing platform publication opens the confirmed-duplicate dialog without a separate-post override or database write. API requests used isolated in-memory SQLite. Screenshots are generated at `.sites-runtime/collaboration-1440.png` and `.sites-runtime/collaboration-390.png`.
+Passed: production build with TypeScript validation; targeted new-component/helper/test lint; internal-brand, existing collaboration, stakeholder selector, post workflow, import metrics, Growth Analysis, analytical dashboard, monthly report, AI Analyst, master relationship and User Guide regression checks. Whitespace checks passed. Desktop/mobile Edge also passed the linked-brand Post Library filter and final revised selector layout. No claim is made that repository-wide legacy lint issues are resolved.
 
-Production builds and TypeScript checking passed during implementation. Targeted new UI/helper/test lint passed; the existing `<img>` performance warning remains in the post form. A broader lint check including `lib/data-service.ts` reported seven existing explicit-`any` errors and existing warnings; repository-wide lint is not claimed clean. The initial sandboxed build failed to spawn workers (`EPERM`); the build succeeded outside that sandbox. No deployment, production mutation or historical migration was performed.
+The regression suite covers four brand/platform directions; dynamic multi-brand choices; stakeholder separation; owner/linked scopes; independent metric editing; removal; stable rename IDs; historical related-post preservation; final review; and AI publishing-versus-linked counts.
 
-- Identity checks cannot prove that unrelated URL forms without a common publication identifier refer to the same real-world post. Staff must inspect original sources; fuzzy text matches remain suggestions.
-- The server checks the saved dataset before writing. There is no new database unique constraint or cross-instance identity lock, so simultaneous racing submissions are not guaranteed to be serialised. The analytical identity policy still counts recognised duplicates once.
-- No new multi-brand ownership editor or automatic account linking is introduced. Attribution uses the representative publication's existing account.
-- Legacy imported records without usable platform identity are not automatically deduplicated by title/date, and historical ownership conflicts are not silently resolved.
-- Browser coverage checks the existing full editor, dialog, save and desktop/mobile overflow. It is not an exhaustive accessibility or all-browser certification.
+The concurrency test forces two independent request caches to finish validation before either database write. Exactly one request commits; the migrated SQLite trigger rejects the other. Historical duplicate updates remain possible without merging records. Supabase duplicate-error handling is also tested with a mocked RPC response.
 
-Deploy through the normal application release process after review. No new environment variables, credentials, dependencies or SQL migrations are needed.
+Headless Edge tests use isolated in-memory SQLite/API interception and unreachable production database settings. They cover brand selection, save review, confirmed duplicate blocking, and desktop/mobile layout. Generated screenshots are under `.sites-runtime/collaboration-1440.png` and `collaboration-390.png`.
+
+**PostgreSQL/Supabase trigger execution and true multi-connection PostgreSQL concurrency have not been tested here:** neither a local PostgreSQL service nor test credentials are available. Production migration installation and a staging two-user save test remain deployment checks. SQLite concurrency results must not be represented as proof of a live Supabase deployment.
+
+Recognised identity is required for definitive duplicate protection. Missing identities, URL aliases that cannot be resolved safely, and similar titles/dates still require staff review. No scraping or external URL resolution is introduced. Full test/build outcomes are recorded in the final response; repository-wide pre-existing lint debt remains outside this redesign.

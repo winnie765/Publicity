@@ -1,20 +1,9 @@
 'use client';
-import {useState} from 'react';
-import Link from 'next/link';
-import type {Post} from './model';
+import type {Config,Post} from './model';
 import FieldLabel from './field-label';
-import {collaborationMatches,collaborationMembers} from '../lib/linked-collaboration';
-import OriginalPostLink from './original-post-link';
-
-export default function LinkedCollaborationFields({post,posts,onChange}:{post:Post;posts:Post[];onChange:(patch:Partial<Post>)=>void}){
- const [query,setQuery]=useState('');
- const matches=collaborationMatches(post,posts),confirmed=new Set(matches.filter(m=>m.confirmed).map(m=>m.post.id));
- const suggested=new Set(matches.map(m=>m.post.id)),members=collaborationMembers(post,posts);
- const rows=posts.filter(p=>p.id!==post.id&&['Facebook','Instagram'].includes(p.platform)&&((post.linked_post_ids||[]).includes(p.id)||suggested.has(p.id)||query.trim()&&[p.title,p.account,p.platform,p.date].join(' ').toLowerCase().includes(query.trim().toLowerCase()))).slice(0,20);
- return <section className="linked-collaboration"><h4>Linked Collaboration</h4><p className="method-note">Link separate publications about the same programme. Each keeps its own account, status and measurements. Linking never creates posts or copies metrics. Stakeholder names do not assign account ownership.</p><label className="field"><FieldLabel>Find a related post</FieldLabel><input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search title, account, platform or date"/></label>
- {rows.length===0&&<p className="method-note">No related posts found. A collaboration can have just this post.</p>}
- <div role="group" aria-label="Related collaboration posts">{rows.map(row=><article key={row.id} className="sp-review"><label><input type="checkbox" disabled={confirmed.has(row.id)} checked={(post.linked_post_ids||[]).includes(row.id)} onChange={e=>onChange({linked_post_ids:e.target.checked?[...(post.linked_post_ids||[]),row.id]:(post.linked_post_ids||[]).filter(id=>id!==row.id)})}/> {row.title} · {row.account} · {row.platform} · {row.date}</label><p>{confirmed.has(row.id)?'Same platform post identity: edit the existing record.':matches.find(m=>m.post.id===row.id)?.reasons.join('; ')||'Staff-selected relationship; not a duplicate determination.'}</p><Link className="button" target="_blank" rel="noopener noreferrer" href={'/workspace/posts?'+(confirmed.has(row.id)?'edit=':'view=')+encodeURIComponent(row.id)}>{confirmed.has(row.id)?'Edit Existing Post':'View Existing Post'}</Link><OriginalPostLink post={row}/></article>)}</div>
- {members.length>0&&<p className="method-note">Related collaboration: {members.map(p=>p.title+' ('+p.account+')').join('; ')}. Shared publications use one stable record for organisation totals; brand attribution stays with that record’s configured account, not the stakeholder list.</p>}
- {(post.linked_post_ids||[]).filter(id=>!posts.some(p=>p.id===id)).map(id=><p key={id}>Related record unavailable: {id} <button className="button" type="button" onClick={()=>onChange({linked_post_ids:(post.linked_post_ids||[]).filter(value=>value!==id)})}>Remove Link</button></p>)}
- </section>;
+import {internalBrandOptions,linkedBrandNames,publishingBrand} from '../lib/internal-brand-links';
+export default function LinkedCollaborationFields({post,config,onChange}:{post:Post;config:Config;onChange:(patch:Partial<Post>)=>void}){
+ const options=internalBrandOptions(post,config),selected=post.linked_brand_ids||[],missing=selected.filter(id=>!options.some(b=>b.id===id)),labels=linkedBrandNames(post,config);
+ const toggle=(id:string,checked:boolean)=>onChange({linked_brand_ids:checked?[...selected,id]:selected.filter(value=>value!==id)});
+ return <section className="linked-collaboration"><h4>Link to Existing Brand</h4><p className="method-note">Select another Tzu Chi brand involved in this collaboration. The post will be linked to the selected brand without creating a duplicate record.</p><p>Original publishing brand: <strong>{publishingBrand(post,config)||'Choose a configured account'}</strong></p><FieldLabel>Linked internal brands</FieldLabel><details className="publishing-partner-select"><summary>Select internal brands{selected.length?' ('+selected.length+')':''}</summary><div className="publishing-partner-options" role="group" aria-label="Linked internal brands">{options.map(brand=><label key={brand.id}><input type="checkbox" checked={selected.includes(brand.id)} onChange={e=>toggle(brand.id,e.target.checked)}/>{brand.name}</label>)}{missing.map(id=><label key={id}><input type="checkbox" checked onChange={()=>toggle(id,false)}/>{labels[selected.indexOf(id)]} <small>Previously selected; not available for new selection</small></label>)}</div></details>{!options.length&&<p>No other internal brands are configured. Manage brands in Settings → Configuration.</p>}<p className="method-note">One record and one set of measurements. Account performance remains attributed to the original publishing account. External organisations belong in Collaborating Stakeholders.</p></section>;
 }

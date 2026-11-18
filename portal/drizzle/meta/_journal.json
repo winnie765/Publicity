@@ -50,6 +50,13 @@
       "when": 1791944396360,
       "tag": "0006_account_reporting",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794959999000,
+      "tag": "0007_post_identity_guard",
+      "breakpoints": true
     }
   ]
 }
