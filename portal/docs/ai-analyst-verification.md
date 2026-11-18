@@ -1,6 +1,24 @@
 # AI Social Media Analyst verification
 
-Reviewed: 17 November 2026.
+Reviewed: 18 November 2026.
+
+## Source-level review added on 18 November
+
+Each current Analyst candidate now carries a deterministic source check built from the same selected/prior saved posts. It reconciles target and baseline identifiers, sample sizes, platform/account identity, publication windows, measured component coverage, actual baseline arithmetic, classification thresholds and shared measurement-age eligibility. Invalid comparisons are withheld before display. Current candidates include their complete target identifiers, rather than relying on three displayed examples to represent a larger cohort.
+
+Fresh and cached Gemini interpretations additionally require a passing source check, reconciled sample/baseline metadata and valid current source identifiers. Duplicate suggested actions across different evidence IDs are withheld. Numbers, percentages, dates, account labels and original links remain application-calculated; Gemini numerical prose is rejected rather than trusted or labelled verified. Qualitative screening is conservative and cannot prove a causal explanation.
+
+Visibility candidates now use the shared visibility eligibility policy. Optional Instagram Views are supported separately from optional Reach; neither is inferred from the other. Incompatible known post ages cannot produce visibility changes. Evidence arrays are canonicalised so record ordering does not invalidate the cache. No actual timestamps are added to evidence fingerprints merely because staff reloads the page.
+
+Within the existing **Supporting Data & Limitations**, staff see classification criteria, coverage, exact comparison dates and target/baseline readings with links to saved source posts. Up to fifty rows per group are rendered for readability; all source rows are checked. Existing Relevant Post Examples still show titles and original URLs when recorded. The screening status reports retained hypotheses and withheld responses. Passing source checks verifies recorded arithmetic/eligibility, not the truth of a qualitative explanation.
+
+The existing Planner approval now also requires a passing current source check. It still requires evidence-review confirmation, final approval and a current evidence revision; saves remain Draft plans, never automatic publishing. Existing saved experiments and frozen historical criteria are preserved.
+
+Files modified for this refinement: `lib/social-analyst.ts`, `lib/analyst-verification.ts`, `lib/analyst-experiments.ts`, `app/social-analyst.tsx`, `lib/user-guide.ts`, `scripts/test-analyst-verification.mjs`, and this document. No API, database migration, dependency or environment changes were needed.
+
+Regression additions cover baseline/sample/account mismatches, invalid or overlapping source identifiers, invalid source dates, optional Instagram Views, incompatible visibility ages and provider outages. Existing tests cover correct/incorrect numeric wording, dates, references, missing data, small groups, approval, cache invalidation and unavailable services. Final command outcomes and any untested browser/live behaviour are stated in the completion report.
+
+Executed successfully for this refinement: `test-analyst-verification.mjs`, `test-social-analyst.mjs`, `test-growth-visibility.mjs`, `test-user-guide.mjs`, `test-executive-intelligence.mjs`, `test-monthly-reports.mjs`, `test-benchmark-policy.mjs`, `test-analytical-dashboards.mjs`, targeted ESLint, and the Next.js production build including TypeScript validation. Tests used isolated fixtures and mocked AI/provider failures. Live Gemini output, interactive browser/mobile behaviour and deployment were not verified. Input records are assumed to be staff-recorded evidence; these checks do not independently authenticate platform counts or establish a qualitative explanation as fact.
 
 ## Audit findings
 

@@ -42,3 +42,13 @@ const platformHtml=renderToStaticMarkup(React.createElement(PlatformAnalytics,{p
 assert.match(fs.readFileSync('app/platform-performance-card.tsx','utf8'),/reported.count\?/);
 assert.match(fs.readFileSync('app/analytical-dashboards.tsx','utf8'),/stats.reach.n>0/);
 console.log('PASS: MoM/QoQ/YoY without visibility, optional Facebook/Instagram Views and Reach, coverage, zeros, missing history, publishing volumes, drafts, account filters and shared website/import dataset.');
+
+for(const mode of ['mom','qoq','yoy']){
+ const complete=rows.map(p=>({...p,likes:p.id.startsWith('now')?20:10,comments:p.id.startsWith('now')?4:2,shares:p.id.startsWith('now')?2:1,saves:0,reportedMetrics:['likes','comments','shares','saves']}));
+ const a=decisionAnalysis(dataset(complete),'social',filters,mode);for(const key of ['likes','comments','shares'])assert.equal(a.components.find(m=>m.id==='instagram-'+key).percentage,100);assert.equal(a.components.find(m=>m.id==='instagram-saves').difference,0);assert.equal(a.components.find(m=>m.id==='instagram-saves').percentage,null);
+ const incompatibleTotals=complete.map(p=>p.id.startsWith('now')?p:{...p,reportedMetrics:['likes']});const b=decisionAnalysis(dataset(incompatibleTotals),'social',filters,mode);assert.equal(b.metrics.find(m=>m.id==='instagram-engagement').percentage,null);assert.equal(b.components.find(m=>m.id==='instagram-likes').percentage,100);assert.equal(b.components.find(m=>m.id==='instagram-comments').benchmark,null);
+}
+const legacyComponents=decisionAnalysis(dataset(rows.map(p=>({...p,reportedMetrics:undefined}))),'social',filters);assert.equal(legacyComponents.components.find(m=>m.id==='instagram-likes').percentage,null);
+const componentAge=decisionAnalysis(dataset(rows.map(p=>({...p,metric_observed_at:{likes:p.id.startsWith('now')?'2026-10-12T00:00:00Z':p.date+'T00:00:00Z'}}))),'social',filters);assert.equal(componentAge.components.find(m=>m.id==='instagram-likes').percentage,null);
+const {DecisionAnalysisView}=await load('app/analytics-decision-support.tsx');const detail=renderToStaticMarkup(React.createElement(DecisionAnalysisView,{analysis:decisionAnalysis(dataset(rows),'social',filters),showTakeaways:false}));assert(detail.includes('Reach-based growth is unavailable'));assert(detail.includes('Recorded Interaction Components'));assert(!detail.includes('Reach (optional)'));
+console.log('PASS: independent compatible components across MoM/QoQ/YoY, incompatible total isolation, partial/missing/zero/legacy readings, measurement ages and one concise missing-Reach notice.');

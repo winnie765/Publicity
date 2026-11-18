@@ -1,0 +1,8 @@
+/** Discovery references, not seeded posts or automatically certified accounts. */
+export const publicSourceReviewDate='2026-11-18';
+export const singaporePublicSources=[
+ {name:'Agency for Integrated Care',website:'https://www.aic.sg/',reference:'https://www.aic.sg/wp-content/uploads/2023/06/Body-Mechanics-EN.pdf',accounts:[{platform:'Facebook',url:'https://www.facebook.com/AICSingapore'},{platform:'Instagram',url:'https://www.instagram.com/aic_singapore/'}],note:'Official published guide corroborates these handles. It is a dated publication; confirm the current account link before recording a post.'},
+ {name:'NTUC Health',website:'https://ntuchealth.sg/',reference:'https://assets.ntuchealth.sg/nh/Documents/Meeting-Future-Needs-of-Eldercare-NTUC-Health-Introduces-New-Initiatives-to-Further-Support-Families-and-Caregivers.pdf',accounts:[{platform:'Facebook',url:'https://www.facebook.com/NTUCHealth'},{platform:'Instagram',url:'https://www.instagram.com/ntuchealth/'}],note:'Official release identifies NTUCHealth on both platforms. Recheck current identity; this reference is not a live post inventory.'},
+ {name:'Fei Yue Community Services',website:'https://fycs.org/',reference:'https://fycs.org/',accounts:[],note:'Official site confirms Active Ageing Centre services. Exact current social account URLs were not established in this review; follow the official site and verify them manually.'},
+ {name:'Tsao Foundation',website:'https://tsaofoundation.org/',reference:'https://tsaofoundation.org/',accounts:[],note:'Official site confirms ageing and community care work. Exact current social account URLs were not established in this review; no unverified handles are suggested.'},
+];

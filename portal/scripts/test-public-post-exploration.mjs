@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/public-post-exploration-tests');
+const {validatePublicPost,savePublicPost,publicPostStatus,publicPeerResult,publicPostIdentity}=await load('lib/public-post-intelligence.ts');
+const {screenPublicLessons}=await load('lib/public-post-lessons.ts');
+const record={organisation:'Mock care provider',region:'Singapore',url:'https://www.facebook.com/provider/posts/123',accountUrl:'https://www.facebook.com/provider',identitySource:'https://example.org/official',title:'Mock activity topic',description:'Isolated fixture',publishedAt:'2026-10-01',retrievedAt:'2026-10-08',format:'Video',category:'Active ageing',likes:60,comments:0,shares:null,reactionDefinition:'facebook_reactions',confirmed:true};
+const p=validatePublicPost(record),peers=[1,2,3].map(n=>({...p,id:'peer'+n,likes:10,accountUrl:'https://m.facebook.com/provider/'}));
+assert.equal(publicPeerResult(peers,p).ratio,6);assert.equal(publicPostStatus(peers,p).label,'Strong relative performance');assert.equal(publicPeerResult(peers.slice(1),p).ratio,null);assert.equal(publicPeerResult(peers.map(p=>({...p,reactionDefinition:'facebook_likes'})),p).ratio,null);
+assert.throws(()=>validatePublicPost({...record,accountUrl:'https://www.facebook.com/different'}),/different Facebook profile/);
+assert.throws(()=>validatePublicPost(null),/valid public post/);
+assert.equal(publicPostIdentity('https://www.facebook.com/provider/videos/456/').id,publicPostIdentity('https://www.facebook.com/watch/?v=456').id);
+assert(publicPostIdentity('https://www.facebook.com/watch/?v=456&tracking=removed').url.endsWith('?v=456'));
+assert.throws(()=>publicPostIdentity('https://facebook.com.evil.example/provider/posts/123'));
+assert.equal(validatePublicPost({...record,publishedAt:'2026-11-18',retrievedAt:'2026-11-18'},new Date('2026-11-17T18:00:00Z')).retrievedAt,'2026-11-18','collection dates use Singapore time');
+const map=new Map(),store={readRecords:async()=>[...map.values()],readRecordsByIds:async ids=>ids.flatMap(id=>map.has(id)?[map.get(id)]:[]),apply:async changes=>{for(const c of changes)map.set(c.record.id,c.record)}};
+await savePublicPost(store,record);await savePublicPost(store,{...record,likes:70,retrievedAt:'2026-10-09',update:true});assert.equal([...map.values()].filter(r=>r.kind==='external_public_observation').length,2);await assert.rejects(()=>savePublicPost(store,{...record,update:true}),/newer observation/);
+const item={finding:'The reviewed source shows an activity approach.',explanation:'The approach suggests an experiment for staff review.',recommendation:'Test a clear invitation and compare matched recorded interactions.',evidenceIds:['I001']};
+const response={mode:'gemini',cached:true,facts:[{id:'I001'},{id:'I002'}],report:{summary:{text:'Invented summary'},insights:[item]}};
+assert.equal(screenPublicLessons(response,peers,p,[],[]).verification.retained,1);
+for(const bad of [{...item,finding:'This post achieved 99% more engagement.'},{...item,evidenceIds:['fake']},{...item,explanation:'This is trending and caused stronger engagement.'},{...item,explanation:'The private reach increased.'},null]){const result=screenPublicLessons({...response,report:{...response.report,insights:[bad]}},peers,p,[],[]);assert.equal(result.verification.retained,0);assert(!result.report.summary.text.includes('Invented summary'));}
+const duplicate=screenPublicLessons({...response,report:{...response.report,insights:[item,item]}},peers,p,[],[]);assert.equal(duplicate.verification.retained,1);assert.equal(duplicate.verification.withheld,1);
+const ui=fs.readFileSync('app/public-post-intelligence.tsx','utf8');assert(ui.includes('Update Measurements'));assert(ui.includes('if(!review.approved)'));assert(ui.includes('approved:false'));assert(ui.includes('Strong matched examples only'));
+console.log('PASS: manual source/account checks, Singapore dates, optional title, canonical peer accounts, strong-relative thresholds, partial definitions/small groups, immutable measurement history, cached lesson screening and explicit Planner approval guard. No production records.');

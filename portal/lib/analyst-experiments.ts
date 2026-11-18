@@ -28,6 +28,7 @@ export async function createAnalystPlan(store:Storage,body:PlanRequest){
  const existing=(await store.readRecords()).find(r=>r.kind==='analyst_experiment'&&r.id===body.id);if(existing){if(existing.payload.requestKey!==requestKey)throw Error('This save identifier belongs to another plan.');return {ok:true,planId:existing.payload.planId};}
  const data=await loadData(store,'social'),analysis=await analystAnalysis(data,body.filters),candidate=analysis.candidates.find(c=>c.id===body.candidateId);
  if(analysis.revision!==body.revision)throw Error('The source evidence changed. Refresh analysis and review the recommendation again.');
+ if(candidate?.proof?.eligible!==true)throw Error('The source-level comparison could not be verified. Refresh Analysis before approving a plan.');
  if(!candidate||candidate.baseline===null||candidate.baseline<=0||candidate.kind==='measurement'||candidate.kind==='visibility')throw Error('A supported positive comparison baseline is needed for a measurable experiment.');
  if(!validDate(body.start)||!validDate(body.end)||body.start>body.end||body.start<=analysis.filters.end)throw Error('Choose an experiment window after the analysed period.');
  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Singapore'});if(body.start<=today)throw Error('Start the experiment after today so the criteria are recorded before the trial posts.');

@@ -1,6 +1,25 @@
 # Available-metric growth comparisons
 
-Reviewed 17 November 2026. No data migration, dependency, environment change or deployment is required by this change. Historical report snapshots are untouched.
+Reviewed 18 November 2026. No data migration, dependency, environment change or deployment is required by this change. Historical report snapshots are untouched.
+
+## Finalisation on 18 November
+
+Audit confirmed that MoM, QoQ and YoY already support published post counts, compatible recorded interaction totals/averages and optional Facebook/Instagram Views or Instagram Reach. These calculations were retained. Reach remains optional at entry and analysis; no estimates, zero substitutions or Views-to-Reach conversions were added.
+
+Two small additions complete the existing detailed workflow:
+
+- One concise notice explains that Reach-based growth is unavailable when neither selected comparison period has Instagram Reach readings. It does not add empty Reach cards or block other metrics. If only one period has Reach, that recorded total remains visible; no supported change is inferred from missing history.
+- **Recorded Interaction Components**, collapsed by default, shows independent Likes/Reactions, Comments, Shares and Saves totals, absolute changes, percentages and coverage. Each component requires sufficient samples, complete explicit readings, matching platform/account sets and compatible component observation ages. A compatible Likes comparison can be valid when aggregate interaction definitions differ, but the aggregate change remains withheld. Zero baselines support absolute changes only. Unknown legacy measurement flags cannot establish comparable component coverage.
+
+The shared visibility check now delegates to the same per-metric policy without changing existing Views/Reach eligibility. Exact period eligibility also gates component changes. No extra graph or Executive insight panel was added, and archived report schemas remain backward-compatible through an optional component field.
+
+Files modified for this finalisation: `lib/comparison-policy.ts`, `lib/analytics-decision.ts`, `app/analytics-decision-support.tsx`, `scripts/test-growth-visibility.mjs`, `lib/user-guide.ts`, and this document. Other uncommitted AI/Public Post Intelligence work was preserved.
+
+Source-data limits remain operationally important: comparisons need recorded compatible readings in both displayed windows, sufficient samples and valid dates. No production database audit was performed, so this report does not claim that every live account currently has sufficient history. Published website/imported records and edits share the authoritative dataset; Draft records intentionally do not contribute. No external social account is automatically published by saving analytics data.
+
+Regression coverage includes every growth mode, independent components with incompatible aggregate definitions, optional Views/Reach, partial coverage, legacy flags, measurement ages, missing history, recorded zeros, account filters, posting volumes, rendered Reach disclosure, real XLSX parsing, website create/edit/import reconciliation, metric history, cache invalidation, AI revisions and immutable archived reports. Live deployment and interactive browser/mobile UAT remain unverified; final command results are supplied with completion.
+
+Finalisation checks passed: growth visibility/components, benchmark policy, analytics decisions, real import metrics, bulk import/cache invalidation, website social-post workflow, Social Media Analyst, Analyst verification, Executive Intelligence, monthly reports, analytical dashboards, organisation benchmarks, User Guide, targeted ESLint and Next.js production build with TypeScript validation. No live production-data audit or deployment was performed.
 
 ## Audit and changes
 
@@ -27,7 +46,7 @@ Existing mutation/import revision and AI evidence fingerprints remain in use. No
 
 Open Social Media Analytics, choose dates/platform/account/brand, then expand **Growth Analysis & Detailed Benchmarks** in Performance Comparisons. Choose Month-on-Month, Quarter-on-Quarter or Year-on-Year. Read exact dates, measured samples and coverage before interpreting changes. Staff can use posts and recorded interactions without entering Reach. Optional visibility appears only when genuine readings exist in a selected comparison period. Missing historical visibility leaves the known period visible but does not create a percentage conclusion.
 
-Settings User Guide was reviewed and updated in the same change; its static review date remains 17 November 2026.
+Settings User Guide was reviewed and updated in the same change; its static review date is 18 November 2026.
 
 ## Files
 
