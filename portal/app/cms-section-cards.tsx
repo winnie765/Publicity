@@ -11,7 +11,7 @@ type Item={title:string;description:string;url?:string;platform?:string;hidden?:
 export default function CmsSectionCards({section,home,busy,onPublish,onHeroEdit}:{section:string;home:PublicHomeSettings;busy:boolean;onPublish:(record:PublicHomeSettings)=>Promise<boolean>;onHeroEdit:()=>void}){
  const [editing,setEditing]=useState<{index:number;item:Item}|null>(null);
  const values=home.values||['respect','gratitude','love'].map(key=>({title:(home as any)[key+'Title'],description:(home as any)[key+'Description']})).concat(home.additionalValues||[]);
- const accounts=home.socialAccounts||['facebookGlow','facebookSeen','facebookLc','instagramGlow','instagramLc'].map(key=>({label:(home as any)[key+'Label'],url:(home as any)[key+'Link'],platform:key.startsWith('facebook')?'Facebook':'Instagram',hidden:false}));
+ const accounts=home.socialAccounts||['facebookGlow','facebookSeen','facebookLc','instagramGlow','instagramLc'].map(key=>({label:(home as any)[key+'Label'],url:(home as any)[key+'Link'],platform:key.startsWith('facebook')?'Facebook':'Instagram',hidden:false})).filter(a=>a.url?.trim());
  const items:Item[]=section==='home'?[{title:home.heroTitle,description:home.heroSubtitle,image:home.heroImageUrl}]:section==='values'?values:accounts.map(a=>({title:a.label,description:a.platform,url:a.url,platform:a.platform,hidden:a.hidden}));
  async function update(next:Item[]){return onPublish(section==='values'?{...home,values:next.map(i=>({title:i.title,description:i.description,hidden:i.hidden===true}))}:{...home,socialAccounts:next.map(i=>({label:i.title,url:i.url||'',platform:i.platform||'Facebook',hidden:i.hidden===true}))});}
  const preview='/workspace/site-preview?page=home'+(section==='values'?'#values':section==='social'?'#social-media':'');
