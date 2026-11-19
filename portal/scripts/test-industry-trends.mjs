@@ -31,6 +31,13 @@ const later=new Date(+now+6*3600000);snapshot=await refresh(getStorage(),async u
 const failed=await refresh(getStorage(),async()=>{throw Error('Offline')},new Date(+later+6*3600000));assert.equal(failed.outcome,'failed');assert.equal(failed.articles.length,6);assert.equal(failed.lastSuccessfulRefreshAt,later.toISOString());
 const retry=new Date(+later+7*3600000),partial=await refresh(getStorage(),async u=>u===sources[0].url?new Response('',{status:429,headers:{'Retry-After':'7200'}}):u===sources[1].url?new Response('<html>unsupported</html>'):fetcher(u),retry);assert.equal(partial.outcome,'partial');assert.equal(partial.articles.length,6);assert.equal(partial.sources[0].status,'rate_limited');assert.equal(partial.sources[1].status,'unsupported');
 assert.equal((await refresh(getStorage(),async()=>{throw Error('not due')},new Date(+retry+600000))).outcome,'cached');
+let manualCalls=0;const manualTime=new Date(+retry+1200000);
+const manual=await refresh(getStorage(),async u=>{manualCalls++;return fetcher(u)},manualTime,{manual:true});
+assert.equal(manualCalls,5,'manual checks bypass healthy-source cache but respect failed-source retry windows');assert.equal(manual.articles.length,6);assert.equal(manual.lastSuccessfulRefreshAt,manualTime.toISOString());
+const deferred=await refresh(getStorage(),async()=>{throw Error('must not fetch')},new Date(+manualTime+1000),{manual:true});assert.equal(deferred.outcome,'cached');
+const manualFailed=await refresh(getStorage(),async()=>{throw Error('Offline')},new Date(+manualTime+1200000),{manual:true});assert.equal(manualFailed.outcome,'failed');assert.equal(manualFailed.lastSuccessfulRefreshAt,manual.lastSuccessfulRefreshAt);assert.equal(manualFailed.articles.length,6);
+const manualApi=await mod('app/api/industry-trends/route.ts');assert.equal((await manualApi.POST(new Request('https://portal.test/api/industry-trends',{method:'POST',body:'{"action":"refresh","manual":true}'}))).status,401);
+const ui=fs.readFileSync('app/industry-trends.tsx','utf8');assert.equal((ui.match(/Refresh Now/g)||[]).length,1);assert(ui.includes('manual:check'));assert(ui.includes('working.current'));assert(ui.includes('No newer updates found.'));
 const api=await mod('app/api/industry-trends/refresh/route.ts'),auth=await mod('lib/industry-cron-security.ts');delete process.env.CRON_SECRET;
 assert.equal((await api.GET(new Request('https://portal.test/api/industry-trends/refresh'))).status,503);process.env.CRON_SECRET='test-only-secret-not-production-'.repeat(2);
 assert.equal((await api.GET(new Request('https://portal.test/api/industry-trends/refresh'))).status,401);
@@ -56,3 +63,11 @@ globalThis.window={dispatchEvent:()=>{},localStorage:{setItem:()=>{}}};globalThi
 await saveContentIdea(insight,{title:'Reviewed title',description:'Reviewed notes',sourceRefs:[{title:'Publisher source',url:opportunity.articles[0].url}]});globalThis.fetch=originalFetch;
 assert.equal(saved.kind,'idea');assert.equal(saved.record.status,'Open');assert(saved.record.description.includes(opportunity.articles[0].url));assert(saved.record.description.includes('Reviewed notes'));assert.equal(saved.record.title,'Reviewed title');
 console.log('PASS: six-source retrieval, relevance, dates, regions, updates/deduplication, concurrency, cache/outages/rate limits, scheduled auth/status and AI source/config validation. Mocked sources, isolated SQLite.');
+
+const {readableHeadline,default:ArticleCard}=await mod('app/industry-article-card.tsx');
+const React=await import('react'),{renderToStaticMarkup}=await import('react-dom/server');
+assert.equal(readableHeadline('MOH AND AIC SUPPORT IMDA IN SINGAPORE'),'MOH And AIC Support IMDA In Singapore');assert.equal(readableHeadline('Singapore community news'),'Singapore community news');
+const original='MOH AND IMDA ANNOUNCE A COMMUNITY HEALTH PROGRAMME FOR SENIORS IN SINGAPORE WITH AIC AND LOCAL COMMUNITY CARE PROVIDERS';
+const article={...snapshot.articles[0],title:original,description:'Verified source summary'};
+const markup=renderToStaticMarkup(React.createElement(ArticleCard,{article,selected:true,disabled:false,onToggle:()=>{}}));
+assert(markup.includes(original),'original title retained in Source Details');assert(markup.includes('Show full headline'));assert(markup.includes('Source Details'));assert(markup.includes('Read Original Article'));assert(markup.includes('noopener noreferrer'));assert(markup.includes('checked=""'));assert(markup.includes('Verified source summary'));assert.equal(article.title,original);assert(markup.includes('is-selected'));console.log('PASS: article presentation, original headline retention, acronym casing, metadata, safe link, selection and expansion markup.');

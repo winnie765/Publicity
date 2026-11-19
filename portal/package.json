@@ -20,6 +20,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:d1:generate": "drizzle-kit generate",
     "test:collaboration": "node scripts/test-internal-brand-links.mjs && node scripts/test-linked-collaboration.mjs && node scripts/test-collaboration-stakeholders.mjs",
+    "test:post-management": "node scripts/test-record-management.mjs && node scripts/test-data-management-ui.mjs",
+    "test:post-management-browser": "node scripts/test-post-management-browser.mjs",
     "test:user-guide": "node scripts/test-user-guide.mjs",
     "test:audit": "node scripts/test-audit-suite.mjs",
     "test:analytics": "node scripts/test-analytics-decisions.mjs",

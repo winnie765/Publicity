@@ -63,11 +63,11 @@ async function claimRefresh(store:Storage,now:Date){
 async function feedText(r:Response){
  if(Number(r.headers.get('content-length')||0)>1_000_000)throw Error('Unsupported oversized source feed.');const reader=r.body?.getReader();if(!reader)throw Error('Source returned no feed body.');let size=0,result='';const decoder=new TextDecoder();try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1_000_000)throw Error('Unsupported oversized source feed.');result+=decoder.decode(value,{stream:true});}return result+decoder.decode();}finally{await reader.cancel().catch(()=>{});}
 }
-export async function refreshIndustryTrends(store:Storage,fetcher:typeof fetch=fetch,now=new Date(),options:{scheduled?:boolean}={}):Promise<IndustrySnapshot>{
- const prior=await readIndustryTrends(store);if(prior&&now.getTime()-Date.parse(prior.fetchedAt)<300000)return prior;
+export async function refreshIndustryTrends(store:Storage,fetcher:typeof fetch=fetch,now=new Date(),options:{scheduled?:boolean;manual?:boolean}={}):Promise<IndustrySnapshot>{
+ const prior=await readIndustryTrends(store);if(prior&&now.getTime()-Date.parse(prior.fetchedAt)<300000)return {...prior,outcome:'cached',newItems:0,changedItems:0};
  if(!await claimRefresh(store,now))return {...(prior||{fetchedAt:now.toISOString(),articles:[],sources:[]}),outcome:'busy'};
  const results=await Promise.all(industrySources.map(async source=>{
-  const prev=prior?.sources.find(s=>s.id===source.id),cached=(prior?.articles||[]).filter(a=>a.sourceId===source.id&&now.getTime()-Date.parse(a.date)<=retention);if(prev?.nextCheckAt&&Date.parse(prev.nextCheckAt)>now.getTime()+(options.scheduled?60000:0))return {source:prev,articles:cached,attempted:false,success:false};
+  const prev=prior?.sources.find(s=>s.id===source.id),cached=(prior?.articles||[]).filter(a=>a.sourceId===source.id&&now.getTime()-Date.parse(a.date)<=retention);if(prev?.nextCheckAt&&Date.parse(prev.nextCheckAt)>now.getTime()+(options.scheduled?60000:0)&&(!options.manual||prev.status!=='available'))return {source:prev,articles:cached,attempted:false,success:false};
   try{
    const r=await fetcher(source.url,{signal:AbortSignal.timeout(8000),redirect:'error',cache:'no-store',headers:{Accept:'application/rss+xml, application/atom+xml, application/xml, text/xml',...(prev?.etag?{'If-None-Match':prev.etag}:{}),...(prev?.modified?{'If-Modified-Since':prev.modified}:{})}});
    if(r.status===429){const raw=r.headers.get('retry-after')||'',delay=/^\d+$/.test(raw)?Number(raw)*1000:Date.parse(raw)-now.getTime();return {source:{...prev,id:source.id,name:source.name,status:'rate_limited' as const,error:'Publisher rate limit reached. Cached records retained.',lastAttemptAt:now.toISOString(),nextCheckAt:new Date(now.getTime()+Math.max(900000,Math.min(delay||3600000,86400000))).toISOString()},articles:cached,attempted:true,success:false};}

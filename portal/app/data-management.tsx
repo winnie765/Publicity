@@ -1,14 +1,15 @@
 'use client';
 import {useEffect,useRef,useState,type ReactNode,type KeyboardEvent} from 'react';
 import Link from 'next/link';
-import {Database,Upload,Download,FileSpreadsheet,ArrowUpRight,Trash2,CheckCircle2,FileCheck2} from 'lucide-react';
+import DeleteAllData from './delete-all-data';
+import {Database,Upload,Download,FileSpreadsheet,ArrowUpRight,CheckCircle2,FileCheck2} from 'lucide-react';
 import type {Dataset} from './model';
 import './data-management.css';
 export const dataCategories=[{id:'posts',label:'Posts'},{id:'followers',label:'Follower Records'},{id:'interactions',label:'Stakeholder Interactions'}] as const;
 export type DataCategory=typeof dataCategories[number]['id'];
 export function datasetCounts(data:Dataset){return {posts:data.posts.length,followers:data.followers.length,interactions:data.interactions.length,kpis:data.kpis?.length||0,total:data.posts.length+data.followers.length+data.interactions.length+(data.kpis?.length||0)};}
-type Props={data:Dataset;category:DataCategory;onCategory:(category:DataCategory)=>void;busy:boolean;loading:boolean;canManageDataset:boolean;onDelete:()=>void;onFile:(file:File)=>Promise<boolean>;onExport:(excel:boolean)=>Promise<void>;onTemplate:()=>Promise<void>;importReady?:boolean;importComplete?:boolean;error?:string;lastImportAt?:string;importSummary?:{added:number;updated:number;unchanged:number;duplicatesPrevented:number;missingFields:number;requiringReview:number;failedRows:number}|null;loadedAt?:string;children?:ReactNode};
-export default function DataManagement({data,category,onCategory,busy,loading,canManageDataset,onDelete,onFile,onExport,onTemplate,importReady=false,importComplete=false,error='',loadedAt,lastImportAt,importSummary,children}:Props){
+type Props={data:Dataset;category:DataCategory;onCategory:(category:DataCategory)=>void;busy:boolean;loading:boolean;canManageDataset:boolean;onDeleted?:()=>void;onFile:(file:File)=>Promise<boolean>;onExport:(excel:boolean)=>Promise<void>;onTemplate:()=>Promise<void>;importReady?:boolean;importComplete?:boolean;error?:string;lastImportAt?:string;importSummary?:{added:number;updated:number;unchanged:number;duplicatesPrevented:number;missingFields:number;requiringReview:number;failedRows:number}|null;loadedAt?:string;children?:ReactNode};
+export default function DataManagement({data,category,onCategory,busy,loading,canManageDataset,onDeleted=()=>{},onFile,onExport,onTemplate,importReady=false,importComplete=false,error='',loadedAt,lastImportAt,importSummary,children}:Props){
  const counts=datasetCounts(data),fileInput=useRef<HTMLInputElement>(null),tabs=useRef<(HTMLButtonElement|null)[]>([]),[file,setFile]=useState<File|null>(null),[reading,setReading]=useState(false),[validationFailed,setValidationFailed]=useState(false),[exporting,setExporting]=useState<'csv'|'excel'|null>(null),[exportError,setExportError]=useState(''),[templateBusy,setTemplateBusy]=useState(false),[templateError,setTemplateError]=useState('');
  useEffect(()=>{if(importComplete){setFile(null);setValidationFailed(false);}},[importComplete]);
  const recordsKnown=!loading&&(canManageDataset||!!loadedAt),unavailable=busy||loading||reading||exporting!==null||templateBusy||!recordsKnown;
@@ -34,6 +35,6 @@ export default function DataManagement({data,category,onCategory,busy,loading,ca
  </div>
  </>:children}
  </div>
- <details className="dm-dataset-controls"><summary>Dataset Controls <span>Shared-data operations</span></summary><div><p>These actions affect the shared dataset across all categories and users, regardless of filters. Configuration and audit history are retained.</p>{canManageDataset?<button className="button dm-danger" type="button" disabled={unavailable||!counts.total} onClick={onDelete}><Trash2 size={16}/>Delete All Data</button>:<p>Dataset operations require an authenticated, loaded workspace.</p>}<Link href="/workspace/trash">Open Trash &amp; Recycling Bin</Link></div></details>
+ <details className="dm-dataset-controls"><summary>Dataset Controls <span>Shared-data operations</span></summary><div><p>These actions affect the shared dataset across all categories and users, regardless of filters. Configuration and audit history are retained.</p>{canManageDataset?<DeleteAllData className="dm-danger" disabled={unavailable||!counts.total} onDeleted={onDeleted}/>:<p>Dataset operations require an authenticated, loaded workspace.</p>}<Link href="/workspace/trash">Open Trash &amp; Recycling Bin</Link></div></details>
  </div>;
 }
