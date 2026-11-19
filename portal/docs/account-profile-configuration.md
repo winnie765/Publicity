@@ -14,7 +14,7 @@ Public Portal social links still have legacy defaults in public-social-links.tsx
 
 ## Staff workflow
 
-Open Settings > Configuration > Social Media Accounts. Add Account or Edit an existing account. Enter the name, platform, brand and Active/Inactive status. Social Media Profile URL is visible under Online Profile and optional. Use a verified HTTPS Facebook/Instagram profile or organisation.workvivo.com URL. Open Profile opens a validated link in a new tab. Save Changes shows confirmation and the saved URL, status and stable ID in the account details.
+Open Settings > Configuration > Social Media Accounts. Add Account or Edit an existing account. Enter the name, platform, brand and Active/Inactive status. Social Media Profile URL is visible under Online Profile and optional. Use a verified HTTPS Facebook/Instagram profile or organisation.workvivo.com URL. Open Profile opens a validated link in a new tab. Save Changes shows confirmation. Compact account cards show name, platform, brand and status; profile URLs and Open Profile remain in Edit > Online Profile. Internal IDs remain stored but are not shown on cards.
 
 A blank edit retains an existing link; enter a replacement to change it. There is no intentional remove-link action in this change. Old clients omitting profile metadata also retain it server-side. Existing accounts without verified URLs may remain blank.
 
@@ -48,3 +48,7 @@ Account regression tests passed with isolated memory storage: valid Facebook/Ins
 Existing master relationship tests passed, including old-name Excel aliases and report/history preservation. Social post workflow and both internal brand-link and linked-collaboration regression suites passed. User Guide checks passed. Standalone TypeScript and scoped ESLint passed. Record Management and Content Planner regression suites also passed after the final inactive-account refinements. The final production build passed, including TypeScript and all 34 static pages.
 
 No database migration, schema or existing API contract replacement is required: optional profileUrl and active fields are persisted in the existing Configuration JSON. No production records were changed or external accounts contacted during tests. Existing shared-workspace authentication is preserved; a distinct administrator role is not implemented by this change. Workvivo custom domains outside organisation.workvivo.com are unsupported. Automated validation cannot prove account ownership; staff must verify the destination. Browser/mobile visual checks and live destination availability were not tested. No deployment was performed.
+
+## Account-card visual rollback
+
+The previous compact card structure and styling were restored from Git history (0dfccff), retaining inline Status as requested. Removed the internal ID, expanded URL text and card-level Open Profile action. The Edit Account modal, validation and save handlers are unchanged from the working copy before this rollback. Modified configuration-manager.tsx, configuration-manager.css, test-account-profiles.mjs and user-guide.ts for this rollback, plus this report. Account tests, User Guide checks, TypeScript, scoped lint and the production build passed; browser/mobile visual checks were not run.
