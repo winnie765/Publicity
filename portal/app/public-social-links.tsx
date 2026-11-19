@@ -2,14 +2,11 @@ import {accountProfileUrl} from '../lib/account-profile';
 import {ArrowUpRight} from 'lucide-react';
 import {PublicSection} from './public-components';
 
-function PlatformIcon({platform}:{platform:string}){
+export function PlatformIcon({platform}:{platform:string}){
  return platform==='Facebook'?<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M14 22v-9h3l.5-4H14V7c0-1.2.4-2 2-2h2V1.5c-.8-.1-1.8-.3-3-.3-3 0-5 1.8-5 5.2V9H7v4h3v9z"/></svg>:<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>;
 }
 export default function PublicSocialLinks({settings}:{settings?:import('../lib/public-site-config').PublicHomeSettings}){
- const saved=settings?.socialAccounts??[
-  ...(['facebookGlow','facebookSeen','facebookLc'] as const).map(key=>({platform:'Facebook',label:settings?.[key==='facebookGlow'?'facebookGlowLabel':key==='facebookSeen'?'facebookSeenLabel':'facebookLcLabel']||'',url:settings?.[key==='facebookGlow'?'facebookGlowLink':key==='facebookSeen'?'facebookSeenLink':'facebookLcLink']||'',hidden:false})),
-  ...(['instagramGlow','instagramLc'] as const).map(key=>({platform:'Instagram',label:settings?.[key==='instagramGlow'?'instagramGlowLabel':'instagramLcLabel']||'',url:settings?.[key==='instagramGlow'?'instagramGlowLink':'instagramLcLink']||'',hidden:false}))
- ];
+ const saved=settings?.socialAccounts??[];
  const accounts=saved.flatMap(account=>{if(account.hidden||!account.label.trim())return [];try{const url=accountProfileUrl(account.url,account.platform);return url?[{...account,url}]:[];}catch{return [];}});
  const visibleGroups=['Facebook','Instagram'].map(platform=>({platform,accounts:accounts.filter(a=>a.platform===platform)})).filter(group=>group.accounts.length);
  if(!visibleGroups.length)return null;

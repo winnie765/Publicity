@@ -6,7 +6,7 @@ const mod=testCompiler('.sites-runtime/public-social-link-tests');
 const {default:Links}=await mod('app/public-social-links.tsx');const {defaultPublicHome}=await mod('lib/public-site-config.ts');
 const render=settings=>renderToStaticMarkup(React.createElement(Links,{settings}));
 assert.equal(render(undefined),'');assert.equal(render(defaultPublicHome),'');
-const legacy={...defaultPublicHome,facebookGlowLabel:'Saved account',facebookGlowLink:'https://www.facebook.com/savedaccount'};assert(render(legacy).includes('https://www.facebook.com/savedaccount'));assert(!render(legacy).includes('glow.tzuchisg'));
+const legacy={...defaultPublicHome,facebookGlowLabel:'Saved account',facebookGlowLink:'https://www.facebook.com/savedaccount'};assert.equal(render(legacy),'','raw legacy copies are resolved only by the server');assert(!render(legacy).includes('glow.tzuchisg'));
 assert.equal(render({...legacy,socialAccounts:[]}),'');assert.equal(render({...legacy,socialAccounts:[{label:'Hidden',platform:'Facebook',url:legacy.facebookGlowLink,hidden:true}]}),'');
 assert.equal(render({...legacy,socialAccounts:[{label:'Unsafe',platform:'Instagram',url:'javascript:alert(1)',hidden:false}]}),'');
 const html=render({...defaultPublicHome,socialAccounts:[{label:'Configured Instagram',platform:'Instagram',url:'https://www.instagram.com/configured/',hidden:false}]});assert(html.includes('Configured Instagram'));assert(html.includes('noopener noreferrer'));assert(html.includes('target="_blank"'));assert(!html.includes('Facebook GLOW'));console.log('PASS: no hardcoded fallbacks, empty section hidden, saved legacy links retained, explicit empty/hidden links honoured, safe configured URLs rendered.');
