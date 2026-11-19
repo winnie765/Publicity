@@ -45,7 +45,7 @@ export async function applyDataAction(store:Storage,body:any,historicalImport=tr
   if(known.some(row=>row.kind!=='config'&&referenced(row.payload)))next.stakeholders.push({...stakeholder,active:false});
  }
  // Older clients may omit profile metadata; never silently clear a verified link.
- for(const account of next.accounts){const previous=config.accounts.find(a=>a.name===account.name||edit?.module==='accounts'&&edit.to===account.name&&a.name===edit.from);account.profileUrl=accountProfileUrl(account.profileUrl?.trim()||previous?.profileUrl||'',account.platform);account.active=account.active??previous?.active??true;}
+ for(const account of next.accounts){const previous=config.accounts.find(a=>a.name===account.name||edit?.module==='accounts'&&edit.to===account.name&&a.name===edit.from);account.profileUrl=accountProfileUrl(account.profileUrl?.trim()||previous?.profileUrl||'',account.platform);account.active=!!account.profileUrl&&(previous?.profileUrl?(account.active??previous.active??true):true);}
  const resolved=withMasterRegistry(next);validateConfig(resolved);
  const updated=known.map(row=>({...row,payload:masterPayload(rename?rename.references(row.payload):row.payload,resolved.masterRegistry!)}));
  for(const row of updated.filter(row=>['posts','followers','interactions','kpis'].includes(row.kind))){const payload=row.payload;validate(row.kind,row.kind==='posts'&&payload.status==='draft'?{...payload,title:payload.title||'Untitled draft',description:payload.description||'Draft',importSheet:'draft'}:payload,resolved);}

@@ -1,3 +1,4 @@
+import {accountIsActive} from '../lib/account-profile';
 import {normalizeLocation,postLocations} from '../lib/post-locations';
 import type {Dataset,Post,Config} from './model';
 export const longevityBrand='Longevity Courtyard';
@@ -29,7 +30,7 @@ export function migrateDataset(data:Dataset):Dataset{
  for(const p of data.posts)if(!accountRows.some((a:any)=>a.name===p.account))accountRows.push({name:p.account,platform:p.platform,...(['Facebook','Instagram'].includes(p.platform)&&p.brand!=='Unclassified'?{brand:p.brand}:{})});
  if(hadSharedFacebook)for(const brand of c.brands.filter((b:string)=>b&&b!=='Unclassified')){const name=canonicalAccount('Facebook','',brand);if(!accountRows.some((a:any)=>a.platform==='Facebook'&&a.brand===brand))accountRows.push({name,platform:'Facebook',brand});}
  for(const brand of c.brands.filter((b:string)=>b&&b!=='Unclassified'))for(const platform of ['Facebook','Instagram'])if(!accountRows.some((a:any)=>a.platform===platform&&a.brand===brand))accountRows.push({name:platform+' '+brand,platform,brand});
- c.accounts=Array.from(new Map(accountRows.map((a:any)=>[a.name,a])).values());
+ c.accounts=Array.from(new Map(accountRows.map((a:any)=>[a.name,{...a,active:accountIsActive(a)}])).values());
  c.brands=[...new Set(data.posts.map(p=>p.brand).concat(c.brands))];
  c.locations=[...new Set([...(legacy?postLocations:[]),...data.posts.map(p=>normalizeLocation(p.location)),...c.locations.map(normalizeLocation)])].filter(Boolean);
  for(const key of ['brands','locations','topics','types'])c[key]=c[key].filter((value:string)=>value!=='Unclassified');

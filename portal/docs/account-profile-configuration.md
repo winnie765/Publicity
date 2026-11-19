@@ -52,3 +52,7 @@ No database migration, schema or existing API contract replacement is required: 
 ## Account-card visual rollback
 
 The previous compact card structure and styling were restored from Git history (0dfccff), retaining inline Status as requested. Removed the internal ID, expanded URL text and card-level Open Profile action. The Edit Account modal, validation and save handlers are unchanged from the working copy before this rollback. Modified configuration-manager.tsx, configuration-manager.css, test-account-profiles.mjs and user-guide.ts for this rollback, plus this report. Account tests, User Guide checks, TypeScript, scoped lint and the production build passed; browser/mobile visual checks were not run.
+
+## Accounts without profile URLs
+
+Accounts without a valid profile URL now resolve as inactive on reads and are excluded from new social-post choices. Saving their first valid profile activates them. Existing explicitly inactive accounts with saved URLs remain inactive. Historical IDs, records, metrics and filtering remain intact; blank edits still retain an existing saved URL. Account and User Guide regression checks passed for this behavior.

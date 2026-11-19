@@ -11,4 +11,5 @@ export function accountProfileUrl(value:unknown,platform:string):string{
  if(/(?:^|\/)(?:l\.php|login|login\.php|dialog|oauth|accounts|redirect|sharer(?:\.php)?)(?:\/|$)/i.test(url.pathname)||[...url.searchParams.keys()].some(k=>/^(?:url|u|redirect.*|next|access_token|token|password|code|session.*)$/i.test(k)))throw Error('Use a direct public profile link, without redirects, sign-in links or credentials.');
  return url.href;
 }
-export function selectableAccounts<T extends AccountProfile>(accounts:T[],platform:string,current=''){return accounts.filter(a=>a.platform===platform&&(a.active!==false||a.name===current));}
+export function accountIsActive(account:AccountProfile){try{return account.active!==false&&!!accountProfileUrl(account.profileUrl,account.platform);}catch{return false;}}
+export function selectableAccounts<T extends AccountProfile>(accounts:T[],platform:string,current=''){return accounts.filter(a=>a.platform===platform&&(accountIsActive(a)||a.name===current));}
