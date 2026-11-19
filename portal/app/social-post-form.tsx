@@ -1,4 +1,5 @@
 'use client';
+import {selectableAccounts} from '../lib/account-profile';
 import {useState} from 'react';
 import CollaborationReviewDialog from './collaboration-review-dialog';
 import {linkedBrandNames,publishingBrand} from '../lib/internal-brand-links';
@@ -28,7 +29,7 @@ export function SocialMetricFields({post,onChange}:{post:Post;onChange:(post:Pos
 }
 export default function SocialPostForm({initial,data,busy,onSave,onCancel,onBusyChange,serverError}:{initial?:Post;data:Dataset;busy:boolean;serverError?:string;onSave:(post:Post)=>Promise<boolean>;onCancel:()=>void;onBusyChange?:(busy:boolean)=>void}){
  const [post,setPost]=useState<Post>(()=>initial?structuredClone(initial):emptySocialPost()),[step,setStep]=useState(0),[error,setError]=useState(''),[uploading,setUploading]=useState(false),[duplicatesApproved,setDuplicatesApproved]=useState(false),[reviewed,setReviewed]=useState(false),[matchReview,setMatchReview]=useState(false);
- const accounts=data.config.accounts.filter(account=>account.platform===post.platform),account=accounts.find(account=>account.name===post.account),matches=collaborationMatches(post,data.posts),duplicates=matches.map(m=>m.post),confirmedDuplicate=matches.some(m=>m.confirmed),related=collaborationMembers(post,data.posts),steps=['Platform','Account','Post Details','Statistics','Review & Save'];
+ const accounts=selectableAccounts(data.config.accounts,post.platform,initial?.account),account=accounts.find(account=>account.name===post.account),matches=collaborationMatches(post,data.posts),duplicates=matches.map(m=>m.post),confirmedDuplicate=matches.some(m=>m.confirmed),related=collaborationMembers(post,data.posts),steps=['Platform','Account','Post Details','Statistics','Review & Save'];
  const patch=(value:Partial<Post>)=>{setPost(current=>({...current,...value}));setError('');setReviewed(false);setDuplicatesApproved(false);};
  const issues=()=>{if(step===0&&!['Facebook','Instagram'].includes(post.platform))return 'Choose Facebook or Instagram.';if(step===1&&(!account||!post.brand))return 'Choose an account and its associated brand.';if(step>=2){const invalid=postStandardIssues(post,data.config.types);if(invalid.length)return invalid.join(' ');try{validateOriginalPostUrl(post.original_post_url);if(!/^\d{4}-\d{2}-\d{2}$/.test(post.date)||new Date(post.date+'T12:00:00Z').toISOString().slice(0,10)!==post.date)return 'Choose a valid publication date.';}catch(e){return e instanceof Error?e.message:'Check the publication date and original post link.';}}return '';};
  const next=()=>{const message=issues();if(message){setError(message);return;}setError('');setStep(value=>Math.min(4,value+1));};
