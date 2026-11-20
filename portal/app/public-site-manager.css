@@ -30,3 +30,5 @@
 .cms-workspace .cms-brand-position{margin:16px 0 0;max-width:230px}.cms-brand-position .themed-select-trigger{width:100%}
 
 .cms-social-url{overflow-wrap:anywhere}.cms-social-accounts .cms-preview-meta{display:flex;align-items:center;gap:8px}.cms-social-accounts .cms-content-card{min-width:0}.cms-social-accounts .cms-card-actions{flex-wrap:wrap}.cms-social-accounts .field{min-width:0;margin:12px 0}
+
+.cms-social-visibility{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.cms-social-summary{font-size:14px;line-height:1.6}
