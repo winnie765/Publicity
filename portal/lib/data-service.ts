@@ -45,8 +45,8 @@ export async function applyDataAction(store:Storage,body:any,historicalImport=tr
   const referenced=(value:any):boolean=>{if(Array.isArray(value))return value.some(item=>typeof item==='string'?item===stakeholder.name:referenced(item));if(!value||typeof value!=='object')return false;return value.stakeholder_id===entry?.id&&!!entry||value.stakeholder===stakeholder.name||value.shared_from===stakeholder.name||typeof value.collaborating_with==='string'&&value.collaborating_with.split(';').some((name:string)=>name.trim()===stakeholder.name)||Object.values(value).some(item=>typeof item==='object'&&referenced(item));};
   if(known.some(row=>row.kind!=='config'&&referenced(row.payload)))next.stakeholders.push({...stakeholder,active:false});
  }
- // Older clients may omit profile metadata; never silently clear a verified link.
- for(const account of next.accounts){const previous=config.accounts.find(a=>a.name===account.name||edit?.module==='accounts'&&edit.to===account.name&&a.name===edit.from);account.profileUrl=accountProfileUrl(account.profileUrl?.trim()||previous?.profileUrl||'',account.platform);account.active=!!account.profileUrl&&(previous?.profileUrl?(account.active??previous.active??true):true);}
+ // Missing metadata preserves the saved URL; an explicit blank/null clears it.
+ for(const account of next.accounts){const previous=config.accounts.find(a=>a.name===account.name||edit?.module==='accounts'&&edit.to===account.name&&a.name===edit.from);account.profileUrl=accountProfileUrl(account.profileUrl===undefined?previous?.profileUrl||'':account.profileUrl??'',account.platform);account.active=account.profileUrl?(previous?.profileUrl?(account.active??previous.active??true):true):(previous?.active??account.active??false);}
  const resolved=withMasterRegistry(next);validateConfig(resolved);
  const updated=known.map(row=>{const payload=masterPayload(rename?rename.references(row.payload):row.payload,resolved.masterRegistry!);
  // Bind legacy public links using the previous verified configuration before a URL/name edit.

@@ -16,7 +16,7 @@ Public Portal social links still have legacy defaults in public-social-links.tsx
 
 Open Settings > Configuration > Social Media Accounts. Add Account or Edit an existing account. Enter the name, platform, brand and Active/Inactive status. Social Media Profile URL is visible under Online Profile and optional. Use a verified HTTPS Facebook/Instagram profile or organisation.workvivo.com URL. Open Profile opens a validated link in a new tab. Save Changes shows confirmation. Compact account cards show name, platform, brand and status; profile URLs and Open Profile remain in Edit > Online Profile. Internal IDs remain stored but are not shown on cards.
 
-A blank edit retains an existing link; enter a replacement to change it. There is no intentional remove-link action in this change. Old clients omitting profile metadata also retain it server-side. Existing accounts without verified URLs may remain blank.
+An explicit blank edit removes the saved URL. Omitting the URL field preserves it; a valid replacement overwrites it. See account-profile-url-clearing.md for the corrected saving rules. Existing accounts without verified URLs may remain blank.
 
 Inactive accounts are excluded from new social-post selections. Current historical selections remain editable; analytics and library filters retain inactive accounts to keep historical records accessible. Planner defaults avoid inactive accounts, retaining a current inactive selection for editing.
 
@@ -55,4 +55,4 @@ The previous compact card structure and styling were restored from Git history (
 
 ## Accounts without profile URLs
 
-Accounts without a valid profile URL now resolve as inactive on reads and are excluded from new social-post choices. Saving their first valid profile activates them. Existing explicitly inactive accounts with saved URLs remain inactive. Historical IDs, records, metrics and filtering remain intact; blank edits still retain an existing saved URL. Account and User Guide regression checks passed for this behavior.
+Accounts without a valid profile URL now resolve as inactive on reads and are excluded from new social-post choices. Saving their first valid profile activates them. Existing explicitly inactive accounts with saved URLs remain inactive. Historical IDs, records, metrics and filtering remain intact; explicit blank edits now clear an existing URL while omitted metadata preserves it. Account and User Guide regression checks passed for this behavior.
