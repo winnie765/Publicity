@@ -9,10 +9,10 @@ import {Eye,Plus,FilePenLine,Globe,Trash2} from 'lucide-react';
 import {Dialog,DialogContent,DialogHeader,DialogTitle} from '../components/ui/dialog';
 import type {PublicHomeSettings} from '../lib/public-site-config';
 type Item={title:string;description:string;url?:string;platform?:string;hidden?:boolean;image?:string};
-export default function CmsSectionCards({section,home,busy,onPublish,onHeroEdit,config=defaultConfig,draftHome}:{section:string;home:PublicHomeSettings;config?:Config;draftHome?:PublicHomeSettings;busy:boolean;onPublish:(record:PublicHomeSettings)=>Promise<boolean>;onHeroEdit:()=>void}){
+export default function CmsSectionCards({section,home,busy,onPublish,onHeroEdit,config=defaultConfig,draftHome,onDraft}:{section:string;home:PublicHomeSettings;config?:Config;draftHome?:PublicHomeSettings;onDraft?:(home:PublicHomeSettings)=>Promise<boolean>;busy:boolean;onPublish:(record:PublicHomeSettings)=>Promise<boolean>;onHeroEdit:()=>void}){
  const [editing,setEditing]=useState<{index:number;item:Item}|null>(null);
  const values=home.values||['respect','gratitude','love'].map(key=>({title:(home as any)[key+'Title'],description:(home as any)[key+'Description']})).concat(home.additionalValues||[]);
- if(section==='social')return <CmsSocialAccounts draftHome={draftHome} home={home} config={config} busy={busy} onPublish={onPublish}/>;
+ if(section==='social')return <CmsSocialAccounts onDraft={onDraft} draftHome={draftHome} home={home} config={config} busy={busy} onPublish={onPublish}/>;
  const items:Item[]=section==='home'?[{title:home.heroTitle,description:home.heroSubtitle,image:home.heroImageUrl}]:section==='values'?values:[];
  async function update(next:Item[]){return onPublish(section==='values'?{...home,values:next.map(i=>({title:i.title,description:i.description,hidden:i.hidden===true}))}:{...home,socialAccounts:next.map(i=>({label:i.title,url:i.url||'',platform:i.platform||'Facebook',hidden:i.hidden===true}))});}
  const preview='/workspace/site-preview?page=home'+(section==='values'?'#values':section==='social'?'#social-media':'');

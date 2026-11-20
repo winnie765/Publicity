@@ -1,3 +1,4 @@
+import {socialDisplayGroups} from '../lib/social-display-layout';
 import {accountProfileUrl} from '../lib/account-profile';
 import {ArrowUpRight} from 'lucide-react';
 import {PublicSection} from './public-components';
@@ -8,7 +9,7 @@ export function PlatformIcon({platform}:{platform:string}){
 export default function PublicSocialLinks({settings}:{settings?:import('../lib/public-site-config').PublicHomeSettings}){
  const saved=settings?.socialAccounts??[];
  const accounts=saved.flatMap(account=>{if(account.hidden||!account.label.trim())return [];try{const url=accountProfileUrl(account.url,account.platform);return url?[{...account,url}]:[];}catch{return [];}});
- const visibleGroups=['Facebook','Instagram'].map(platform=>({platform,accounts:accounts.filter(a=>a.platform===platform)})).filter(group=>group.accounts.length);
+ const layout=settings?.socialLayout||'platform',visibleGroups=socialDisplayGroups(accounts,layout,settings?.socialPublicBrandOrder);
  if(!visibleGroups.length)return null;
- return <PublicSection id="social-media" eyebrow="STAY CONNECTED" title={settings?.socialTitle||"Follow Our Social Media"} description={settings?.socialDescription||"Stay connected with our latest activities, community stories and programme updates."} className="ps-social-section"><div className="ps-social-groups">{visibleGroups.map(group=><section className="ps-social-group" key={group.platform} aria-labelledby={'social-'+group.platform.toLowerCase()}><h3 id={'social-'+group.platform.toLowerCase()}>{group.platform}</h3><div className="ps-social-links">{group.accounts.map(account=><a key={account.url} className="ps-social-account" href={account.url} target="_blank" rel="noopener noreferrer" aria-label={account.label+' (opens in a new tab)'}><span className="ps-social-icon"><PlatformIcon platform={group.platform}/></span><span>{account.label}</span><ArrowUpRight size={20} aria-hidden="true"/></a>)}</div></section>)}</div></PublicSection>;
+ return <PublicSection id="social-media" eyebrow="STAY CONNECTED" title={settings?.socialTitle||"Follow Our Social Media"} description={settings?.socialDescription||"Stay connected with our latest activities, community stories and programme updates."} className="ps-social-section"><div className="ps-social-groups" data-layout={layout}>{visibleGroups.map((group,index)=><section className="ps-social-group" key={group.key} aria-labelledby={group.title?'social-group-'+index:undefined}>{group.title&&<h3 id={'social-group-'+index}>{group.title}</h3>}<div className="ps-social-links">{group.accounts.map(account=><a key={account.url} className="ps-social-account" href={account.url} target="_blank" rel="noopener noreferrer" aria-label={account.label+' (opens in a new tab)'}><span className="ps-social-icon"><PlatformIcon platform={account.platform}/></span><span>{account.label}</span><ArrowUpRight size={20} aria-hidden="true"/></a>)}</div></section>)}</div></PublicSection>;
 }

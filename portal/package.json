@@ -22,6 +22,8 @@
     "test:collaboration": "node scripts/test-internal-brand-links.mjs && node scripts/test-linked-collaboration.mjs && node scripts/test-collaboration-stakeholders.mjs",
     "test:post-management": "node scripts/test-record-management.mjs && node scripts/test-data-management-ui.mjs",
     "test:post-management-browser": "node scripts/test-post-management-browser.mjs",
+    "test:social-display-layout-browser": "node scripts/test-social-display-layout-browser.mjs",
+    "test:social-display-layout": "node scripts/test-social-display-layout.mjs",
     "test:public-account-browser": "node scripts/test-public-account-browser.mjs",
     "audit:public-accounts": "node scripts/audit-public-account-status.mjs",
     "test:public-account-connection": "node scripts/test-public-account-connection.mjs && node scripts/test-public-account-workflow.mjs",

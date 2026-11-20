@@ -2,6 +2,7 @@
 import {useEffect,useState,useRef} from 'react';
 import Link from 'next/link';
 import {DropdownMenu as Menu,Dialog} from 'radix-ui';
+import {invalidateWorkspaceData} from './workspace-data-client';
 import {Settings,Globe,LockKeyhole,Palette,Database,LogOut,X,ArrowUpRight,BookOpen} from 'lucide-react';
 import ThemeControl from './theme-control';
 import {workspaceFeatures} from '../lib/workspace-features';
@@ -10,7 +11,7 @@ export default function WorkspaceSettingsMenu({onNavigate}:{onNavigate?:()=>void
  const [mobile,setMobile]=useState(false),[open,setOpen]=useState(false),[panel,setPanel]=useState<''|'appearance'|'database'>(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[database,setDatabase]=useState<{state:'loading'|'connected'|'error';posts?:number;followers?:number;interactions?:number;message?:string}>({state:'loading'});
  useEffect(()=>{const media=window.matchMedia('(max-width: 760px)'),update=()=>{setMobile(media.matches);setOpen(false)};update();media.addEventListener('change',update);return()=>media.removeEventListener('change',update)},[]);
  useEffect(()=>{if(panel!=='database')return;const controller=new AbortController();setDatabase({state:'loading'});fetch('/api/data',{cache:'no-store',signal:controller.signal}).then(async response=>{if(!response.ok)throw Error(response.status===401?'Your session has expired. Open Workspace again.':'The shared database could not be reached. Please try again.');const data=await response.json() as {posts:unknown[];followers:unknown[];interactions:unknown[]};if(!Array.isArray(data.posts)||!Array.isArray(data.followers)||!Array.isArray(data.interactions))throw Error('The database response was incomplete.');setDatabase({state:'connected',posts:data.posts.length,followers:data.followers.length,interactions:data.interactions.length})}).catch(e=>{if(!controller.signal.aborted)setDatabase({state:'error',message:e instanceof Error?e.message:'Unable to check database status.'})});return()=>controller.abort()},[panel]);
- async function logout(){if(busy)return;setBusy(true);setError('');try{const response=await fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!response.ok)throw Error();window.location.replace('/')}catch{setError('Could not log out. Please try again.');setBusy(false);setOpen(true)}}
+ async function logout(){if(busy)return;setBusy(true);setError('');try{const response=await fetch('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!response.ok)throw Error();invalidateWorkspaceData();window.location.replace('/')}catch{setError('Could not log out. Please try again.');setBusy(false);setOpen(true)}}
  const showPanel=(next:'appearance'|'database')=>{setOpen(false);setPanel(next)};
  const navigate=()=>{setOpen(false);onNavigate?.();};
  const trigger=<button ref={triggerRef} className="workspace-settings-trigger" aria-label="Workspace Settings" disabled={busy}><Settings size={18}/><span>Settings</span></button>;
