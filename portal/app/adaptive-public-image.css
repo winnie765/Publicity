@@ -1,8 +1,7 @@
 .ps-adaptive-stage{position:relative;isolation:isolate;width:100%;height:100%;min-height:0;overflow:hidden;background:var(--ps-soft,#edf3ec)}
-.ps-adaptive-backdrop{position:absolute;inset:0;width:100%;height:100%;filter:blur(16px);transform:scale(1.12);opacity:.32;pointer-events:none}
 .ps-adaptive-trigger{position:relative;z-index:1;display:flex;flex-direction:column;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:zoom-in}
 .ps-adaptive-trigger:disabled{cursor:default}
-.ps-adaptive-trigger>img{display:block;flex:1;min-height:0;width:100%;height:0;object-fit:contain;object-position:center;transform:none!important}
+.ps-adaptive-trigger>img{display:block;flex:1;min-height:0;width:100%;height:0;object-fit:contain;object-position:center;transform:none}
 .ps-adaptive-trigger>.data-image-empty,.ps-adaptive-empty{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ps-muted,#647568);padding:16px}
 .ps-adaptive-trigger>.data-image-empty{height:100%}
 .ps-adaptive-expand{position:relative;align-self:flex-end;flex-shrink:0;margin:5px 8px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;background:#fffef0;color:#233d2f;font-size:12px;pointer-events:none}
