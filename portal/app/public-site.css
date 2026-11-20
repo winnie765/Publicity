@@ -59,3 +59,18 @@ html[data-theme=dark] .public-site{--ps-muted:#b3c3b8;--ps-soft:#243c30}
 
 .public-site .ps-social-groups[data-layout=brand],.public-site .ps-social-groups[data-layout=custom]{grid-template-columns:minmax(0,1fr)}.public-site .ps-social-groups[data-layout=brand] .ps-social-links,.public-site .ps-social-groups[data-layout=custom] .ps-social-links{grid-template-columns:repeat(2,minmax(0,1fr))}.public-site .ps-social-groups[data-layout=brand] .ps-social-links:has(>.ps-social-account:only-child){grid-template-columns:minmax(0,1fr)}@media(max-width:700px){.public-site .ps-social-groups[data-layout=brand] .ps-social-links,.public-site .ps-social-groups[data-layout=custom] .ps-social-links{grid-template-columns:minmax(0,1fr)}}
 .ps-refresh-notice{max-width:1440px;margin:12px auto;padding:12px 5%;font-size:14px;color:var(--dark);background:var(--paper)}.ps-refresh-notice button{margin-left:8px;text-decoration:underline;color:var(--green)}
+.public-site .ps-card-grid{align-items:stretch}
+.public-site .ps-content-card{display:flex;flex-direction:column;min-width:0;height:100%}
+.public-site .ps-card-image{--ps-image-ratio:4/3;aspect-ratio:var(--ps-image-ratio);flex-shrink:0;border-radius:18px 18px 0 0}
+.public-site .ps-showcase-featured .ps-card-image{--ps-image-ratio:6/5}
+.public-site .ps-showcase-recent .ps-card-image{--ps-image-ratio:3/2}
+.public-site .ps-card-copy{flex:1;min-width:0;gap:12px}
+.public-site .ps-card-copy>p{margin:0}
+.public-site .ps-card-copy>p:empty{display:none}
+.public-site .ps-card-copy h3{overflow-wrap:anywhere;line-height:1.4;margin:0}
+.public-site .ps-card-copy>.ps-link{align-self:flex-start}
+.public-site .ps-card-copy>.ps-post-availability{margin-top:auto}
+.public-site .ps-card-copy>.ps-post-availability+.ps-link{margin-top:0}
+.public-site .ps-article-cover>.ps-adaptive-stage{height:auto;aspect-ratio:3/2;max-height:70vh;min-height:240px;border-radius:24px}
+
+.public-site .ps-card-meta{flex-wrap:wrap;align-items:center}.public-site .ps-card-platform{font-weight:400;color:var(--ps-muted)}

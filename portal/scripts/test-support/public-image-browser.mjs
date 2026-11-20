@@ -1,0 +1,41 @@
+import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';
+const sizes={'wide-thumb':[400,150],'wide-original':[1600,600],portrait:[600,1200],square:[800,800],poster:[500,1500],group:[1800,700],small:[120,80],landscape:[1200,800]};
+export async function imageBrowserProfile(base,label,dir){let browser,ws;const requests=[],errors=[];
+try{
+ const profile=path.join(dir,'edge');browser=spawn(process.env.EDGE_BINARY||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',['--headless','--disable-gpu','--no-first-run','--disable-extensions','--disable-background-networking','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
+ for(let i=0;i<100&&!fs.existsSync(profile+'/DevToolsActivePort');i++)await new Promise(r=>setTimeout(r,100));
+ const port=fs.readFileSync(profile+'/DevToolsActivePort','utf8').split('\n')[0],tabs=await(await fetch('http://127.0.0.1:'+port+'/json')).json();ws=new WebSocket(tabs.find(t=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});let sequence=0;const pending=new Map();
+ const send=(method,params={})=>new Promise((resolve,reject)=>{const id=++sequence;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));});
+ ws.onmessage=event=>{const m=JSON.parse(event.data);if(pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(Error(JSON.stringify(m.error))):p.resolve(m.result);}else if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);else if(m.method==='Fetch.requestPaused'){
+ const {request,requestId}=m.params,url=new URL(request.url),name=url.pathname.split('/').at(-1).replace('.png','');requests.push(name);const size=sizes[name];
+ const svg=size?`<svg xmlns="http://www.w3.org/2000/svg" width="${size[0]}" height="${size[1]}" viewBox="0 0 ${size[0]} ${size[1]}"><rect width="100%" height="100%" fill="#e4f0dc"/><rect x="4" y="4" width="${size[0]-8}" height="${size[1]-8}" fill="none" stroke="#35694f" stroke-width="8"/><text x="50%" y="18%" text-anchor="middle" font-size="${size[0]/18}" fill="#233d2f">TOP EDGE / Programme details</text><text x="50%" y="94%" text-anchor="middle" font-size="${size[0]/20}" fill="#233d2f">BOTTOM EDGE / Register now</text><text x="50%" y="45%" text-anchor="middle" font-size="${size[0]/12}" fill="#35694f">${name}</text>${Array.from({length:5},(_,i)=>`<circle cx="${size[0]*(i+1)/6}" cy="${size[1]*.6}" r="${Math.min(size[0],size[1])*.045}" fill="#8cae89"/><rect x="${size[0]*(i+1)/6-Math.min(size[0],size[1])*.04}" y="${size[1]*.65}" width="${Math.min(size[0],size[1])*.08}" height="${Math.min(size[0],size[1])*.12}" rx="10" fill="#72966d"/>`).join('')}</svg>`:'';
+ void send('Fetch.fulfillRequest',{requestId,responseCode:size?200:404,responseHeaders:[{name:'Content-Type',value:'image/svg+xml'},{name:'Cache-Control',value:'public,max-age=31536000'}],body:Buffer.from(svg).toString('base64')});
+ }};
+ const evaluate=async expression=>{const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.text);return r.result.value;};
+ const wait=async expression=>{for(let i=0;i<100;i++){if(await evaluate('Boolean('+expression+')'))return;await new Promise(r=>setTimeout(r,100));}throw Error('Timed out '+expression);};
+ await send('Page.enable');await send('Runtime.enable');await send('Network.enable');await send('Fetch.enable',{patterns:[{urlPattern:'https://public-image-fixtures.invalid/*'}]});await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1100,deviceScaleFactor:1,mobile:false});
+ const started=performance.now();await send('Page.navigate',{url:base+'/'});await wait("document.querySelector('#content-showcases .ps-card-grid')&&!document.querySelector('.ps-loading')");
+ await evaluate("document.querySelector('#content-showcases').scrollIntoView()");await new Promise(r=>setTimeout(r,500));
+ const readyMs=performance.now()-started;
+ if(label==='after'){
+  await wait("[...document.querySelectorAll('.ps-adaptive-trigger img')].some(i=>i.complete&&i.naturalWidth)");
+  const images=await evaluate("[...document.querySelector('#content-showcases .ps-card-grid').querySelectorAll('img')].filter(i=>i.naturalWidth).map(i=>({fit:getComputedStyle(i).objectFit,width:i.naturalWidth,height:i.naturalHeight,stageWidth:i.clientWidth,stageHeight:i.clientHeight}))");assert(images.length>0);assert(images.every(i=>i.fit==='contain'));
+  const aligned=await evaluate("(()=>{const cards=[...document.querySelectorAll('#content-showcases .ps-card-grid')[0].children].slice(0,3);return {heights:cards.map(c=>c.getBoundingClientRect().height),actions:cards.map(c=>c.querySelector('.ps-card-copy>.ps-link').getBoundingClientRect().bottom)}})()");assert(Math.max(...aligned.heights)-Math.min(...aligned.heights)<2);assert(Math.max(...aligned.actions)-Math.min(...aligned.actions)<2);
+ }
+ const screenshots=[];async function shot(name){const r=await send('Page.captureScreenshot',{format:'png'}),file=path.join(dir,name+'.png');fs.writeFileSync(file,Buffer.from(r.data,'base64'));screenshots.push(file);}
+ await shot('desktop-mixed-images');
+ if(label==='after'){
+  assert.equal(requests.filter(n=>n==='wide-original').length,0,'full original must not download before preview');
+  await evaluate("window.__imageTrigger=[...document.querySelectorAll('.ps-adaptive-trigger')].find(b=>b.querySelector('img')?.src.includes('wide-thumb'));window.__imageTrigger.focus();window.__imageTrigger.click()");await wait("document.querySelector('[role=dialog] img')?.naturalWidth===1600");assert.equal(requests.filter(n=>n==='wide-original').length,1);await shot('full-image-preview');
+  await evaluate("document.querySelector('[aria-label=\"Zoom image\"]').click()");assert(await evaluate("document.querySelector('.ps-image-viewport').scrollWidth>document.querySelector('.ps-image-viewport').clientWidth"));
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});await wait("!document.querySelector('[role=dialog]')");await wait('document.activeElement===window.__imageTrigger');
+  assert(await evaluate("[...document.querySelectorAll('.ps-adaptive-empty,.ps-adaptive-trigger .data-image-empty')].length>=2"),'missing/broken sources have fallbacks');
+  await evaluate("window.__poster=[...document.querySelectorAll('.ps-adaptive-trigger')].find(b=>b.querySelector('img')?.src.includes('poster'));window.__poster.focus();window.__poster.click()");await wait("document.querySelector('[role=dialog] img')?.naturalHeight===1500");await shot('poster-preview');await evaluate("document.querySelector('[aria-label=\"Close image preview\"]').click()");await wait("!document.querySelector('[role=dialog]')");
+ }
+ await send('Emulation.setDeviceMetricsOverride',{width:768,height:1000,deviceScaleFactor:1,mobile:false});await evaluate("document.querySelector('#content-showcases').scrollIntoView()");await shot('tablet-mixed-images');
+ await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await evaluate("document.querySelector('#content-showcases').scrollIntoView()");await new Promise(r=>setTimeout(r,200));assert(await evaluate('document.documentElement.scrollWidth<=innerWidth'));await shot('mobile-mixed-images');
+ if(label==='after'){
+  await evaluate('window.__imageTrigger.focus();window.__imageTrigger.click()');await wait("document.querySelector('[role=dialog]')");assert(await evaluate("document.querySelector('[role=dialog]').getBoundingClientRect().right<=innerWidth"));await shot('mobile-preview');await evaluate("document.querySelector('[aria-label=\"Close image preview\"]').click()");await wait("!document.querySelector('[role=dialog]')");
+ }
+ assert.equal(errors.length,0,errors.join('\n'));return {readyMs,requests,screenshots};
+}finally{ws?.close();browser?.kill();}}

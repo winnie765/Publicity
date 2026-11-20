@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/adaptive-public-image-tests'),{default:Image}=await load('app/adaptive-public-image.tsx'),{HighlightCard}=await load('app/public-components.tsx'),{default:Media}=await load('app/public-story-media.tsx');
+const image='https://example.org/poster.png',thumb='https://example.org/small.png';
+let html=renderToStaticMarkup(React.createElement(Image,{src:thumb,originalSrc:image,alt:'Senior wellness ????'}));assert(html.includes('View full image: Senior wellness'));assert(html.includes('loading="lazy"'));assert(html.includes('decoding="async"'));assert(html.includes('<canvas'));assert(!html.includes('src="'+image+'"'));assert(!html.includes('role="dialog"'));
+html=renderToStaticMarkup(React.createElement(Image,{src:'',alt:'Missing'}));assert(html.includes('No Image Available'));assert(!html.includes('<button'));
+html=renderToStaticMarkup(React.createElement(Image,{src:thumb,alt:'Neutral',background:'neutral'}));assert(!html.includes('<canvas'));
+const story={id:'preserved-id',title:'Community wellness ????',summary:'Saved caption',body:'Saved public text',imageUrl:image,thumbnailUrl:thumb,brand:'GLOW',platform:'Facebook',date:'2026-11-01',section:'Community',featured:true,url:'https://www.facebook.com/example/posts/123'};
+html=renderToStaticMarkup(React.createElement(HighlightCard,{story}));assert(html.includes(story.url));assert(html.includes('Read More'));assert(html.includes('View full image'));
+html=renderToStaticMarkup(React.createElement(HighlightCard,{story:{...story,url:''}}));assert(html.includes('/stories/preserved-id'));assert(html.includes('View Details'));
+html=renderToStaticMarkup(React.createElement(Media,{story:{...story,media_type:'video',media_url:'/api/video?id=video'}}));assert(html.includes('Play video'));assert(!html.includes('ps-adaptive-trigger'));
+const css=fs.readFileSync('app/adaptive-public-image.css','utf8');assert(css.includes('object-fit:contain'));assert(!css.includes('background-image:'));assert(css.includes('ps-image-viewport[data-zoomed=true]'));assert(css.includes('focus-visible'));
+console.log('PASS thumbnail/original separation, lazy decoding, neutral/missing fallbacks, source/detail actions and video preservation.');
