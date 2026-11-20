@@ -1,2 +1,2 @@
-import PublicPortal from '../public-portal';
+import PublicPortal from '../public-page';
 export default function Page(){return <PublicPortal page="impact"/>;}
