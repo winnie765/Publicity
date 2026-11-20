@@ -3,6 +3,10 @@
 .ps-adaptive-trigger:disabled{cursor:default}
 .ps-adaptive-stage .ps-adaptive-trigger>img{display:block;width:100%;height:100%;object-fit:cover;object-position:var(--ps-image-focus,center);transform:none}
 .ps-adaptive-stage .ps-adaptive-trigger>img[data-image-orientation=portrait]{object-position:var(--ps-image-focus,50% 35%)}
+.ps-adaptive-stage[data-layout=natural]{height:auto;min-height:0}
+.ps-adaptive-stage[data-layout=natural] .ps-adaptive-trigger{height:auto}
+.ps-adaptive-stage[data-layout=natural] .ps-adaptive-trigger>img{width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:center}
+.ps-adaptive-stage[data-layout=natural].ps-adaptive-empty{min-height:120px}
 .ps-adaptive-trigger>.data-image-empty,.ps-adaptive-empty{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ps-muted,#647568);padding:16px}
 .ps-adaptive-trigger>.data-image-empty{height:100%}
 .ps-adaptive-expand{position:absolute;right:12px;bottom:12px;margin:0;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;background:#fffffff0;color:#233d2f;font-size:12px;pointer-events:none}

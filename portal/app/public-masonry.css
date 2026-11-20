@@ -1,0 +1,20 @@
+/* Native column flow keeps source/keyboard order: top-to-bottom, then the next column.
+   No JS sorting, measurements, dense placement or reparenting of cards. */
+.public-site .ps-masonry:is(.ps-card-grid,.ps-programme-showcase-grid,.ps-story-gallery-grid,.ps-photo-gallery){
+ display:block;column-count:3;column-width:300px;column-gap:24px;
+}
+.public-site .ps-masonry>.ps-content-card,.public-site .ps-masonry>.ps-programme-showcase,.public-site .ps-masonry>figure,.public-site .ps-masonry>a{
+ display:inline-flex;flex-direction:column;width:100%;height:auto;min-width:0;break-inside:avoid;vertical-align:top;margin:0 0 24px;
+}
+.public-site :is(.ps-card-image,.ps-programme-showcase-image,.ps-gallery-image):has(>.ps-adaptive-stage[data-layout=natural]){
+ height:auto;min-height:0;max-height:none;aspect-ratio:auto;
+}
+.public-site .ps-card-copy{flex:0 0 auto;padding:20px;gap:10px}
+.public-site .ps-card-copy h3{font-size:19px;line-height:1.45}
+.public-site .ps-card-copy>.ps-post-availability,.public-site .ps-card-copy>.ps-link{margin-top:0}
+.public-site .ps-article-cover:has(>.ps-adaptive-stage[data-layout=natural]){height:auto;max-height:none;overflow:visible}
+.public-site .ps-article-cover>.ps-adaptive-stage[data-layout=natural]{height:auto;min-height:0;max-height:none;aspect-ratio:auto}
+.public-site .ps-photo-gallery.ps-masonry img.cc-adaptive-image{width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain}
+.public-site .ps-programme-card .ps-card-grid,.public-site .ps-programme-learn .ps-card-grid,.public-site.cms-brand-card-preview .ps-programme-showcase-grid.ps-masonry{column-count:1}
+.public-site .ps-event-card:has(.ps-adaptive-stage[data-layout=natural]) .ps-event-cover{width:100%;min-width:0;height:auto;flex-basis:100%}
+@media(max-width:640px){.public-site .ps-masonry:is(.ps-card-grid,.ps-programme-showcase-grid,.ps-story-gallery-grid,.ps-photo-gallery){column-count:1;column-gap:0}}
