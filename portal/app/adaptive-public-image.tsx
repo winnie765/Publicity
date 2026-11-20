@@ -11,14 +11,17 @@ const ImagePreview=lazy(()=>import('./public-image-preview').catch(()=>({default
 /** Natural images in content cards; banners/carousels may retain their framed composition. */
 export default function AdaptivePublicImage({src,originalSrc,alt,variant='card',layout,width,height,loading='lazy',fetchPriority}:{src:string;originalSrc?:string;alt:string;variant?:'card'|'banner'|'gallery';layout?:'natural'|'framed';width?:number;height?:number;loading?:'lazy'|'eager';fetchPriority?:'high'|'low'|'auto'}){
  const trigger=useRef<HTMLButtonElement>(null),[failed,setFailed]=useState(false),[open,setOpen]=useState(false);
+ const classify=(w:number,h:number)=>h>w*2.2?'poster':h>w*1.15?'portrait':w>h*1.15?'landscape':'square';
+ const [orientation,setOrientation]=useState(()=>width&&height?classify(width,height):'unknown');
  const source=databaseImageSource(src),original=databaseImageSource(originalSrc||src);
  const presentation=layout||(variant==='banner'?'framed':'natural');
+ useEffect(()=>{const image=trigger.current?.querySelector('img');setOrientation(image?.complete&&image.naturalWidth?classify(image.naturalWidth,image.naturalHeight):width&&height?classify(width,height):'unknown');},[source,width,height]);
  const dimensions=width&&height&&Number.isFinite(width)&&Number.isFinite(height)&&width>0&&height>0?{width,height}:{};
  if(!source&&!original)return <div className="ps-adaptive-stage ps-adaptive-empty" data-layout={presentation} role="img" aria-label="No image available">No Image Available</div>;
  return <>
-  <div className="ps-adaptive-stage" data-background="neutral" data-variant={variant} data-layout={presentation}>
+  <div className="ps-adaptive-stage" data-background="neutral" data-variant={variant} data-layout={presentation} data-orientation={orientation}>
    <button ref={trigger} type="button" className="ps-adaptive-trigger" onClick={()=>setOpen(true)} aria-haspopup="dialog" aria-expanded={open} disabled={failed} aria-label={'View full image: '+alt}>
-    <ContentImage {...dimensions} src={source||original} fallbackSrc={original} alt={alt} loading={loading} fetchPriority={fetchPriority} decoding="async" referrerPolicy="no-referrer" onLoad={()=>setFailed(false)} onError={()=>setFailed(true)}/>
+    <ContentImage {...dimensions} src={source||original} fallbackSrc={original} alt={alt} loading={loading} fetchPriority={fetchPriority} decoding="async" referrerPolicy="no-referrer" onLoad={event=>{setFailed(false);setOrientation(classify(event.currentTarget.naturalWidth,event.currentTarget.naturalHeight));}} onError={()=>setFailed(true)}/>
     {!failed&&<span className="ps-adaptive-expand" aria-hidden="true"><Expand size={16}/> View image</span>}
    </button>
   </div>
