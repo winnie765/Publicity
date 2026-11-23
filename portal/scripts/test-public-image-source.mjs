@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/public-image-source-tests');const {publicImageSources}=await load('lib/public-image-source.ts');
+const original='https://example.org/original.jpg',thumb='https://example.org/cropped-small.jpg';
+assert.deepEqual(publicImageSources(thumb,original),{primary:original,fallback:thumb,original,kind:'original'});
+assert.equal(publicImageSources(thumb).primary,thumb);assert.equal(publicImageSources(original,original).fallback,'');
+assert.equal(publicImageSources(thumb,'javascript:alert(1)').primary,thumb);
+assert.equal(publicImageSources('',original).primary,original);
+assert.equal(publicImageSources('data:image/png;base64,abc').primary,'');
+assert.equal(publicImageSources('/api/media?key='+encodeURIComponent('workvivo/11111111-1111-1111-1111-111111111111.jpg')).primary,'');
+assert.equal(publicImageSources('https://example.org/photo.jpg?w=120&quality=30').primary,'https://example.org/photo.jpg?w=120&quality=30','never guess a larger URL');
+console.log('PASS original-first selection, saved-only images, deduplication, unsafe/private rejection and unchanged external URLs.');

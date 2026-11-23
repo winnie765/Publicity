@@ -3,9 +3,9 @@
 .ps-adaptive-trigger:disabled{cursor:default}
 .ps-adaptive-stage .ps-adaptive-trigger>img{display:block;width:100%;height:100%;object-fit:cover;object-position:var(--ps-image-focus,center);transform:none}
 .ps-adaptive-stage .ps-adaptive-trigger>img[data-image-orientation=portrait]{object-position:var(--ps-image-focus,50% 35%)}
-.ps-adaptive-stage[data-layout=natural]{height:auto;min-height:0}
-.ps-adaptive-stage[data-layout=natural] .ps-adaptive-trigger{height:auto}
-.ps-adaptive-stage[data-layout=natural] .ps-adaptive-trigger>img{width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:center}
+.ps-adaptive-stage[data-layout=natural]{width:fit-content;max-width:100%;height:auto;min-height:0}
+.ps-adaptive-stage[data-layout=natural] .ps-adaptive-trigger{width:fit-content;max-width:100%;height:auto}
+.ps-adaptive-stage[data-layout=natural] .ps-adaptive-trigger>img{width:auto;max-width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain;object-position:center}
 .ps-adaptive-stage[data-layout=natural].ps-adaptive-empty{min-height:120px}
 .ps-adaptive-trigger>.data-image-empty,.ps-adaptive-empty{display:flex;align-items:center;justify-content:center;text-align:center;color:var(--ps-muted,#647568);padding:16px}
 .ps-adaptive-trigger>.data-image-empty{height:100%}
@@ -27,3 +27,5 @@
 .ps-adaptive-trigger:focus-visible{outline:3px solid #35694f;outline-offset:-3px}
 
 .ps-image-opening{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2002;max-width:calc(100vw - 32px);padding:12px 18px;border:1px solid #dce4db;border-radius:12px;background:#fff;color:#233d2f;box-shadow:0 4px 18px #0002}.ps-image-opening a,.ps-image-opening button{text-decoration:underline;padding:6px;color:#35694f}
+.ps-image-source-note{display:block;margin:0;padding:8px 10px;font-size:13px;line-height:1.5;color:#536658;background:#f5f7f3;overflow-wrap:anywhere}
+.ps-adaptive-stage[data-small-source=true] .ps-adaptive-expand{right:4px;bottom:4px;padding:4px;font-size:11px}

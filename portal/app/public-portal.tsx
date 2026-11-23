@@ -1,4 +1,5 @@
 'use client';
+import PublicCardGrid from './public-card-grid';
 import AdaptivePublicImage from './adaptive-public-image';
 import PublicPostDetails from './public-post-details';
 import ContentImage from './content-image';
@@ -37,7 +38,7 @@ export default function PublicPortal({page='home',slug='',initialData,initialRev
   return()=>{controller.abort();clearInterval(timer);window.removeEventListener('storage',onStorage);};
  },[initialData,initialRevision,generatedAt,initialUnavailable,preview,page,slug]);
  const landing=!['article','programme','event'].includes(page);
- const cards=(stories:PublicStory[],kind='highlight')=>stories.length?<div className="ps-card-grid ps-masonry">{stories.map(story=>kind==='story'?<StoryCard story={story} key={story.id}/>:<HighlightCard story={story} key={story.id}/>)}</div>:<EmptyPublicContent>New community stories will be shared here soon.</EmptyPublicContent>;
+ const cards=(stories:PublicStory[],kind='highlight')=>stories.length?<PublicCardGrid>{stories.map(story=>kind==='story'?<StoryCard story={story} key={story.id}/>:<HighlightCard story={story} key={story.id}/>)}</PublicCardGrid>:<EmptyPublicContent>New community stories will be shared here soon.</EmptyPublicContent>;
  const featured=data.stories.filter(s=>s.featured),featuredStories=data.stories.filter(s=>s.featuredStory??s.featured),impact=data.impact,home={...defaultPublicHome,...data.home};
  const impactCards=(full=false)=><><div className="ps-impact-grid">{(full?[['activities','Activities Conducted'],['volunteers','Volunteers Engaged'],['events','Events Conducted'],['programmes','Programmes Delivered'],['participants','Participants Engaged'],['partnershipActivities','Partnership Activities']]:[['activities','Activities Conducted'],['participants','Participants Engaged'],['volunteers','Volunteers Engaged']]).map(([key,label],i)=><ImpactCard key={key} value={impact?.[key as 'activities']} label={label} index={i}/>)}</div>{impact&&<p className="ps-impact-period">{impact.period} · As of {displayDate(impact.date)}</p>}</>;
  const titles={activities:['Come together. Make a memory.','Explore upcoming activities, events and opportunities to connect with your community.'],partners:['Stronger, together.','Meet the partners helping us build a healthier and more connected community.'],home:[home.heroTitle,home.heroSubtitle],community:['Community, in every moment.','Discover shared experiences, everyday kindness and stories from our community.'],programmes:['A place to connect. A community to belong.','Meet GLOW and SEEN, and explore the activities and stories bringing people together.'],stories:['Real people. Meaningful stories.','Meet the seniors, volunteers and neighbours at the heart of our community.'],impact:['Together, care goes further.','Discover the activities, participation and connections behind our community impact.']};

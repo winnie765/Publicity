@@ -1,8 +1,9 @@
-/* Editorial rows retain source/keyboard order. Minimum track width is based on
-   available container space, not viewport width; no dense placement/reordering. */
+/* Source-ordered Grid is the fallback. PublicCardGrid progressively positions
+   cards in the shortest column; no DOM sorting or dense Grid placement. */
 .public-site .ps-masonry:is(.ps-card-grid,.ps-programme-showcase-grid,.ps-story-gallery-grid,.ps-photo-gallery){
  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:24px;align-items:start;container-type:inline-size;
 }
+.public-site .ps-masonry[data-balanced=true]{position:relative;grid-template-columns:repeat(var(--ps-balanced-columns),minmax(0,1fr))}
 .public-site .ps-masonry>.ps-content-card,.public-site .ps-masonry>.ps-programme-showcase,.public-site .ps-masonry>figure,.public-site .ps-masonry>a{
  display:flex;flex-direction:column;width:100%;height:auto;min-width:0;align-self:start;margin:0;overflow:hidden;
 }
@@ -17,12 +18,7 @@
 .public-site .ps-photo-gallery.ps-masonry img.cc-adaptive-image{width:100%;height:auto;max-height:none;aspect-ratio:auto;object-fit:contain}
 .public-site .ps-programme-card .ps-card-grid,.public-site .ps-programme-learn .ps-card-grid,.public-site.cms-brand-card-preview .ps-programme-showcase-grid.ps-masonry{grid-template-columns:1fr}
 .public-site .ps-event-card:has(.ps-adaptive-stage[data-layout=natural]) .ps-event-cover{width:100%;min-width:0;height:auto;flex-basis:100%}
-/* Portraits use a narrower, natural-height image beside the copy. Long posters
-   receive more image width than ordinary portraits to keep lettering legible. */
-.public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage:is([data-orientation=portrait],[data-orientation=poster])),
 .public-site .ps-masonry>.ps-programme-showcase:has(.ps-adaptive-stage:is([data-orientation=portrait],[data-orientation=poster])){display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);align-items:start}
-.public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage[data-orientation=poster]){grid-template-columns:minmax(0,48%) minmax(0,1fr)}
-.public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage[data-orientation=portrait]){grid-template-columns:minmax(0,55%) minmax(0,1fr)}
 .public-site .ps-masonry .ps-card-image{width:100%;border-radius:0}
 .public-site .ps-masonry .ps-card-copy{min-width:0;overflow-wrap:anywhere}
 .public-site .ps-masonry .ps-card-meta{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;line-height:1.5}
@@ -37,22 +33,29 @@
 .public-site .ps-masonry .ps-card-copy>p:empty{display:none}
 .public-site .ps-masonry .ps-card-copy h3{margin:0;overflow-wrap:anywhere;text-wrap:pretty}
 .public-site .ps-masonry .ps-card-copy>.ps-link{min-height:32px;align-self:flex-start}
-@container(min-width:560px){
- .public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage[data-orientation=square]){display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);align-items:start}
- .public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage[data-orientation=square])>.ps-card-copy{align-self:center}
+.public-site .ps-content-card{container-type:inline-size;container-name:public-post-card}
+.public-site .ps-post-composition{display:flex;flex-direction:column;min-width:0;width:100%}
+.public-site .ps-post-composition>.ps-card-copy{min-width:0;gap:10px}
+.public-site .ps-post-composition .ps-card-meta{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:baseline}
+.public-site .ps-post-composition .ps-card-meta>span{min-width:0;overflow-wrap:anywhere}
+.public-site .ps-post-composition .ps-card-meta time{grid-column:1/-1}
+.public-site .ps-post-composition>.ps-card-copy h3{word-break:normal;line-break:strict;overflow-wrap:anywhere;hyphens:auto;text-wrap:pretty;font-size:19px;line-height:1.5;margin:0}
+.public-site .ps-post-composition>.ps-card-copy>.ps-link{min-height:44px;margin-top:0;align-self:flex-start}
+@container public-post-card (min-width:560px){
+ .public-site .ps-post-composition[data-title-density=short]:has(>.ps-card-image .ps-adaptive-stage:is([data-orientation=portrait],[data-orientation=poster],[data-orientation=square])){display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);align-items:center}
 }
-.public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage:is([data-orientation=portrait],[data-orientation=poster]))>.ps-card-copy{align-self:center}
-@container(max-width:440px){
- /* Ordinary portraits stay readable on phones; very long posters retain the
-    compact side composition with the full-size viewer for small lettering. */
- .public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage[data-orientation=portrait]){display:flex;flex-direction:column}
- .public-site .ps-masonry>.ps-content-card:has(.ps-adaptive-stage[data-orientation=portrait])>.ps-card-copy{align-self:stretch}
+@container public-post-card (min-width:760px){
+ .public-site .ps-post-composition[data-title-density=long]:has(>.ps-card-image .ps-adaptive-stage:is([data-orientation=portrait],[data-orientation=poster],[data-orientation=square])){display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);align-items:center}
+}
+@container public-post-card (max-width:559px){
+ .public-site .ps-post-composition>.ps-card-copy{padding:18px}
+ .public-site .ps-post-composition>.ps-card-copy h3{font-size:18px;line-height:1.5}
 }
 .public-site .ps-masonry .ps-programme-showcase-body{padding:20px;min-width:0}
 .public-site .ps-masonry .ps-programme-showcase-body>h3{font-size:24px;line-height:1.3;letter-spacing:0}
 .public-site .ps-masonry .ps-programme-description,.public-site .ps-masonry .ps-programme-subtitle{min-height:0}
 @container(max-width:500px){
  .public-site .ps-masonry .ps-card-copy{padding:16px;gap:8px}
- .public-site .ps-masonry .ps-card-copy h3{font-size:17px}
+ .public-site .ps-masonry .ps-card-copy h3{font-size:18px}
  .public-site .ps-masonry .ps-adaptive-expand{right:6px;bottom:6px;padding:6px;font-size:11px}
 }
