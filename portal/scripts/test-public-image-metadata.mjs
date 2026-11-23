@@ -1,0 +1,9 @@
+import assert from 'node:assert/strict';import {testCompiler} from './test-support/compiler.mjs';
+const load=testCompiler('.sites-runtime/public-image-metadata-tests');
+const {publicPortalData}=await load('lib/workspace-service.ts'),{defaultConfig,blankPost}=await load('app/model.ts');
+const config={...structuredClone(defaultConfig),brands:['GLOW'],accounts:[{name:'Facebook GLOW',platform:'Facebook',brand:'GLOW',active:true}]};
+const uuid='11111111-1111-4111-8111-111111111111',url='/api/media?key='+encodeURIComponent('facebook/'+uuid+'.jpg');
+const rows=[{id:'configuration',kind:'config',payload:config},{id:'metadata-post',kind:'posts',payload:{...blankPost(),id:'metadata-post',title:'Saved public post',platform:'Facebook',account:'Facebook GLOW',brand:'GLOW',date:'2026-11-01',status:'published',featured_image_url:url,show_on_public_site:true}},{id:'media-'+uuid,kind:'media_asset',payload:{url,key:'facebook/'+uuid+'.jpg',width:640,height:960,name:'private-internal-name.jpg',size:1234}},{id:'private-unreferenced',kind:'media_asset',payload:{url:'/api/media?key=private',key:'workvivo/private.jpg',width:200,height:400}}].map(row=>({...row,updatedAt:'2026-11-23T00:00:00Z'}));
+const requested=[];const store={readRecords:async kinds=>rows.filter(r=>!kinds||kinds.includes(r.kind)),readAudit:async()=>[],apply:async()=>{throw Error('No writes permitted')},readRecordsByIds:async ids=>{requested.push(...ids);return rows.filter(r=>ids.includes(r.id));}};
+const data=await publicPortalData(store,'2026-11-23');assert.deepEqual(data.imageDimensions[url],{width:640,height:960});assert.deepEqual(requested,['media-'+uuid]);assert(!JSON.stringify(data).includes('private-internal-name'));assert(!data.imageDimensions['/api/media?key=private']);
+console.log('PASS public-reference-only dimensions, scoped asset IDs, no private metadata exposure and no storage writes.');

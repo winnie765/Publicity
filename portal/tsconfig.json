@@ -41,7 +41,7 @@
     ".next/types/**/*.ts",
     ".sites-runtime/public-benchmark-next/types/**/*.ts",
     "next-env.d.ts",
-    ".sites-runtime/historical-media-next/types/**/*.ts"
+    ".sites-runtime/stable-images-next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

@@ -54,3 +54,27 @@ Media Library **Replace** is a broader existing operation: its confirmation stat
 The eight currently assigned public images have no separate higher-resolution alternate in their record fields. This work cannot make their intrinsic photographic detail sharper. Some apparent blur or framing is already embedded in uploaded files. The 258 records without an image remain without one. Staff may have genuine better originals outside this public inventory; linking one requires their review through existing tools.
 
 Original-first display can download more bytes than a separate small thumbnail. Below-fold lazy loading remains, unused thumbnails are not fetched when the original succeeds, and no second compression pass or speculative image probing was added. No true responsive derivative registry exists, so the code does not invent `srcset` variants. Existing unknown image dimensions can still cause layout movement. No deployment or production speed improvement is claimed.
+
+## Executed verification
+
+- Final production build passed, including TypeScript validation and 34 generated static pages. Rounded First Load JS is 138 KB for public routes and 139 KB for private public-site preview.
+- Targeted ESLint: zero errors; one existing `@next/next/no-img-element` warning in the shared native image component. Native image loading remains compatible with guarded/signed media URLs; no new image proxy or permission bypass was introduced. Full-repository lint was not run.
+- Passed public source selection, adaptive-image, public-loading and User Guide/search/link regressions.
+- Passed isolated database-image, direct-upload, media-reference and media-preview regressions. These use local/mocked storage, not production writes. Checks cover submitted byte/hash preservation, signed/private previews, published-only public access, idempotent uploads, stale shared URL rejection and referenced-file deletion protection.
+- Final synthetic browser suite passed: a declared 1600 px original is used instead of its distinct 180 px cropped thumbnail; the unused cropped thumbnail is not fetched. A saved-only 120×80 source stays at or below native width. A missing original falls back to its saved image and the preview says Open available image. A failed image explicitly becomes a collapsed text-first card, including failures occurring before hydration. Natural aspect ratios, source/Tab order, dynamic layout expansion, mobile widths, full-image zoom/closing and fallback without ResizeObserver also passed.
+- Final real-photo browser suite passed desktop (1440), tablet (768), mobile (390), zoom-equivalent 100/125/150/200% widths, 16 bilingual title-width cases, hero controls, gallery viewer/Escape/focus, private public-site preview and staff image editing. The eight fixture URLs match all eight unique originals in the live published inventory; file contents were not reuploaded or rewritten. Eight image resources were requested.
+- Visual review caught native-size and cached-failure timing issues during implementation. Both were corrected, and the strict browser suites were rerun against the final build.
+
+Scripts were executed with the bundled Node binary; npm was unavailable on PATH. No deployment or claim of complete unrelated-site verification is made.
+
+## Screenshots
+
+- [Native-size small source and collapsed failed card](../.sites-runtime/public-images-after-1795398746391/native-size-small-source.png)
+- [Missing original with accurate fallback preview](../.sites-runtime/public-images-after-1795398746391/missing-original-fallback.png)
+- [Small saved-only preview](../.sites-runtime/public-images-after-1795398746391/small-source-preview.png)
+- [Original-source full preview](../.sites-runtime/public-images-after-1795398746391/full-image-preview.png)
+- [Published-photo desktop](../.sites-runtime/whole-site-images-after-1795398766699/desktop-post-cards.png)
+- [Published-photo tablet](../.sites-runtime/whole-site-images-after-1795398766699/tablet-cards.png)
+- [Published-photo mobile](../.sites-runtime/whole-site-images-after-1795398766699/mobile-cards.png)
+
+Screenshots and the per-post audit JSON are local generated artifacts. Synthetic source/failure fixtures are not production content.

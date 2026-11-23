@@ -29,3 +29,12 @@
 .ps-image-opening{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2002;max-width:calc(100vw - 32px);padding:12px 18px;border:1px solid #dce4db;border-radius:12px;background:#fff;color:#233d2f;box-shadow:0 4px 18px #0002}.ps-image-opening a,.ps-image-opening button{text-decoration:underline;padding:6px;color:#35694f}
 .ps-image-source-note{display:block;margin:0;padding:8px 10px;font-size:13px;line-height:1.5;color:#536658;background:#f5f7f3;overflow-wrap:anywhere}
 .ps-adaptive-stage[data-small-source=true] .ps-adaptive-expand{right:4px;bottom:4px;padding:4px;font-size:11px}
+/* Metadata reserves each file's own ratio, never a shared photograph crop. */
+.ps-adaptive-stage[data-layout=natural][data-reserve-space=true] .ps-adaptive-trigger{position:relative;display:block;width:100%;height:auto}
+.ps-adaptive-stage[data-layout=natural][data-reserve-space=true] .ps-adaptive-trigger[data-known-size=true]>img,
+.ps-adaptive-stage[data-layout=natural][data-reserve-space=true] .ps-adaptive-trigger>.data-image-empty{position:absolute;inset:0;width:100%;height:100%;min-height:0;object-fit:contain}
+.ps-adaptive-stage[data-layout=natural] .ps-adaptive-trigger[data-known-size=false]{height:clamp(160px,30vw,240px)}
+.ps-adaptive-stage[data-layout=natural][data-image-state=loading] .ps-adaptive-trigger[data-known-size=false]>img{opacity:0}
+.ps-image-load-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#edf3ec;color:#536658;font-size:13px}
+.public-site :is(.ps-card-image,.ps-programme-showcase-image,.ps-gallery-image,.ps-event-cover):has(.ps-adaptive-stage[data-reserve-space=true]){display:block}
+.ps-adaptive-stage[data-previewable=false] .ps-adaptive-trigger{cursor:inherit}
