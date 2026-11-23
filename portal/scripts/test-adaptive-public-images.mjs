@@ -20,3 +20,7 @@ const publicStyles=fs.readFileSync('app/public-site.css','utf8');
 assert(publicStyles.includes('.public-site .ps-home-hero .ps-hero-image{height:520px;border-radius:130px 22px 22px 22px}'));
 assert(publicStyles.includes('.public-site .ps-home-hero .ps-photo-caption{position:absolute;bottom:30px;left:32px;padding:0;background:transparent;pointer-events:none}'));
 console.log('PASS homepage-only curved hero frame and overlaid caption restoration.');
+
+html=renderToStaticMarkup(React.createElement(HighlightCard,{story:{...story,imageUrl:'',thumbnailUrl:''}}));assert(!html.includes('ps-card-image'));assert(!html.includes('No Image Available'));assert(html.includes(story.title)&&html.includes('Read More'));
+html=renderToStaticMarkup(React.createElement((await load('app/public-components.tsx')).StoryCard,{story:{...story,imageUrl:'',thumbnailUrl:''}}));assert(!html.includes('ps-card-image'));assert(html.includes('Read More'));
+console.log('PASS no-image showcase and story cards preserve metadata/actions without empty media stages.');
