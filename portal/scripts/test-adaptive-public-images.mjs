@@ -16,3 +16,7 @@ for(const [width,height,orientation] of [[1600,600,'landscape'],[800,800,'square
  html=renderToStaticMarkup(React.createElement(Image,{src:image,alt:'Dimension classification',width,height}));assert(html.includes('data-orientation="'+orientation+'"'));
 }
 console.log('PASS natural image dimensions, orientation classification, lazy decoding, neutral/missing fallbacks, source/detail actions and video preservation.');
+const publicStyles=fs.readFileSync('app/public-site.css','utf8');
+assert(publicStyles.includes('.public-site .ps-home-hero .ps-hero-image{height:520px;border-radius:130px 22px 22px 22px}'));
+assert(publicStyles.includes('.public-site .ps-home-hero .ps-photo-caption{position:absolute;bottom:30px;left:32px;padding:0;background:transparent;pointer-events:none}'));
+console.log('PASS homepage-only curved hero frame and overlaid caption restoration.');
