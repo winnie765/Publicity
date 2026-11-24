@@ -6,8 +6,8 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "test:email-login": "node scripts/test-email-login.mjs",
-    "test:email-login-browser": "node scripts/test-email-login-browser.mjs",
+    "test:ai-quality": "node scripts/test-ai-quality.mjs",
+    "test:ai-quality-browser": "node scripts/test-ai-quality-browser.mjs",
     "install:ci": "node scripts/install-ci.mjs",
     "dev": "next dev",
     "build": "node scripts/build-target.mjs",
@@ -41,7 +41,9 @@
     "test:consolidation": "node scripts/test-workspace-consolidation.mjs",
     "test:industry-trends": "node scripts/test-industry-trends.mjs",
     "test:sidebar": "node scripts/test-sidebar-layout.mjs",
-    "test:sidebar-browser": "node scripts/test-sidebar-browser.mjs"
+    "test:sidebar-browser": "node scripts/test-sidebar-browser.mjs",
+    "test:password-login": "node scripts/test-password-login.mjs",
+    "test:password-login-browser": "node scripts/test-password-login-browser.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
@@ -53,7 +55,6 @@
     "date-fns": "^4.4.0",
     "drizzle-orm": "0.45.2",
     "embla-carousel-react": "^8.6.0",
-    "input-otp": "^1.4.2",
     "lucide-react": "^1.31.0",
     "next": "15.5.28",
     "next-themes": "^0.4.6",

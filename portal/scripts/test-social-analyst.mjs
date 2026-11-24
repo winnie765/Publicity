@@ -1,5 +1,6 @@
+import {verifiedAISessionSource} from './test-support/verified-ai-session.mjs';
 import fs from 'node:fs';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import {testCompiler} from './test-support/compiler.mjs';
-const load=testCompiler('.sites-runtime/social-analyst-tests',{transform:(source,file)=>file==='lib/ai-runtime.ts'?'export const getAIRuntime=()=>globalThis.analystTestRuntime;':source});
+const load=testCompiler('.sites-runtime/social-analyst-tests',{transform:(source,file)=>file==='lib/ai-runtime.ts'?'export const getAIRuntime=()=>globalThis.analystTestRuntime;':verifiedAISessionSource(source,file)});
 const sql=new DatabaseSync(':memory:');for(const m of JSON.parse(fs.readFileSync('drizzle/meta/_journal.json')).entries)sql.exec(fs.readFileSync('drizzle/'+m.tag+'.sql','utf8'));
 const query=(text,values=[])=>({bind:(...next)=>query(text,next),first:async()=>sql.prepare(text).get(...values),all:async()=>({results:sql.prepare(text).all(...values)}),run:()=>sql.prepare(text).run(...values)});
 globalThis.cmsTestEnv={DB:{prepare:text=>query(text),batch:async statements=>{sql.exec('BEGIN');try{const out=statements.map(s=>s.run());sql.exec('COMMIT');return out;}catch(e){sql.exec('ROLLBACK');throw e;}}}};

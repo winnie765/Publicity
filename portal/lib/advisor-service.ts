@@ -1,9 +1,10 @@
 import type {Dataset} from '../app/model';
+import {assertAIPrivacy} from './ai-safety';
 import {calculateEvidence} from './intelligence/evidence';
 import type {EvidencePack,Filters,Scope} from './intelligence/types';
 export function advisorEvidence(data:Dataset,value:unknown,now=new Date()):EvidencePack&{advisoryQuestion:string}{
  if(typeof value!=='string'||!value.trim()||value.length>600||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value))throw Error('Ask a question using between one and six hundred characters.');
- const question=value.trim(),q=question.toLowerCase();
+ const question=value.trim(),q=question.toLowerCase();assertAIPrivacy(question);
  let scope:Scope='insights';
  if(/\baic\b|\bmsf\b|\bncss\b|stakeholder|partner/.test(q))scope='stakeholders';
  else if(data.config.brands.filter(b=>q.includes(b.toLowerCase())).length>1||/brand|centre|compare/.test(q))scope='brands';
