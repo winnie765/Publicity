@@ -6,6 +6,7 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "test:content-studio-facts": "node scripts/test-content-studio-facts.mjs",
     "test:ai-quality": "node scripts/test-ai-quality.mjs",
     "test:ai-quality-browser": "node scripts/test-ai-quality-browser.mjs",
     "install:ci": "node scripts/install-ci.mjs",

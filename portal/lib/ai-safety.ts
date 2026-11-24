@@ -5,7 +5,7 @@ export function privacyIssue(value:unknown):string|null{
  const text=typeof value==='string'?value:JSON.stringify(value);
  if(/\b[STFGM]\d{7}[A-Z]\b/i.test(text))return 'Remove identity numbers before using external AI.';
  if(/(?:api[_ -]?key|password|access[_ -]?token|secret|密码|密钥)\s*[=:：]\s*["']?[^\s,"'}]{6,}|\bAIza[\w-]{25,}|\bre_[\w-]{20,}|\bsk-[\w-]{20,}|\bBearer\s+[\w.-]{16,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(text))return 'Remove credentials before using external AI.';
- if(/(?:participant|beneficiary|patient|resident|senior|client|参与者|受益人|病人|长者).{0,60}(?:phone|mobile|email|address|NRIC|诊断|病历|住址|电话)|(?:diagnosis|medical record|care assessment|病历|诊断)\s*[:：]/i.test(text))return 'Remove identifiable participant details and confidential care information before using external AI.';
+ if(/(?:participant|beneficiary|patient|resident|senior|client|参与者|受益人|病人|长者).{0,60}(?:\b(?:phone|mobile|email|address|NRIC)\b|诊断|病历|住址|电话)|(?:diagnosis|medical record|care assessment|病历|诊断)\s*[:：]/i.test(text))return 'Remove identifiable participant details and confidential care information before using external AI.';
  if(/\b(?:Mdm|Madam|Mrs|Mr|Ms)\.?\s+[\p{L} ]{2,45}.{0,50}(?:[689]\d{7}|[\w.+-]+@[\w.-]+\.[a-z]{2,})|(?:姓名|患者|长者).{0,60}(?:[689]\d{7}|[\w.+-]+@[\w.-]+\.[a-z]{2,})/iu.test(text))return 'Remove personal names with private contact details before using external AI.';
  return null;
 }

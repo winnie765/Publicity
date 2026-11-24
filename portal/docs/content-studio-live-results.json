@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-24",
+  "model": "gemini-2.5-flash",
+  "source": "Programme: Click & Capture: Handphone Photography\nDate: 3 December 2026\nTime: 1 PM to 3 PM\nVenue: Wisdom Hall\nAudience: Seniors\nOrganisation: Tzu Chi SEEN @ Bukit Batok\nAdmission fee: Not provided\nRegistration requirements: Not provided\nAttendance figures: Not provided",
+  "results": [
+    {
+      "task": "Event Promotion",
+      "language": "English",
+      "sample": 1,
+      "output": null,
+      "usage": null,
+      "ms": 432,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Event Promotion",
+      "language": "English",
+      "sample": 2,
+      "output": null,
+      "usage": null,
+      "ms": 275,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Event Promotion",
+      "language": "Chinese",
+      "sample": 1,
+      "output": null,
+      "usage": null,
+      "ms": 282,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Event Promotion",
+      "language": "Chinese",
+      "sample": 2,
+      "output": null,
+      "usage": null,
+      "ms": 282,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Event Promotion",
+      "language": "English + Chinese",
+      "sample": 1,
+      "output": null,
+      "usage": null,
+      "ms": 289,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Event Promotion",
+      "language": "English + Chinese",
+      "sample": 2,
+      "output": null,
+      "usage": null,
+      "ms": 282,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Facebook Caption",
+      "language": "English",
+      "sample": 1,
+      "output": null,
+      "usage": null,
+      "ms": 280,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Facebook Caption",
+      "language": "English",
+      "sample": 2,
+      "output": null,
+      "usage": null,
+      "ms": 285,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Instagram Caption",
+      "language": "Chinese",
+      "sample": 1,
+      "output": null,
+      "usage": null,
+      "ms": 283,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    },
+    {
+      "task": "Instagram Caption",
+      "language": "Chinese",
+      "sample": 2,
+      "output": null,
+      "usage": null,
+      "ms": 281,
+      "validation": "withheld",
+      "error": "AI service is temporarily unavailable. Your work is preserved."
+    }
+  ]
+}
