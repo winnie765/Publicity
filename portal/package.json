@@ -6,6 +6,8 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "test:email-login": "node scripts/test-email-login.mjs",
+    "test:email-login-browser": "node scripts/test-email-login-browser.mjs",
     "install:ci": "node scripts/install-ci.mjs",
     "dev": "next dev",
     "build": "node scripts/build-target.mjs",

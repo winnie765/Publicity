@@ -4,7 +4,7 @@ import {authenticated,automationAuthorized} from './lib/workspace-security';
 const publicPages=new Set(['/','/community','/showcase','/programmes','/stories','/impact','/activities','/partners','/what-were-doing','/workspace/login']);
 export async function middleware(request:NextRequest){
  const path=request.nextUrl.pathname;
- if(path.startsWith('/_next/')||path.startsWith('/assets/')||/\.(?:ico|svg|png|jpg|jpeg|webp|css|js|woff2?)$/.test(path))return NextResponse.next();
+ if(path.startsWith('/_next/')||path.startsWith('/assets/')||(!path.startsWith('/workspace')&&!path.startsWith('/api/')&&/\.(?:ico|svg|png|jpg|jpeg|webp|css|js|woff2?)$/.test(path)))return NextResponse.next();
  if(publicPages.has(path)||/^\/(stories|programmes|activities)\/[^/]+$/.test(path)||path==='/api/media'||path==='/api/public'||path==='/api/session'){
   const response=NextResponse.next();response.headers.set('Cache-Control','no-store');response.headers.set('Content-Security-Policy',path==='/workspace/login'?"frame-ancestors 'none'":"frame-ancestors *");return response;
  }
@@ -15,4 +15,4 @@ export async function middleware(request:NextRequest){
  if(!path.startsWith('/workspace')&&!path.startsWith('/api/'))return NextResponse.redirect(new URL('/workspace'+path+request.nextUrl.search,request.url));
  const response=NextResponse.next();response.headers.set('Cache-Control','private, no-store');response.headers.set('X-Frame-Options','DENY');response.headers.set('Content-Security-Policy',"frame-ancestors 'none'");return response;
 }
-export const config={matcher:['/((?!_next/static|_next/image|favicon.ico).*)']};
+export const config={runtime:'nodejs',matcher:['/((?!_next/static|_next/image|favicon.ico).*)']};

@@ -9,6 +9,15 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// Server-only, expiring authentication state. Never part of workspace records.
+model LoginState {
+ id String @id
+ payload Json
+ expiresAt DateTime @db.Timestamptz @map("expires_at")
+ @@index([expiresAt], map:"portal_login_state_expiry")
+ @@map("portal_login_state")
+}
+
 model Record {
   masterLinks RecordMasterLink[]
   id        String   @id
