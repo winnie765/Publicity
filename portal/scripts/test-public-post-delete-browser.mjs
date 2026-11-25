@@ -1,7 +1,7 @@
 import fs from 'node:fs';import path from 'node:path';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';
 const aiReview=false;
 const dir=path.resolve(aiReview?'.sites-runtime/ai-quality-browser':'.sites-runtime/public-post-delete-browser');fs.mkdirSync(dir,{recursive:true});
-const base='http://localhost:3164',env={...process.env,NODE_ENV:'production',NEXT_BUILD_DIR:'.sites-runtime/public-post-delete-next',DATABASE_PROVIDER:'supabase',SUPABASE_URL:'https://password-test.invalid',SUPABASE_SERVICE_ROLE_KEY:'test-only',WORKSPACE_PASSWORD:'isolated-browser-password',VERCEL:'0',NODE_OPTIONS:'--require '+JSON.stringify(path.resolve('scripts/test-support/password-login-preload.cjs'))};
+const base='http://localhost:3164',env={...process.env,NODE_ENV:'production',NEXT_BUILD_DIR:process.env.PUBLIC_POST_BROWSER_BUILD||'.sites-runtime/public-post-delete-next',DATABASE_PROVIDER:'supabase',SUPABASE_URL:'https://password-test.invalid',SUPABASE_SERVICE_ROLE_KEY:'test-only',WORKSPACE_PASSWORD:'isolated-browser-password',VERCEL:'0',NODE_OPTIONS:'--require '+JSON.stringify(path.resolve('scripts/test-support/password-login-preload.cjs'))};
 // Use HTTPS Secure cookies in production. Chromium permits Secure cookies on localhost.
 if(aiReview)env.NEXT_BUILD_DIR=process.env.AI_BROWSER_BUILD||env.NEXT_BUILD_DIR;env.DATABASE_URL='postgresql://test:test@127.0.0.1:1/test';env.DIRECT_URL=env.DATABASE_URL;env.AI_PROVIDER=aiReview?'gemini':'none';env.GEMINI_API_KEY=aiReview?'test-only':'';
 const server=spawn(path.resolve('../.tools/node.exe'),['node_modules/next/dist/bin/next','start','-p','3164'],{env,windowsHide:true,stdio:['ignore','pipe','pipe','ipc']});let output='',browser,ws;

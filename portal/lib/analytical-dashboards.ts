@@ -69,10 +69,11 @@ export function frequencyAssociations(posts:Post[],start:string,end:string){
  }).flat();
 }
 export function accountComparisons(data:Dataset,filters:AnalyticalFilters,current:Post[],previous:Post[]){
+ const periodEligible=validDate(filters.start)&&validDate(filters.end)&&filters.start<=filters.end?benchmarkPeriod(filters.start,filters.end).eligible:false;
  const accounts=[...data.config.accounts,...current.map(p=>({name:p.account,platform:p.platform,brand:p.brand})),...previous.map(p=>({name:p.account,platform:p.platform,brand:p.brand}))];
  return [...new Map(accounts.filter(a=>['Facebook','Instagram'].includes(a.platform)&&(!filters.platform||a.platform===filters.platform)&&(!filters.account||a.name===filters.account)&&(!filters.brand||a.brand===filters.brand)).map(a=>[a.platform+'|'+a.name,a])).values()].map(a=>{
  const now=current.filter(p=>p.account===a.name&&p.platform===a.platform),before=previous.filter(p=>p.account===a.name&&p.platform===a.platform),c=summarisePosts(now),p=summarisePosts(before);
- const comparable=benchmarkPeriod(filters.start,filters.end).eligible&&compatibleInteractions(now,before).eligible,difference=comparable?c.total!-p.total!:null;
+ const comparable=periodEligible&&compatibleInteractions(now,before).eligible,difference=comparable?c.total!-p.total!:null;
  return {...a,current:c,previous:p,difference,percent:difference!==null&&p.total!>0?difference/p.total!*100:null,attention:!c.posts&&p.posts?'No current-period posts recorded — review':c.posts&&!c.measured?'Missing measurements':c.measured<c.posts?'Incomplete coverage':difference!==null&&difference<0?'Recorded decline — review':'No measured decline established'};
  });
 }
