@@ -13,3 +13,25 @@ assert.equal(publicPageData(data,'programme'),data);assert.equal(publicPageData(
 const source=fs.readFileSync('app/public-portal.tsx','utf8');assert(!source.includes("addEventListener('focus'"));assert(source.includes('300000'));assert(!source.includes('setInterval(refresh,30000)'));
 const unavailable=renderToStaticMarkup(React.createElement(Portal,{initialUnavailable:true}));assert(unavailable.includes('temporarily unavailable'));assert(!unavailable.includes('Gathering our community stories'));
 console.log('PASS route-specific payloads preserve all rendered public content; preview, first-load error and controlled background checks.');
+const oldContent=renderToStaticMarkup(React.createElement(Portal,{initialData:data,generatedAt:'2020-01-01T00:00:00Z'}));
+assert(!oldContent.includes('latest content check is delayed'));assert(!oldContent.includes('Showing previously published content'));assert(oldContent.includes('Community activity'));
+console.log('PASS previously loaded content stays visible without a delayed-refresh banner.');
+// Exercise the actual refresh effect with a fake clock and network, without production data.
+let effect,scheduled,requests=0,fail=true,updates=0;
+globalThis.publicRetryHooks={useState:value=>[value,()=>{updates++;}],useEffect:fn=>{effect=fn;}};
+const retryLoad=testCompiler('.sites-runtime/public-retry-tests',{transform:(source,file)=>file==='app/public-portal.tsx'?source.replace("import {useEffect,useState} from 'react';",'const {useEffect,useState}=globalThis.publicRetryHooks;'):source});
+const {default:RetryPortal}=await retryLoad('app/public-portal.tsx');
+const original={fetch:globalThis.fetch,setTimeout:globalThis.setTimeout,clearTimeout:globalThis.clearTimeout,window:globalThis.window,document:globalThis.document};
+try{
+ globalThis.setTimeout=(fn,ms)=>{scheduled={fn,ms};return 1;};globalThis.clearTimeout=()=>{};
+ globalThis.document={visibilityState:'visible'};globalThis.window={addEventListener(){},removeEventListener(){}};
+ globalThis.fetch=async()=>{requests++;if(fail)throw Error('offline');return new Response(null,{status:304});};
+ RetryPortal({initialData:data,initialRevision:'same'});const cleanup=effect();
+ assert.equal(requests,0,'Server data does not trigger a duplicate initial fetch');assert.equal(scheduled.ms,300000);
+ await scheduled.fn();assert.equal(requests,1);assert.equal(scheduled.ms,30000);
+ await scheduled.fn();assert.equal(requests,2);assert.equal(scheduled.ms,60000);
+ fail=false;await scheduled.fn();assert.equal(scheduled.ms,300000,'Successful validation resets retry delay');
+ const count=requests;globalThis.document.visibilityState='hidden';await scheduled.fn();assert.equal(requests,count,'Hidden pages do not poll');
+ cleanup();assert(updates>0);
+ console.log('PASS actual refresh effect: automatic retries, increasing delay, success reset, no duplicate initial fetch and hidden-tab pause.');
+}finally{Object.assign(globalThis,original);delete globalThis.publicRetryHooks;}

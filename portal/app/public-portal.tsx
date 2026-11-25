@@ -17,25 +17,27 @@ import {PublicShell,HeroSection,HighlightCard,StoryCard,ImpactCard,PartnerCard,E
 export type PublicData={imageDimensions?:Record<string,{width:number;height:number}>;showcases?:import('../lib/public-content-showcases').PublicShowcases;home?:PublicHomeSettings;stories:PublicStory[];brands:string[];events:PublicActivity[];partners:{id:string;title:string;description?:string;imageUrl:string;url:string}[];programmes:(BrandPageFields&{title?:string;imageAlt?:string;brand:string;overview:string;imageUrl:string;gallery?:import('../lib/content-media').GalleryImage[];highlightIds?:string[]})[];impact:{period:string;date:string;activities:number|null;participants:number|null;volunteers:number|null;communityReach:number|null;programmes:number|null;events?:number|null;partnershipActivities?:number|null}|null};
 export type PublicPortalProps={page?:'home'|'community'|'programmes'|'impact'|'stories'|'article'|'programme'|'activities'|'partners'|'event';slug?:string;initialData?:PublicData;initialRevision?:string;generatedAt?:string;initialUnavailable?:boolean;preview?:boolean};
 export default function PublicPortal({page='home',slug='',initialData,initialRevision,generatedAt,initialUnavailable=false,preview=false}:PublicPortalProps){
- const [data,setData]=useState<PublicData>(initialData||{stories:[],brands:[],events:[],partners:[],programmes:[],impact:null}),[loading,setLoading]=useState(!initialData&&!initialUnavailable),[error,setError]=useState(initialUnavailable),[refreshError,setRefreshError]=useState(!!generatedAt&&Date.now()-Date.parse(generatedAt)>120000),[receivedAt,setReceivedAt]=useState(generatedAt),[query,setQuery]=useState(''),[category,setCategory]=useState('All Stories');
+ const [data,setData]=useState<PublicData>(initialData||{stories:[],brands:[],events:[],partners:[],programmes:[],impact:null}),[loading,setLoading]=useState(!initialData&&!initialUnavailable),[error,setError]=useState(initialUnavailable),[query,setQuery]=useState(''),[category,setCategory]=useState('All Stories');
  useEffect(()=>{
-  if(initialData){setData(initialData);setLoading(false);setError(false);setReceivedAt(generatedAt);setRefreshError(!!generatedAt&&Date.now()-Date.parse(generatedAt)>120000);}
+  if(initialData){setData(initialData);setLoading(false);setError(false);}
   if(preview)return;
-  const controller=new AbortController();let loaded=!!initialData,revision=initialRevision,busy=false;
+  const controller=new AbortController();let loaded=!!initialData,revision=initialRevision,busy=false,failures=0;let timer:ReturnType<typeof setTimeout>;
   async function refresh(){
-   if(busy||document.visibilityState==='hidden')return;busy=true;
+   if(busy)return;if(document.visibilityState==='hidden'){schedule(300000);return;}busy=true;clearTimeout(timer);
    try{
-    const response=await fetch('/api/public?view='+encodeURIComponent(page)+(slug?'&slug='+encodeURIComponent(slug):''),{signal:controller.signal,cache:'no-cache',headers:revision?{'If-None-Match':'"'+revision+'"'}:{}});
+    const response=await fetch('/api/public?view='+encodeURIComponent(page)+(slug?'&slug='+encodeURIComponent(slug):''),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20000)]),cache:'no-cache',headers:revision?{'If-None-Match':'"'+revision+'"'}:{}});
     if(response.status!==304){if(!response.ok)throw Error();const result=await response.json() as PublicData;setData(result);revision=response.headers.get('etag')?.replaceAll('"','');}
-    setReceivedAt(response.headers.get('x-public-generated-at')||undefined);setError(false);setRefreshError(!!response.headers.get('x-public-generated-at')&&Date.now()-Date.parse(response.headers.get('x-public-generated-at')!)>120000);loaded=true;
-   }catch{if(!controller.signal.aborted){if(!loaded)setError(true);else setRefreshError(true);}}
-   finally{busy=false;if(!controller.signal.aborted)setLoading(false);}
+    setError(false);failures=0;loaded=true;
+   }catch{if(!controller.signal.aborted){failures++;if(!loaded)setError(true);}}
+   finally{busy=false;if(!controller.signal.aborted){setLoading(false);schedule(failures?Math.min(300000,30000*2**Math.min(failures-1,4)):300000);}}
   }
+  function schedule(delay:number){clearTimeout(timer);timer=setTimeout(()=>void refresh(),delay);}
   // Server-rendered visits do not immediately fetch the same projection a second time.
   if(!initialData&&!initialUnavailable)void refresh();
-  const timer=setInterval(()=>void refresh(),300000),onStorage=(event:StorageEvent)=>{if(event.key==='portal-public-revision')void refresh();};
+  if(initialData||initialUnavailable)schedule(initialUnavailable?30000:300000);
+  const onStorage=(event:StorageEvent)=>{if(event.key==='portal-public-revision')void refresh();};
   window.addEventListener('storage',onStorage);
-  return()=>{controller.abort();clearInterval(timer);window.removeEventListener('storage',onStorage);};
+  return()=>{controller.abort();clearTimeout(timer);window.removeEventListener('storage',onStorage);};
  },[initialData,initialRevision,generatedAt,initialUnavailable,preview,page,slug]);
  const landing=!['article','programme','event'].includes(page);
  const cards=(stories:PublicStory[],kind='highlight')=>stories.length?<PublicCardGrid>{stories.map(story=>kind==='story'?<StoryCard story={story} key={story.id}/>:<HighlightCard story={story} key={story.id}/>)}</PublicCardGrid>:<EmptyPublicContent>New community stories will be shared here soon.</EmptyPublicContent>;
@@ -44,7 +46,6 @@ export default function PublicPortal({page='home',slug='',initialData,initialRev
  const titles={activities:['Come together. Make a memory.','Explore upcoming activities, events and opportunities to connect with your community.'],partners:['Stronger, together.','Meet the partners helping us build a healthier and more connected community.'],home:[home.heroTitle,home.heroSubtitle],community:['Community, in every moment.','Discover shared experiences, everyday kindness and stories from our community.'],programmes:['A place to connect. A community to belong.','Meet GLOW and SEEN, and explore the activities and stories bringing people together.'],stories:['Real people. Meaningful stories.','Meet the seniors, volunteers and neighbours at the heart of our community.'],impact:['Together, care goes further.','Discover the activities, participation and connections behind our community impact.']};
  const event=data.events.find(e=>e.id===slug),article=data.stories.find(s=>s.id===slug),profile=data.programmes.find(p=>p.brand.toLowerCase()===slug.toLowerCase()),brand=data.brands.find(b=>b.toLowerCase()===slug.toLowerCase()),programmeStories=data.stories.filter(s=>s.brand===brand&&s.showOnProgramme!==false).sort((a,b)=>{const ids=profile?.highlightIds||[],ai=ids.indexOf(a.id),bi=ids.indexOf(b.id);return (ai<0?10000:ai)-(bi<0?10000:bi)});
  return <PublicImageMetadataProvider dimensions={data.imageDimensions} cache={!preview}><div onClickCapture={e=>{if(!preview)return;const anchor=(e.target as HTMLElement).closest('a');if(!anchor)return;const url=new URL(anchor.href);if(url.origin!==window.location.origin)return;const paths:Record<string,string>={'/':'home','/community':'community','/stories':'stories','/programmes':'programmes','/what-were-doing':'programmes','/activities':'activities','/impact':'impact','/partners':'partners'};const parts=url.pathname.split('/').filter(Boolean),next=paths[url.pathname]||(parts[1]?({'stories':'article','programmes':'programme','activities':'event'} as Record<string,string>)[parts[0]]:undefined);if(next){e.preventDefault();window.location.href='/workspace/site-preview?page='+next+(parts[1]?'&slug='+encodeURIComponent(decodeURIComponent(parts[1])):'')+(url.hash||'');}}}><PublicShell siteCopy={home} page={page==='article'?'stories':page==='programme'?'programmes':page==='event'?'activities':page}>
- {refreshError&&<div className="ps-refresh-notice" role="status">Showing previously published content{receivedAt?' from '+new Date(receivedAt).toLocaleString('en-SG',{timeZone:'Asia/Singapore'}):''}. The latest content check is delayed. <button onClick={()=>window.location.reload()}>Try again</button></div>}
  {landing&&home.heroVisible!==false&&<HeroSection slides={home.heroSlides} title={home.heroTitle} subtitle={home.heroSubtitle} home buttonText={home.heroButtonText} buttonLink={home.heroButtonLink} secondaryButtonText={home.secondaryButtonText} secondaryButtonLink={home.secondaryButtonLink} imageUrl={home.heroSlides?home.heroImageUrl:home.heroImageUrl||undefined} imageAlt={home.heroImageAlt} eyebrow="TZU CHI COMMUNITY CARE"/>}
  {loading?<div className="ps-loading" role="status">Gathering our community stories…</div>:error?<div className="ps-empty" role="alert"><p>Our stories are temporarily unavailable.</p><button className="ps-button" onClick={()=>window.location.reload()}>Try again</button></div>:<>
  {landing&&<PublicLanding data={data}/>}
