@@ -4,7 +4,7 @@ import {approvedCaption,analystAnalysis,analystEvidence} from '../../../lib/soci
 import {loadData} from '../../../lib/data-service';
 import {workspaceGuard} from '../../../lib/workspace-security';
 import {getStorage} from '../../../lib/storage';
-import {readPublicPosts,savePublicPost,publicPostEvidence} from '../../../lib/public-post-intelligence';
+import {readPublicPosts,savePublicPost,publicPostEvidence,deletePublicPost,PublicPostDeleteError} from '../../../lib/public-post-intelligence';
 import {getAIRuntime} from '../../../lib/ai-runtime';
 import {createProvider} from '../../../lib/intelligence/provider';
 import {intelligenceResponse} from '../../../lib/intelligence/service';
@@ -13,3 +13,13 @@ export const maxDuration=60;
 const json=(value:unknown,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(request:Request){const denied=await workspaceGuard(request);if(denied)return denied;try{const store=getStorage(),data=await loadData(store,'config'),benchmarks=await readPublicBenchmarkData(store,data.config);return json({posts:benchmarks.posts,scopes:benchmarks.assessments,accounts:data.config.accounts,collection:'manual'});}catch{return json({error:'Public post records could not be loaded. Retry without removing saved records.'},503);}}
 export async function POST(request:Request){const denied=await workspaceGuard(request);if(denied)return denied;try{const raw=await request.text();if(raw.length>18000)throw Error('The request is too large.');const body=JSON.parse(raw),store=getStorage();if(body.action==='review-scope'){const data=await loadData(store,'config');return json({scope:await savePublicScope(store,body.record,data.config)});}if(body.action==='save')return json({post:await savePublicPost(store,body.record)});if(body.action!=='analyse')throw Error('Choose a supported action.');const posts=await readPublicPosts(store),post=posts.find(p=>p.id===body.id);if(!post)throw Error('Select a saved, staff-verified public post.');const observation=approvedCaption(body.observation,body.privacyApproved);if(!observation)throw Error('Describe the observable content in anonymised English before requesting lessons.');const pack=publicPostEvidence(posts,{...post,title:undefined,description:observation,techniques:''}),data=await loadData(store,'social'),brands=data.config.brands.filter(b=>b!=='Unclassified').slice(0,20),formats=data.config.types.slice(0,30),runtime=getAIRuntime();if(brands.length&&formats.length)pack.industryContext={brands,formats};if(data.posts?.length){const month=post.publishedAt.slice(0,7),last=new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).toISOString().slice(0,10),internal=await analystAnalysis(data,{platform:post.platform,start:month+'-01',end:last});const supported=new Set(internal.candidates.filter(c=>c.kind==='format'&&c.format.toLowerCase()===post.format.toLowerCase()).map(c=>c.factId));for(const fact of analystEvidence(internal).facts.filter(f=>supported.has(f.id)).slice(0,2)){const evidence=JSON.parse(fact.text);pack.facts.push({id:'INTERNAL'+pack.facts.length,label:'Independent internal matched comparison',text:evidence.platform+' / '+evidence.format+': '+evidence.statistics+' Period '+evidence.period.start+' to '+evidence.period.end+'. This is a separate internal result; public component counts are not equivalent to these private measurements.'});}}let provider=null;try{provider=createProvider(runtime.config);}catch{}const result=await intelligenceResponse(pack,provider,runtime.cache,runtime.dailyLimit);return json(screenPublicLessons(result,posts,post,brands,formats));}catch(e){return json({error:e instanceof Error?e.message:'Public post action failed.'},400);}}
+
+export async function DELETE(request:Request){
+ const denied=await workspaceGuard(request);if(denied)return denied;
+ try{
+  const raw=await request.text();if(raw.length>1000)return json({error:'The deletion request is too large.'},413);
+  let body;try{body=JSON.parse(raw);}catch{return json({error:'Submit a valid deletion request.'},400);}
+  if(!body||typeof body!=='object'||Array.isArray(body)||body.confirmed!==true)return json({error:'Confirm the external public post deletion first.'},400);
+  return json({deleted:await deletePublicPost(getStorage(),body.id)});
+ }catch(error){if(error instanceof PublicPostDeleteError)return json({error:error.message},error.status);return json({error:'The public post could not be deleted. Please retry; no internal posts are affected.'},503);}
+}

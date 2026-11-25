@@ -6,6 +6,8 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "test:public-post-delete-browser": "node scripts/test-public-post-delete-browser.mjs",
+    "test:public-post-delete": "node scripts/test-public-post-delete.mjs",
     "test:content-studio-facts": "node scripts/test-content-studio-facts.mjs",
     "test:ai-quality": "node scripts/test-ai-quality.mjs",
     "test:ai-quality-browser": "node scripts/test-ai-quality-browser.mjs",

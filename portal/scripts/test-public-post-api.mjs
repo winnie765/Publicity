@@ -1,9 +1,10 @@
+import {verifiedAISessionSource} from './test-support/verified-ai-session.mjs';
 import assert from 'node:assert/strict';
 import {testCompiler} from './test-support/compiler.mjs';
 process.env.WORKSPACE_PASSWORD='isolated-public-post-test-password';
 globalThis.publicPostInternalData={posts:[],config:{brands:['GLOW','SEEN'],types:['Reel','Video'],accounts:[]}};globalThis.publicPostRuntime={config:{provider:'gemini',model:'test'},cache:{},dailyLimit:0};
 const rows=new Map();globalThis.publicPostTestStore={readRecords:async kinds=>[...rows.values()].filter(r=>kinds.includes(r.kind)),readRecordsByIds:async ids=>ids.flatMap(id=>rows.has(id)?[rows.get(id)]:[]),apply:async changes=>{for(const c of changes)rows.set(c.record.id,c.record)}};
-const load=testCompiler('.sites-runtime/public-post-api-tests',{transform:(source,file)=>file==='app/api/public-post-intelligence/route.ts'?source.replace("import {getStorage} from '../../../lib/storage';",'const getStorage=()=>globalThis.publicPostTestStore;').replace("import {loadData} from '../../../lib/data-service';","const loadData=async()=>globalThis.publicPostInternalData;").replace("import {getAIRuntime} from '../../../lib/ai-runtime';","const getAIRuntime=()=>globalThis.publicPostRuntime;"):source});
+const load=testCompiler('.sites-runtime/public-post-api-tests',{transform:(source,file)=>{source=verifiedAISessionSource(source,file);return file==='app/api/public-post-intelligence/route.ts'?source.replace("import {getStorage} from '../../../lib/storage';",'const getStorage=()=>globalThis.publicPostTestStore;').replace("import {loadData} from '../../../lib/data-service';","const loadData=async()=>globalThis.publicPostInternalData;").replace("import {getAIRuntime} from '../../../lib/ai-runtime';","const getAIRuntime=()=>globalThis.publicPostRuntime;"):source;}});
 const security=await load('lib/workspace-security.ts'),api=await load('app/api/public-post-intelligence/route.ts'),origin='https://portal.test',cookie=security.sessionCookie+'='+await security.createSession(),headers={cookie,origin,'Content-Type':'application/json'};
 assert.equal((await api.GET(new Request(origin+'/api/public-post-intelligence'))).status,401);
 const send=(body,custom=headers)=>api.POST(new Request(origin+'/api/public-post-intelligence',{method:'POST',headers:custom,body:JSON.stringify(body)}));
